@@ -1,0 +1,95 @@
+import { Router } from 'express';
+import { PrismaClient } from '@prisma/client';
+
+const router = Router();
+const prisma = new PrismaClient();
+
+// Listar todos os militares
+router.get('/', async (req, res) => {
+  try {
+    const militares = await prisma.militar.findMany({
+      include: {
+        unidade: true,
+      }
+    });
+    res.json(militares);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar militares' });
+  }
+});
+
+// Criar militar
+router.post('/', async (req, res) => {
+  const { nome, rg, cpf, posto, unidadeId } = req.body;
+  try {
+    const militar = await prisma.militar.create({
+      data: {
+        nome,
+        rg,
+        cpf,
+        contato: req.body.contato,
+        posto,
+        unidadeId: Number(unidadeId),
+      },
+    });
+    res.status(201).json(militar);
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+       res.status(400).json({ error: 'RG ou CPF já cadastrado' });
+    } else {
+       res.status(500).json({ error: 'Erro ao criar militar' });
+    }
+  }
+});
+
+// Atualizar Militar
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nome, rg, cpf, contato, posto, unidadeId } = req.body;
+  
+  try {
+    const militar = await prisma.militar.update({
+      where: { id: Number(id) },
+      data: {
+        nome,
+        rg,
+        cpf,
+        contato,
+        posto,
+        unidadeId: Number(unidadeId),
+      },
+    });
+    res.json(militar);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao atualizar militar' });
+  }
+});
+
+// Excluir Militar
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Check if there are active cautelas for this militar
+    const activeCautelas = await prisma.cautela.findFirst({
+      where: {
+        militarId: Number(id),
+        status: 'ATIVA'
+      }
+    });
+
+    if (activeCautelas) {
+      return res.status(400).json({ error: 'Militar possui cautelas ativas.' });
+    }
+
+    await prisma.militar.delete({
+      where: { id: Number(id) },
+    });
+    
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao excluir militar' });
+  }
+});
+
+export default router;

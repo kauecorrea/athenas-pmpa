@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Unidade {
+  id        Int        @id @default(autoincrement())
+  nome        String     @unique // Ex: 1º BPM, BOPE, CME
+  sigla       String?
+  coint       String?
+  localizacao String?
+  militares Militar[]
+  cautelas  Cautela[]
+  // Rádios podem pertencer a uma unidade
+  radios    Equipamento[]
+}
+
+model Militar {
+  id        Int        @id @default(autoincrement())
+  nome      String
+  rg        String?    
+  cpf       String?
+  contato   String?    
+  posto     String?    // Ex: SD, CB, SGT, TEN
+  unidadeId Int
+  unidade   Unidade    @relation(fields: [unidadeId], references: [id])
+  cautelas  Cautela[]
+}
+
+model Equipamento {
+  id          Int       @id @default(autoincrement()) // ID interno do Banco
+  idRadio     String?   @unique // "ID do Rádio" que aparece na interface
+  rp          String    @unique // Número de Patrimônio
+  numSerie    String    @unique // Número de Série
+  marca       String?   // Motorola, Tait
+  modelo      String?   // APX 900, APX 2000, TP9400, TP9100
+  status      StatusEquipamento @default(OPERACIONAL)
+  unidadeId   Int?
+  unidade   Unidade?  @relation(fields: [unidadeId], references: [id])
+  cautelas  Cautela[]
+}
+
+enum StatusEquipamento {
+  OPERACIONAL
+  CAUTELADO
+  MANUTENCAO
+  EXTRAVIADO
+  TRANSFERIDO
+}
+
+model Cautela {
+  id            Int         @id @default(autoincrement())
+  equipamentoId Int
+  equipamento   Equipamento @relation(fields: [equipamentoId], references: [id])
+  militarId     Int?        // Quem pegou
+  militar       Militar?    @relation(fields: [militarId], references: [id])
+  unidadeId     Int?        // Ou a Unidade que pegou
+  unidade       Unidade?    @relation(fields: [unidadeId], references: [id])
+  
+  dataRetirada  DateTime    @default(now())
+  dataDevolucao DateTime?   // Quando foi devolvido
+  dataPrevista  DateTime?   // Data limite para devolução (ex: evento sábado)
+  
+  status        StatusCautela @default(ATIVA) // ATIVA, DEVOLVIDA, VENCIDA
+}
+
+enum StatusCautela {
+  ATIVA
+  DEVOLVIDA
+  VENCIDA
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nomeCompleto String
+  nomeGuerra   String
+  email        String   @unique
+  senha        String
+  posto        String?  // Ex: 1º Sargento
+  unidade      String?  // Ex: DITEL (Texto livre por enquanto)
+  permissao    String   @default("Administrador") 
+  dataCadastro DateTime @default(now())
+}
