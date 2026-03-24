@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Plus, Edit2, FileText, ChevronDown, Check } from 'lucide-react';
 
-interface MockTransferencia {
+interface TransferenciaRecord {
   id: number;
-  militar: string;
-  unidade: string;
+  militar: { nome: string; posto: string; unidade: { nome: string } | null } | null;
   destino: string;
-  dataSaida: string;
+  dataTransferencia: string;
   qtdRadios: number;
   status: string;
 }
@@ -19,27 +18,61 @@ interface EquipamentoDisponivel {
   idRadio: string;
 }
 
+interface Militar {
+  id: number;
+  nome: string;
+  posto: string;
+}
+
 const Transferencias: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [buscaTratada, setBuscaTratada] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Todos - Status');
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
   const [radiosSelecionados, setRadiosSelecionados] = useState<number[]>([]);
+  
+  const [transferencias, setTransferencias] = useState<TransferenciaRecord[]>([]);
+  const [militares, setMilitares] = useState<Militar[]>([]);
 
-  // Tabela Vazia como no Print
-  const transferenciasPlaceholder: MockTransferencia[] = [];
+  // Form states
+  const [militarId, setMilitarId] = useState('');
+  const [destino, setDestino] = useState('');
+  const [dataTransferencia, setDataTransferencia] = useState('');
+  const [observacoes, setObservacoes] = useState('');
 
   useEffect(() => {
-    // Buscar equipamentos cautelados apenas quando o modal for aberto
+    fetchTransferencias();
+  }, []);
+
+  useEffect(() => {
     if (isModalOpen) {
       fetchEquipamentosCautelados();
+      fetchMilitares();
     }
   }, [isModalOpen]);
+
+  const fetchTransferencias = async () => {
+    try {
+      const res = await axios.get('http://localhost:3333/api/transferencias');
+      setTransferencias(res.data);
+    } catch (error) {
+      console.error("Erro ao buscar transferências", error);
+    }
+  };
+
+  const fetchMilitares = async () => {
+    try {
+      const res = await axios.get('http://localhost:3333/api/militares');
+      setMilitares(res.data);
+    } catch (error) {
+      console.error("Erro ao buscar militares", error);
+    }
+  };
 
   const fetchEquipamentosCautelados = async () => {
     try {
       const res = await axios.get('http://localhost:3333/api/equipamentos');
-      // Filtra apenas Rádios já CAUTELADOS, pois a transferência ocorre em cima de rádios que já saíram do depósito principal
+      // Transfere apenas aparelhos no momento Cautelados. (Se está operacional é uma cautela nova).
       const cautelados = res.data.filter((eq: any) => eq.status === 'CAUTELADO');
       setRadiosDisponiveis(cautelados);
     } catch (error) {
@@ -55,6 +88,45 @@ const Transferencias: React.FC = () => {
     }
   };
 
+  const handleCreateTransferencia = async () => {
+    if (!militarId || radiosSelecionados.length === 0 || !destino) {
+      alert("Preencha o Destino, o Militar responsável e selecione ao menos 1 rádio.");
+      return;
+    }
+
+    try {
+      await axios.post('http://localhost:3333/api/transferencias', {
+        equipamentosIds: radiosSelecionados,
+        militarId: Number(militarId),
+        destino,
+        dataTransferencia: dataTransferencia ? new Date(dataTransferencia).toISOString() : new Date().toISOString(),
+        observacoes,
+      });
+
+      setIsModalOpen(false);
+      setRadiosSelecionados([]);
+      setMilitarId('');
+      setDestino('');
+      setDataTransferencia('');
+      setObservacoes('');
+      fetchTransferencias();
+    } catch (error) {
+      console.error("Erro ao processar transferência", error);
+      alert("Ocorreu um erro. Verifique se o backend está rodando e conectado ao banco.");
+    }
+  };
+
+  // Filtragem local
+  const transferenciasFiltradas = transferencias.filter(t => {
+    const searchMatch = !buscaTratada || 
+      t.destino.toLowerCase().includes(buscaTratada.toLowerCase()) ||
+      t.militar?.nome.toLowerCase().includes(buscaTratada.toLowerCase());
+    
+    const statusMatch = filtroStatus === 'Todos - Status' || t.status.toLowerCase() === filtroStatus.toLowerCase();
+
+    return searchMatch && statusMatch;
+  });
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
       
@@ -64,7 +136,7 @@ const Transferencias: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
              Transferência de Carga
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Gerencie as transferências de equipamentos</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Repasse direto de Cautelas Operacionais (Guarnição p/ Guarnição)</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -84,7 +156,7 @@ const Transferencias: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
             <input 
               type="text" 
-              placeholder="Buscar por militar, destino..." 
+              placeholder="Buscar por militar ou destino..." 
               value={buscaTratada}
               onChange={(e) => setBuscaTratada(e.target.value)}
               className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg pl-10 pr-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
@@ -104,7 +176,6 @@ const Transferencias: React.FC = () => {
                 <div className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] flex items-center gap-2 cursor-pointer" onClick={() => setFiltroStatus('Todos - Status')}>
                    Todos - Status
                 </div>
-                <div className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer pl-7" onClick={() => setFiltroStatus('Ativa')}>Ativa</div>
                 <div className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer pl-7" onClick={() => setFiltroStatus('Finalizada')}>Finalizada</div>
               </div>
             </div>
@@ -116,42 +187,51 @@ const Transferencias: React.FC = () => {
           <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Destino</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data de Saída</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Qtd. Rádios</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar Substituto</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade Receptora</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Missão / Destino</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data do Repasse</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Volume (Qtd)</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Termo Vtr</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
-              {transferenciasPlaceholder.length === 0 ? (
+              {transferenciasFiltradas.length === 0 ? (
                 <tr>
                    <td colSpan={7} className="px-6 py-10 text-center text-gray-500 bg-transparent">
-                     Nenhuma transferência encontrada.
+                     Nenhuma transferência inter-policial registrada.
                    </td>
                 </tr>
               ) : (
-                transferenciasPlaceholder.map((t) => (
+                transferenciasFiltradas.map((t) => (
                   <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{t.militar}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{t.unidade}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{t.destino}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{t.dataSaida}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{t.qtdRadios}</td>
+                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
+                      {t.militar ? `${t.militar.posto} ${t.militar.nome}` : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                      {t.militar && t.militar.unidade ? t.militar.unidade.nome : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300 truncate max-w-[200px]" title={t.destino}>{t.destino}</td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                      {new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{t.qtdRadios} Un.</td>
                     <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 text-[11px] font-bold text-success bg-success/10 border border-success/20 rounded-full lowercase tracking-wider">
-                        {t.status}
-                      </span>
+                      {t.status === 'FINALIZADA' ? (
+                        <span className="px-2.5 py-1 text-[11px] font-bold text-success bg-success/10 border border-success/20 rounded-full uppercase tracking-wider">
+                          Sucesso
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 text-[11px] font-bold text-gray-500 bg-gray-500/10 border border-gray-500/20 rounded-full uppercase tracking-wider">
+                          {t.status}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
-                        <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5">
+                        <button className="hover:text-primary dark:hover:text-primary p-1.5 rounded-lg transition-colors hover:bg-primary/10" title="Imprimir Termo de Repasse">
                           <FileText size={16} />
-                        </button>
-                        <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5">
-                          <Edit2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -169,8 +249,8 @@ const Transferencias: React.FC = () => {
           <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[600px] shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Transferência</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Preencha os dados da transferência de equipamentos</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Repasse Tático de Material</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Ao registrar, a cautela original do rádio selecionado é encerrada e transferida para a matrícula do PM selecionado abaixo.</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                 ✕
@@ -181,14 +261,17 @@ const Transferencias: React.FC = () => {
               
               {/* Militar Responsável */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Militar Responsável *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Policial Substituto (Quem vai assumir) *</label>
                 <div className="relative">
                   <select 
                     className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                    defaultValue=""
+                    value={militarId}
+                    onChange={(e) => setMilitarId(e.target.value)}
                   >
                     <option value="" disabled>Selecione o militar</option>
-                    <option value="1">Mario - CIEPAS</option>
+                    {militares.map(m => (
+                      <option key={m.id} value={m.id}>{m.posto} {m.nome}</option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
                 </div>
@@ -196,31 +279,35 @@ const Transferencias: React.FC = () => {
 
               {/* Destino */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Destino *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Missão ou Prefixo da Viatura *</label>
                 <input 
                   type="text" 
-                  placeholder="Para onde os equipamentos estão indo"
+                  value={destino}
+                  onChange={(e) => setDestino(e.target.value)}
+                  placeholder="Ex: Viatura 2304 / Operação Paz"
                   className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                 />
               </div>
 
               {/* Data Saída */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data de Saída *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Hora Crítica do Repasse</label>
                 <input 
-                  type="date"
+                  type="datetime-local"
+                  value={dataTransferencia}
+                  onChange={(e) => setDataTransferencia(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                 />
               </div>
 
               {/* Rádios Cautelados Disponíveis Component */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rádios * (Selecione múltiplos)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rádios Atualmente na Rua *</label>
                 <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
                   {/* List of checkboxes */}
                   <div className="max-h-48 overflow-y-auto p-4 space-y-3">
                     {radiosDisponiveis.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic text-center py-4">Nenhum rádio Cautelado para transferência.</p>
+                      <p className="text-sm text-gray-500 italic text-center py-4">Nenhum rádio rodando na rua para ser transferido.</p>
                     ) : (
                       radiosDisponiveis.map((radio) => (
                         <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
@@ -247,16 +334,18 @@ const Transferencias: React.FC = () => {
                 </div>
                 {/* Selection Count Label */}
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
-                  Selecionados: {radiosSelecionados.length}
+                  Selecionados para repasse: <strong className="text-primary">{radiosSelecionados.length}</strong>
                 </p>
               </div>
 
               {/* Observações */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Observações</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Observações Visuais (Avarias)</label>
                 <textarea 
                   rows={3}
-                  placeholder="Observações adicionais (opcional)"
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Ex: Rádio recebido com a ponta da antena mastigada."
                   className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
                 />
               </div>
@@ -272,10 +361,10 @@ const Transferencias: React.FC = () => {
                 Cancelar
               </button>
               <button 
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleCreateTransferencia}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
               >
-                Registrar Transferência
+                Transferir Instintivamente
               </button>
             </div>
           </div>

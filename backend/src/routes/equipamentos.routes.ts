@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { registrarAuditoria } from '../utils/auditoria';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -33,6 +34,9 @@ router.post('/', async (req, res) => {
         unidadeId: unidadeId ? Number(unidadeId) : null,
       },
     });
+
+    registrarAuditoria(req, 'Cadastrou novo Rádio / Equipamento', `RP: ${rp} - Série: ${numSerie} - ID Virtual: ${idRadio}`);
+
     res.status(201).json(equipamento);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao criar equipamento' });
@@ -56,6 +60,9 @@ router.put('/:id', async (req, res) => {
         unidadeId: unidadeId ? Number(unidadeId) : null,
       },
     });
+
+    registrarAuditoria(req, 'Editou informações de um Rádio', `ID Banco: ${id} - Novo RP: ${rp || 'mantido'}`);
+
     res.json(equipamento);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar equipamento' });
@@ -69,6 +76,9 @@ router.delete('/:id', async (req, res) => {
     await prisma.equipamento.delete({
       where: { id: Number(id) }
     });
+
+    registrarAuditoria(req, 'Excluiu um Rádio permanentemente do Banco', `ID Banco: ${id}`);
+
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Erro ao deletar equipamento' });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import axios from 'axios';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Equipamentos from './pages/Equipamentos';
@@ -10,8 +11,21 @@ import Transferencias from './pages/Transferencias';
 import Manutencao from './pages/Manutencao';
 import Extraviados from './pages/Extraviados';
 import Usuarios from './pages/Usuarios';
+import Auditoria from './pages/Auditoria';
 import Perfil from './pages/Perfil';
 import Login from './pages/Login';
+
+// Configurar o interceptor do Axios para espetar quem está logado em toda chamada HTTP
+axios.interceptors.request.use((config) => {
+  const usuarioInfo = localStorage.getItem('usuario');
+  if (usuarioInfo) {
+    const usuarioObj = JSON.parse(usuarioInfo);
+    config.headers['X-Usuario-Nome'] = `${usuarioObj.posto || ''} ${usuarioObj.nomeGuerra || usuarioObj.nomeCompleto}`.trim();
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 
 // Componente para Proteger as Rotas Internas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -57,6 +71,7 @@ const App: React.FC = () => {
                 <Route path="/manutencao" element={<Manutencao />} />
                 <Route path="/extraviados" element={<Extraviados />} />
                 <Route path="/usuarios" element={<Usuarios />} />
+                <Route path="/auditoria" element={<Auditoria />} />
                 <Route path="/perfil" element={<Perfil />} />
                 {/* Fallback 404 interno */}
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,6 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, CheckCircle, MapPin, PenTool, AlertTriangle, TrendingUp } from 'lucide-react';
+import { 
+  Radio, 
+  Wrench, 
+  AlertTriangle, 
+  CheckCircle2, 
+  TrendingUp, 
+  ArrowUpRight, 
+  Activity,
+  Clock,
+  Ban
+} from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart, 
+  Pie, 
+  Cell,
+  Legend
+} from 'recharts';
 
 interface DashboardStats {
   total: number;
@@ -12,130 +35,251 @@ interface DashboardStats {
 }
 
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    total: 0,
-    operacional: 0,
-    cautelado: 0,
-    emManutencao: 0,
-    extraviados: 0,
-    cautelasVencidas: 0
-  });
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
-    // Busca dados reais do backend
-    axios.get('http://localhost:3333/api/dashboard/stats')
-      .then(response => {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get('http://localhost:3333/api/dashboard/stats');
         setStats(response.data);
-      })
-      .catch(error => {
-        console.error("Erro ao buscar estatísticas.", error);
-        // Reseta para 0 ao invés de usar mocks para não confundir o usuário
-        setStats({
-          total: 0,
-          operacional: 0,
-          cautelado: 0,
-          emManutencao: 0,
-          extraviados: 0,
-          cautelasVencidas: 0
-        });
-      });
+      } catch (error) {
+        console.error('Erro ao buscar estatísticas:', error);
+      }
+    };
+    fetchStats();
   }, []);
 
-  const cards = [
-    { title: 'TOTAL DE EQUIPAMENTOS', value: stats.total, icon: Activity, color: 'text-primary', bg: 'bg-primary/10 border-primary/20' },
-    { title: 'OPERACIONAL', value: stats.operacional, icon: CheckCircle, color: 'text-success', bg: 'bg-success/10 border-success/20' },
-    { title: 'CAUTELADO', value: stats.cautelado, icon: MapPin, color: 'text-blue-400', bg: 'bg-blue-400/10 border-blue-400/20' },
-    { title: 'EM MANUTENÇÃO', value: stats.emManutencao, icon: PenTool, color: 'text-warning', bg: 'bg-warning/10 border-warning/20' },
-    { title: 'EXTRAVIADOS', value: stats.extraviados, icon: AlertTriangle, color: 'text-danger', bg: 'bg-danger/10 border-danger/20' },
-    { title: 'CAUTELAS VENCIDAS', value: stats.cautelasVencidas, icon: TrendingUp, color: 'text-red-500', bg: 'bg-red-500/10 border-red-500/20' },
+  // Dados Mockados para os Gráficos enquanto a API não fornece o histórico
+  const historyData = [
+    { name: 'Seg', cautelas: 4 },
+    { name: 'Ter', cautelas: 7 },
+    { name: 'Qua', cautelas: 3 },
+    { name: 'Qui', cautelas: 8 },
+    { name: 'Sex', cautelas: 12 },
+    { name: 'Sáb', cautelas: 2 },
+    { name: 'Dom', cautelas: 5 },
+  ];
+
+  const pieData = [
+    { name: 'Operacionais', value: stats?.operacional || 0, color: '#3b82f6' }, // Azul
+    { name: 'Cautelados', value: stats?.cautelado || 0, color: '#f59e0b' },    // Laranja/Amarelo
+    { name: 'Manutenção', value: stats?.emManutencao || 0, color: '#ef4444' }, // Vermelho
+    { name: 'Extraviados', value: stats?.extraviados || 0, color: '#1f2937' }, // Cinza Escuro
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white transition-colors duration-200">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Visão geral e análise do sistema de equipamentos</p>
+    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white pb-10">
+      
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
+            <Activity className="text-primary" size={28} />
+            Visão Geral
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Resumo do patrimônio de radiocomunicação da PMPA
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2 bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] px-4 py-2 rounded-lg shadow-sm">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sistema Conectado</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {cards.map((card, index) => (
-          <div key={index} className={`rounded-xl border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-surface p-5 flex flex-col justify-between h-32 relative overflow-hidden group hover:border-gray-300 dark:hover:border-[#374151] transition-colors`}>
-            <div className={`absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity ${card.bg.split(' ')[0]}`} />
-            
-            <div className="flex justify-between items-start">
-              <h3 className="text-[10px] font-bold text-gray-500 dark:text-gray-400 tracking-wider">
-                {card.title}
-              </h3>
-              <card.icon size={16} className={`${card.color} opacity-80`} />
+      {/* CARDS DE ESTATÍSTICAS PRINCIPAIS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        
+        {/* Total Operacional */}
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Operacionais</p>
+              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats?.operacional || 0}</h3>
             </div>
-            
-            <div className="text-4xl font-bold mt-2">
-              {card.value}
+            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <CheckCircle2 size={24} />
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
-        {/* Equipamentos por Estado */}
-        <div className="bg-white dark:bg-surface rounded-xl border border-gray-200 dark:border-[#1f2937] p-6 shadow-sm flex flex-col h-[400px]">
-          <h2 className="text-lg font-bold mb-6">Equipamentos por Estado</h2>
-          <div className="space-y-4 flex-1">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937]">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-success" />
-                <span className="font-medium text-sm">Operacional</span>
-              </div>
-              <span className="text-success font-bold text-xl">{stats.operacional}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937]">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-blue-400" />
-                <span className="font-medium text-sm">Cautelado</span>
-              </div>
-              <span className="text-blue-400 font-bold text-xl">{stats.cautelado}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937]">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-warning" />
-                <span className="font-medium text-sm">Manutenção</span>
-              </div>
-              <span className="text-warning font-bold text-xl">{stats.emManutencao}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937]">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-danger" />
-                <span className="font-medium text-sm">Extraviado</span>
-              </div>
-              <span className="text-danger font-bold text-xl">{stats.extraviados}</span>
-            </div>
+          <div className="mt-4 flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400 relative z-10">
+            <ArrowUpRight size={16} />
+            <span>Saudável</span>
           </div>
         </div>
 
-        {/* Guia Rápido */}
-        <div className="bg-white dark:bg-surface rounded-xl border border-gray-200 dark:border-[#1f2937] p-6 shadow-sm flex flex-col h-[400px]">
-          <h2 className="text-lg font-bold mb-6">Guia Rápido</h2>
-          
-          <div className="bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937] p-4 rounded-lg text-sm text-gray-700 dark:text-gray-300 mb-4">
-            Sistema inicializado com sucesso. Utilize o menu lateral para navegar entre as funcionalidades disponíveis.
-          </div>
-
-          <div className="border border-primary/30 bg-primary/5 rounded-lg p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                <TrendingUp size={16} />
-              </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Primeiros Passos</h3>
+        {/* Cautelados - PRIMARY ACCENT (Laranja Ativo) */}
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-800 p-6 rounded-2xl shadow-lg shadow-orange-500/20 text-white relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <p className="text-sm font-medium text-orange-100">Rádios em Cautela</p>
+              <h3 className="text-3xl font-bold mt-2">{stats?.cautelado || 0}</h3>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 ml-11 leading-relaxed">
-              Comece cadastrando unidades militares, depois registre os militares e por fim cadastre os equipamentos individuais.
-            </p>
+            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
+              <Radio size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1 text-sm font-medium text-orange-50 relative z-10">
+            <TrendingUp size={16} />
+            <span>Em uso nas ruas</span>
           </div>
         </div>
+
+        {/* Em Manutenção */}
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Em Manutenção</p>
+              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats?.emManutencao || 0}</h3>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-red-600 dark:text-red-400">
+              <Wrench size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1 text-sm font-medium text-red-600 dark:text-red-400 relative z-10">
+            <AlertTriangle size={16} />
+            <span>Requer Atenção</span>
+          </div>
+        </div>
+
+        {/* Cautelas Vencidas */}
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Cautelas Vencidas</p>
+              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats?.cautelasVencidas || 0}</h3>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
+              <Clock size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1 text-sm font-medium text-yellow-600 dark:text-yellow-400 relative z-10">
+            <AlertTriangle size={16} />
+            <span>Retornos Atrasados</span>
+          </div>
+        </div>
+
+        {/* Extraviados */}
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gray-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rádios Extraviados</p>
+              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats?.extraviados || 0}</h3>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-[#111827] flex items-center justify-center text-gray-600 dark:text-gray-400">
+              <Ban size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400 relative z-10">
+            <span>Perdas Registradas</span>
+          </div>
+        </div>
+
+        {/* Total do Acervo */}
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-1">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gray-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total do Acervo</p>
+              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats?.total || 0}</h3>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-300">
+              <Radio size={24} />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400 relative z-10">
+            <span>Volume Patrimonial</span>
+          </div>
+        </div>
+
       </div>
+
+      {/* ÁREA DOS GRÁFICOS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        
+        {/* Gráfico de Barras: Produtividade (Cautelas na semana) */}
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-2xl p-6 lg:col-span-2 shadow-sm">
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Fluxo de Cautelas na Semana</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Quantidade de rádios emprestados por dia</p>
+          </div>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={historyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#6b7280', fontSize: 12 }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#6b7280', fontSize: 12 }} 
+                />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(249, 115, 22, 0.1)' }}
+                  contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
+                  itemStyle={{ color: '#f97316' }}
+                />
+                <Bar 
+                  dataKey="cautelas" 
+                  fill="#f97316" 
+                  radius={[4, 4, 0, 0]} 
+                  barSize={40}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico de Pizza: Distribuição de Status */}
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-2xl p-6 shadow-sm flex flex-col">
+          <div className="mb-2">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Capacidade Operativa</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Distribuição atual dos equipamentos</p>
+          </div>
+          <div className="flex-1 min-h-[250px] w-full flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
+                  itemStyle={{ color: '#fff' }}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  iconType="circle"
+                  formatter={(value) => <span style={{ color: '#9ca3af', fontSize: '13px' }}>{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 };

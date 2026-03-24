@@ -10,6 +10,10 @@ import dashboardRoutes from './routes/dashboard.routes';
 import militaresRoutes from './routes/militares.routes';
 import usuariosRoutes from './routes/usuarios.routes';
 import authRoutes from './routes/auth.routes';
+import manutencaoRoutes from './routes/manutencao.routes';
+import extraviosRoutes from './routes/extravios.routes';
+import transferenciasRoutes from './routes/transferencias.routes';
+import auditoriaRoutes from './routes/auditoria.routes';
 
 dotenv.config();
 
@@ -28,6 +32,10 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/militares', militaresRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/manutencoes', manutencaoRoutes);
+app.use('/api/extravios', extraviosRoutes);
+app.use('/api/transferencias', transferenciasRoutes);
+app.use('/api/auditoria', auditoriaRoutes);
 
 // Rota inicial / Teste
 app.get('/', (req: express.Request, res: express.Response) => {

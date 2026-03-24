@@ -8,8 +8,8 @@ import {
   ClipboardList, 
   ArrowRightLeft, 
   Wrench, 
-  AlertTriangle, 
-  Settings,
+  AlertTriangle,
+  Activity,
   LogOut,
   Moon,
   Sun
@@ -28,7 +28,7 @@ const menuPrincipal = [
 
 const menuAdmin = [
   { icon: Users, label: 'Usuários', path: '/usuarios' },
-  { icon: Settings, label: 'Configurações', path: '/configuracoes' }, // Added Configurações
+  { icon: Activity, label: 'Auditoria', path: '/auditoria' }, // Changed from Configurações
 ];
 
 const Sidebar: React.FC = () => {

@@ -40,6 +40,15 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       { expiresIn: '8h' }
     );
 
+    // Auditoria de Logon manual
+    await prisma.auditoria.create({
+      data: {
+        usuario: `${usuario.posto} ${usuario.nomeGuerra}`,
+        acao: 'Realizou Login no Sistema',
+        detalhes: `Sistema acessado com Nível: ${usuario.permissao}`
+      }
+    });
+
     // Retorna Token + Informações do Sessão do Usuário
     res.json({
       token,

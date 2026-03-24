@@ -32,6 +32,8 @@ model Militar {
   unidadeId Int
   unidade   Unidade    @relation(fields: [unidadeId], references: [id])
   cautelas  Cautela[]
+  extravios Extravio[]
+  transferencias Transferencia[]
 }
 
 model Equipamento {
@@ -45,6 +47,8 @@ model Equipamento {
   unidadeId   Int?
   unidade   Unidade?  @relation(fields: [unidadeId], references: [id])
   cautelas  Cautela[]
+  manutencoes Manutencao[]
+  extravios   Extravio[]
 }
 
 enum StatusEquipamento {
@@ -87,4 +91,46 @@ model Usuario {
   unidade      String?  // Ex: DITEL (Texto livre por enquanto)
   permissao    String   @default("Administrador") 
   dataCadastro DateTime @default(now())
+}
+
+model Manutencao {
+  id              Int         @id @default(autoincrement())
+  equipamentoId   Int
+  equipamento     Equipamento @relation(fields: [equipamentoId], references: [id])
+  problema        String      @db.Text
+  dataEntrada     DateTime    @default(now())
+  previsaoRetorno DateTime?
+  dataConclusao   DateTime?
+  status          String      @default("EM ANDAMENTO") // EM ANDAMENTO, CONCLUIDA
+}
+
+model Extravio {
+  id            Int         @id @default(autoincrement())
+  equipamentoId Int
+  equipamento   Equipamento @relation(fields: [equipamentoId], references: [id])
+  militarId     Int?        // Quem estava responsável quando sumiu
+  militar       Militar?    @relation(fields: [militarId], references: [id])
+  dataExtravio  DateTime    @default(now())
+  local         String?
+  descricao     String      @db.Text
+  status        String      @default("INVESTIGACAO") // INVESTIGACAO, LOCALIZADO, BAIXADO
+}
+
+model Transferencia {
+  id                Int      @id @default(autoincrement())
+  militarId         Int      // Novo detentor
+  militar           Militar  @relation(fields: [militarId], references: [id])
+  destino           String
+  dataTransferencia DateTime @default(now())
+  observacoes       String?  @db.Text
+  qtdRadios         Int
+  status            String   @default("FINALIZADA")
+}
+
+model Auditoria {
+  id          Int      @id @default(autoincrement())
+  usuario     String   // Nome do usuário ou 'Sistema'
+  acao        String   @db.Text // O que foi feito
+  detalhes    String?  @db.Text // Opcional, como JSON ou IDs
+  dataHora    DateTime @default(now())
 }

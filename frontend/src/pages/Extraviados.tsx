@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Edit2, FileText, ChevronDown, AlertTriangle } from 'lucide-react';
 
-interface MockExtravio {
+interface ExtravioRecord {
   id: number;
-  idRadio: string;
-  rp: string;
-  responsavel: string;
+  equipamento: { rp: string; numSerie: string; idRadio: string };
+  militar: { nome: string; posto: string } | null;
   dataExtravio: string;
-  local: string;
+  local: string | null;
   descricao: string;
   status: string;
 }
@@ -20,28 +19,88 @@ interface EquipamentoDisponivel {
   idRadio: string;
 }
 
+interface Militar {
+  id: number;
+  nome: string;
+  posto: string;
+}
+
 const Extraviados: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
+  const [militares, setMilitares] = useState<Militar[]>([]);
+  const [extravios, setExtravios] = useState<ExtravioRecord[]>([]);
 
-  // Tabela Vazia como no Print
-  const extraviosPlaceholder: MockExtravio[] = [];
+  // Form states
+  const [equipamentoId, setEquipamentoId] = useState('');
+  const [militarId, setMilitarId] = useState('');
+  const [dataExtravio, setDataExtravio] = useState('');
+  const [local, setLocal] = useState('');
+  const [descricao, setDescricao] = useState('');
 
   useEffect(() => {
-    // Buscar equipamentos quando o formulário for aberto (para listar no select)
+    fetchExtravios();
+  }, []);
+
+  useEffect(() => {
     if (isFormOpen) {
       fetchEquipamentosParaExtravio();
+      fetchMilitares();
     }
   }, [isFormOpen]);
+
+  const fetchExtravios = async () => {
+    try {
+      const res = await axios.get('http://localhost:3333/api/extravios');
+      setExtravios(res.data);
+    } catch (error) {
+      console.error("Erro ao buscar extravios", error);
+    }
+  };
+
+  const fetchMilitares = async () => {
+    try {
+      const res = await axios.get('http://localhost:3333/api/militares');
+      setMilitares(res.data);
+    } catch (error) {
+      console.error("Erro ao buscar militares", error);
+    }
+  };
 
   const fetchEquipamentosParaExtravio = async () => {
     try {
       const res = await axios.get('http://localhost:3333/api/equipamentos');
-      // Todos os rádios exceto os que JÁ ESTÃO extraviados podem ser declarados como extraviados.
+      // Qualquer rádio pode ser extraviado (até os operacionais), exceto os que JÁ ESTÃO extraviados
       const disponiveis = res.data.filter((eq: any) => eq.status !== 'EXTRAVIADO');
       setRadiosDisponiveis(disponiveis);
     } catch (error) {
       console.error("Erro ao buscar equipamentos para extravio", error);
+    }
+  };
+
+  const handleCreateExtravio = async () => {
+    if (!equipamentoId || !descricao) {
+      alert("Preencha o Rádio e a Descrição/B.O obrigatoriamente.");
+      return;
+    }
+
+    try {
+      await axios.post('http://localhost:3333/api/extravios', {
+        equipamentoId: Number(equipamentoId),
+        militarId: militarId ? Number(militarId) : null,
+        dataExtravio: dataExtravio ? new Date(dataExtravio).toISOString() : new Date().toISOString(),
+        local,
+        descricao
+      });
+      setIsFormOpen(false);
+      setEquipamentoId('');
+      setMilitarId('');
+      setDataExtravio('');
+      setLocal('');
+      setDescricao('');
+      fetchExtravios(); // Atualiza a tabela
+    } catch (error) {
+      console.error("Erro ao registrar extravio", error);
     }
   };
 
@@ -54,7 +113,7 @@ const Extraviados: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
              Extraviados
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Registro de equipamentos extraviados</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Acervo oficial de Furtos, Perdas e Danos Irrecuperáveis</p>
         </div>
         {!isFormOpen && (
           <button 
@@ -62,7 +121,7 @@ const Extraviados: React.FC = () => {
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
           >
             <Plus size={18} />
-            Registrar Extravio
+            Registrar B.O de Extravio
           </button>
         )}
       </div>
@@ -71,70 +130,84 @@ const Extraviados: React.FC = () => {
       {isFormOpen && (
         <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-shrink-0 transition-colors">
           <div className="p-6 border-b border-gray-200 dark:border-[#1f2937]">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Extravio</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Perda / Extravio</h2>
+            <p className="text-sm text-gray-500 mt-1">Ao registrar o rádio sai definitivamente do controle de "Operacionais".</p>
           </div>
           
           <div className="p-6 space-y-4">
             
             {/* Equipamento */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Equipamento</label>
-              <div className="relative">
-                <select 
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                  defaultValue=""
-                >
-                  <option value="" disabled>Selecione o rádio</option>
-                  {radiosDisponiveis.map(radio => (
-                    <option key={radio.id} value={radio.id}>
-                      {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Equipamento Ausente</label>
+                <div className="relative">
+                  <select 
+                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                    value={equipamentoId}
+                    onChange={(e) => setEquipamentoId(e.target.value)}
+                  >
+                    <option value="" disabled>Selecione a máquina perdida</option>
+                    {radiosDisponiveis.map(radio => (
+                      <option key={radio.id} value={radio.id}>
+                        {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+                </div>
               </div>
-            </div>
 
-            {/* Militar Responsável */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Militar Responsável</label>
-              <div className="relative">
-                <select 
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                  defaultValue=""
-                >
-                  <option value="" disabled>Selecione o militar</option>
-                  {/* Mocking for layout */}
-                  <option value="1">Mario - CIEPAS</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+              {/* Militar Responsável */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Quem estava responsável?</label>
+                <div className="relative">
+                  <select 
+                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                    value={militarId}
+                    onChange={(e) => setMilitarId(e.target.value)}
+                  >
+                    <option value="">Não informado (ou do Batalhão)</option>
+                    {militares.map(m => (
+                      <option key={m.id} value={m.id}>{m.posto} {m.nome}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+                </div>
               </div>
             </div>
 
             {/* Data e Local */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data do Extravio</label>
-              <input 
-                type="date"
-                className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data Crítica (quando ocorreu?)</label>
+                <input 
+                  type="date"
+                  value={dataExtravio}
+                  onChange={(e) => setDataExtravio(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Local do Extravio</label>
-              <input 
-                type="text"
-                placeholder="Local onde ocorreu o extravio"
-                className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Local (Cidade / Rua / Evento)</label>
+                <input 
+                  type="text"
+                  placeholder="Ex: Praça Batista Campos"
+                  value={local}
+                  onChange={(e) => setLocal(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                />
+              </div>
             </div>
 
             {/* Descrição do Ocorrido */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Descrição do Ocorrido</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Resumo / Número do B.O / Sindicância</label>
               <textarea 
                 rows={3}
-                placeholder="Descreva as circunstâncias do extravio"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Exemplo: Rádio foi subtraído do armário do aloja e a parte confeccionada foi a Num. 3432/2026."
                 className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
               />
             </div>
@@ -143,10 +216,10 @@ const Extraviados: React.FC = () => {
 
           <div className="p-6 pt-2 flex items-center gap-3">
             <button 
-              onClick={() => setIsFormOpen(false)}
-              className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
+              onClick={handleCreateExtravio}
+              className="px-6 py-2.5 text-sm font-medium text-white bg-danger hover:bg-red-700 rounded-lg transition-colors shadow-lg shadow-red-600/20"
             >
-              Registrar
+              Registrar Perda
             </button>
             <button 
               onClick={() => setIsFormOpen(false)}
@@ -163,39 +236,43 @@ const Extraviados: React.FC = () => {
         
         <div className="p-5 border-b border-gray-200 dark:border-[#1f2937] flex items-center gap-2">
           <AlertTriangle className="text-danger" size={20} />
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Equipamentos Extraviados</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Relação de Documentos Físicos de Extravio</h2>
         </div>
         
         <div className="flex-1 overflow-auto z-0">
           <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">ID do Rádio</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Patrimônio</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Responsável</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Local</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Descrição</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">RP / Série</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Oficial Acompanhando</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data do Evento</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Localização</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Resumo / B.O</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Andamento IPD</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Documentos</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
-              {extraviosPlaceholder.length === 0 ? (
+              {extravios.length === 0 ? (
                 <tr>
-                   <td colSpan={8} className="px-6 py-12 text-center text-gray-500 bg-transparent">
-                     Nenhum equipamento extraviado registrado.
+                   <td colSpan={7} className="px-6 py-12 text-center text-gray-500 bg-transparent">
+                     Excelente operação! Nenhum equipamento extraviado histórico registrado.
                    </td>
                 </tr>
               ) : (
-                extraviosPlaceholder.map((e) => (
+                extravios.map((e) => (
                   <tr key={e.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{e.idRadio}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{e.rp}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{e.responsavel}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{e.dataExtravio}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300 truncate max-w-[150px]">{e.local}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300 truncate max-w-[200px]">{e.descricao}</td>
+                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
+                      {e.equipamento?.rp} <br/><span className="text-xs font-normal text-gray-500">{e.equipamento?.numSerie}</span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                      {e.militar ? `${e.militar.posto} ${e.militar.nome}` : 'Apurar'}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                      {new Date(e.dataExtravio).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300 truncate max-w-[150px]" title={e.local || ''}>{e.local || '-'}</td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300 truncate max-w-[200px]" title={e.descricao}>{e.descricao}</td>
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-1 text-[11px] font-bold text-danger bg-danger/10 border border-danger/20 rounded-full uppercase tracking-wider">
                         {e.status}
@@ -203,11 +280,8 @@ const Extraviados: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
-                        <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5">
+                        <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" title="Baixar Boletim Relatório">
                           <FileText size={16} />
-                        </button>
-                        <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5">
-                          <Edit2 size={16} />
                         </button>
                       </div>
                     </td>

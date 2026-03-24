@@ -1,17 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, FileText, Edit2, Download, ChevronDown } from 'lucide-react';
-
-interface MockCautela {
-  id: number;
-  militar: string;
-  unidade: string;
-  quantidade: number;
-  dataInicio: string;
-  dataRetorno: string;
-  missao: string;
-  status: string;
-}
+import { Search, Plus, FileText, Download, ChevronDown, CheckCircle } from 'lucide-react';
 
 interface EquipamentoDisponivel {
   id: number;
@@ -20,24 +9,76 @@ interface EquipamentoDisponivel {
   idRadio: string;
 }
 
+interface Militar {
+  id: number;
+  nome: string;
+  posto: string;
+  unidade: { nome: string };
+}
+
+interface Cautela {
+  id: number;
+  militar: { nome: string; posto: string } | null;
+  unidade: { nome: string } | null;
+  equipamento: { rp: string; numSerie: string; idRadio: string };
+  dataRetirada: string;
+  dataDevolucao: string | null;
+  dataPrevista: string | null;
+  status: string;
+}
+
 const Cautelas: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [buscaTratada, setBuscaTratada] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Todos - Status');
+  
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
   const [radiosSelecionados, setRadiosSelecionados] = useState<number[]>([]);
+  
+  const [militares, setMilitares] = useState<Militar[]>([]);
+  const [cautelas, setCautelas] = useState<Cautela[]>([]);
 
+  // Form states
+  const [militarId, setMilitarId] = useState('');
+  const [dataPrevista, setDataPrevista] = useState('');
+
+  // Initial Data Fetch
   useEffect(() => {
-    // Buscar equipamentos apenas quando o modal for aberto
+    fetchCautelas();
+    fetchMilitares();
+  }, []);
+
+  // Fetch Available Radios when Modal Opens
+  useEffect(() => {
     if (isModalOpen) {
       fetchEquipamentosOperacionais();
+      setRadiosSelecionados([]);
+      setMilitarId('');
+      setDataPrevista('');
     }
   }, [isModalOpen]);
+
+  const fetchCautelas = async () => {
+    try {
+      const res = await axios.get('http://localhost:3333/api/cautelas');
+      setCautelas(res.data);
+    } catch (error) {
+      console.error("Erro ao buscar cautelas", error);
+    }
+  };
+
+  const fetchMilitares = async () => {
+    try {
+      const res = await axios.get('http://localhost:3333/api/militares');
+      setMilitares(res.data);
+    } catch (error) {
+      console.error("Erro ao buscar militares", error);
+    }
+  };
 
   const fetchEquipamentosOperacionais = async () => {
     try {
       const res = await axios.get('http://localhost:3333/api/equipamentos');
-      // Filtrar apenas os Rádios que estão com status OPERACIONAL (livres para cautela)
       const operacionais = res.data.filter((eq: any) => eq.status === 'OPERACIONAL');
       setRadiosDisponiveis(operacionais);
     } catch (error) {
@@ -53,29 +94,53 @@ const Cautelas: React.FC = () => {
     }
   };
 
-  // Hardcoded mock data exactly as requested in the print to construct the UI skeleton
-  const cautelasPlaceholder: MockCautela[] = [
-    {
-      id: 1,
-      militar: 'Mario',
-      unidade: 'CIEPAS',
-      quantidade: 3,
-      dataInicio: '26/11/2025',
-      dataRetorno: '28/11/2025',
-      missao: '',
-      status: 'Devolvida'
-    },
-    {
-      id: 2,
-      militar: 'Mario',
-      unidade: 'CIEPAS',
-      quantidade: 2,
-      dataInicio: '23/11/2025',
-      dataRetorno: '26/11/2025',
-      missao: '',
-      status: 'Devolvida'
+  const handleCriarCautela = async () => {
+    if (radiosSelecionados.length === 0 || !militarId) {
+      alert("Selecione um militar e pelo menos um rádio.");
+      return;
     }
-  ];
+
+    try {
+      await axios.post('http://localhost:3333/api/cautelas', {
+        equipamentosIds: radiosSelecionados,
+        militarId: Number(militarId),
+        dataPrevista: dataPrevista ? new Date(dataPrevista).toISOString() : null
+      });
+      setIsModalOpen(false);
+      fetchCautelas(); // Refresh table
+    } catch (error) {
+      console.error("Erro ao criar cautela:", error);
+      alert("Ocorreu um erro ao emprestar o rádio.");
+    }
+  };
+
+  const handleDevolver = async (id: number) => {
+    if (window.confirm('Tem certeza que deseja registrar a devolução deste equipamento?')) {
+      try {
+        await axios.put(`http://localhost:3333/api/cautelas/${id}/devolver`);
+        fetchCautelas(); // Refresh table
+      } catch (error) {
+        console.error("Erro ao devolver:", error);
+      }
+    }
+  };
+
+  // Filtragem local
+  const cautelasFiltradas = cautelas.filter(c => {
+    const termo = buscaTratada.toLowerCase();
+    const nome = c.militar?.nome?.toLowerCase() || '';
+    const unidade = c.unidade?.nome?.toLowerCase() || c.militar?.unidade?.nome?.toLowerCase() || '';
+    const rp = c.equipamento?.rp?.toLowerCase() || '';
+    
+    const matchBusca = nome.includes(termo) || unidade.includes(termo) || rp.includes(termo);
+    
+    if (filtroStatus === 'Todos - Status') return matchBusca;
+    if (filtroStatus === 'Ativa') return matchBusca && c.status === 'ATIVA';
+    if (filtroStatus === 'Devolvida') return matchBusca && c.status === 'DEVOLVIDA';
+    if (filtroStatus === 'Vencida') return matchBusca && c.status === 'VENCIDA';
+    
+    return matchBusca;
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
@@ -86,7 +151,7 @@ const Cautelas: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
              Cautelas
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Gerenciamento de cautelas de rádios</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Gerenciamento de empréstimos e devoluções</p>
         </div>
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors">
@@ -112,7 +177,7 @@ const Cautelas: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
             <input 
               type="text" 
-              placeholder="Buscar por militar, unidade, missão..." 
+              placeholder="Buscar por militar, unidade, rádio (RP)..." 
               value={buscaTratada}
               onChange={(e) => setBuscaTratada(e.target.value)}
               className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg pl-10 pr-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
@@ -142,40 +207,72 @@ const Cautelas: React.FC = () => {
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Quantidade</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Início</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Retorno</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Missão</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Rádio (RP/Série)</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Saída</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Devolução</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
-              {cautelasPlaceholder.map((c) => (
+              {cautelasFiltradas.length > 0 ? cautelasFiltradas.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
-                  <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{c.militar}</td>
-                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{c.unidade}</td>
-                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{c.quantidade}</td>
-                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{c.dataInicio}</td>
-                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{c.dataRetorno}</td>
-                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{c.missao}</td>
+                  <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
+                    {c.militar ? `${c.militar.posto} ${c.militar.nome}` : '-'}
+                  </td>
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                    {c.militar?.unidade?.nome || c.unidade?.nome || '-'}
+                  </td>
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-medium">
+                    {c.equipamento.rp} <span className="text-gray-400 font-normal">({c.equipamento.numSerie})</span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                    {new Date(c.dataRetirada).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                    {c.dataDevolucao ? new Date(c.dataDevolucao).toLocaleDateString('pt-BR') : (c.dataPrevista ? new Date(c.dataPrevista).toLocaleDateString('pt-BR') : '-')}
+                  </td>
                   <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 text-[11px] font-bold text-success bg-success/10 border border-success/20 rounded-full lowercase tracking-wider">
-                      {c.status}
-                    </span>
+                    {c.status === 'ATIVA' && (
+                      <span className="px-2.5 py-1 text-[11px] font-bold text-orange-600 bg-orange-500/10 border border-orange-500/20 rounded-full lowercase tracking-wider">
+                        Ativa
+                      </span>
+                    )}
+                    {c.status === 'DEVOLVIDA' && (
+                      <span className="px-2.5 py-1 text-[11px] font-bold text-success bg-success/10 border border-success/20 rounded-full lowercase tracking-wider">
+                        Devolvida
+                      </span>
+                    )}
+                    {c.status === 'VENCIDA' && (
+                      <span className="px-2.5 py-1 text-[11px] font-bold text-danger bg-danger/10 border border-danger/20 rounded-full lowercase tracking-wider">
+                        Vencida
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
-                      <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5">
+                      <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" title="Emitir Recibo">
                         <FileText size={16} />
                       </button>
-                      <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5">
-                        <Edit2 size={16} />
-                      </button>
+                      {c.status === 'ATIVA' && (
+                        <button 
+                          onClick={() => handleDevolver(c.id)}
+                          className="hover:text-success dark:hover:text-success p-1.5 rounded-lg transition-colors hover:bg-success/10" 
+                          title="Registrar Devolução"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    Nenhuma cautela encontrada.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -188,7 +285,7 @@ const Cautelas: React.FC = () => {
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nova Cautela</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Preencha as informações da cautela</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Selecione o militar e os equipamentos</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                 ✕
@@ -203,50 +300,37 @@ const Cautelas: React.FC = () => {
                 <div className="relative">
                   <select 
                     className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                    defaultValue=""
+                    value={militarId}
+                    onChange={(e) => setMilitarId(e.target.value)}
                   >
                     <option value="" disabled>Selecione um militar</option>
-                    <option value="1">Mario - CIEPAS</option>
+                    {militares.map(m => (
+                      <option key={m.id} value={m.id}>{m.posto} {m.nome} - {m.unidade?.nome || ''}</option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
                 </div>
               </div>
 
               {/* Datas */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data de Início</label>
-                  <input 
-                    type="date"
-                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data de Retorno</label>
-                  <input 
-                    type="date" 
-                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Missão */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Missão</label>
-                <textarea 
-                  rows={3}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Previsão de Retorno (Opcional)</label>
+                <input 
+                  type="date"
+                  value={dataPrevista}
+                  onChange={(e) => setDataPrevista(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                 />
               </div>
 
               {/* Rádios Disponíveis Component */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rádios Disponíveis</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rádios Disponíveis para Empréstimo</label>
                 <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
                   {/* List of checkboxes */}
                   <div className="max-h-48 overflow-y-auto p-4 space-y-3">
                     {radiosDisponiveis.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic text-center py-2">Nenhum rádio operacional disponível.</p>
+                      <p className="text-sm text-gray-500 italic text-center py-2">Nenhum rádio operacional disponível no momento.</p>
                     ) : (
                       radiosDisponiveis.map((radio) => (
                         <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
@@ -263,7 +347,7 @@ const Cautelas: React.FC = () => {
                               </svg>
                             </div>
                           </div>
-                          <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium">
+                          <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium text-left">
                             {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''}
                           </span>
                         </label>
@@ -288,10 +372,11 @@ const Cautelas: React.FC = () => {
                 Cancelar
               </button>
               <button 
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
+                onClick={handleCriarCautela}
+                disabled={radiosSelecionados.length === 0 || !militarId}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Criar Cautela
+                Emprestar Rádios
               </button>
             </div>
           </div>
