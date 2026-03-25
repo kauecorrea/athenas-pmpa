@@ -8,7 +8,8 @@ const Login: React.FC = () => {
   const [senha, setSenha] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [showForgotAlert, setShowForgotAlert] = useState(false);
+
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -23,7 +24,7 @@ const Login: React.FC = () => {
       });
 
       const { token, usuario } = response.data;
-      
+
       // Salva no LocalStorage
       localStorage.setItem('token', token);
       localStorage.setItem('usuario', JSON.stringify(usuario));
@@ -39,8 +40,8 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0a0f1d] flex items-center justify-center p-4 transition-colors">
-      
-      <div className="max-w-md w-full animate-fade-in">
+
+      <div className="max-w-md w-full animate-fade-in relative">
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white mx-auto shadow-lg shadow-primary/30 mb-4">
             <Radio size={32} />
@@ -52,54 +53,85 @@ const Login: React.FC = () => {
         <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-2xl shadow-xl overflow-hidden">
           <div className="p-8">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Acesso ao Sistema</h2>
-            
-            {error && (
-              <div className="mb-6 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm font-medium">
-                {error}
+
+            {showForgotAlert ? (
+              <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="p-5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 text-blue-800 dark:text-blue-300 mb-6">
+                  <h3 className="font-bold mb-2 flex items-center gap-2">
+                    <Radio size={18} />
+                    Recuperação de Acesso
+                  </h3>
+                  <p className="text-sm leading-relaxed">
+                    Por motivos de segurança institucional, a recuperação de senha deve ser solicitada formalmente ao DITEL.
+                  </p>
+                  <p className="text-sm mt-4 font-semibold">
+                    Contato: citel@pm.pa.gov.br
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowForgotAlert(false)}
+                  className="w-full py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  Voltar para o Login
+                </button>
               </div>
+            ) : (
+              <>
+                {error && (
+                  <div className="mb-6 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm font-medium">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="usuario@pmpa.pa.gov.br"
+                      required
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha</label>
+                    <input
+                      type="password"
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary bg-gray-50 dark:bg-[#111827] dark:border-[#374151]" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Lembrar-me</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotAlert(true)}
+                      className="text-sm font-medium text-primary hover:text-blue-500 transition-colors"
+                    >
+                      Esqueceu a senha?
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 px-4 flex items-center justify-center text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/30 mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
+                  </button>
+                </form>
+              </>
             )}
-
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="usuario@pmpa.pa.gov.br"
-                  required
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha</label>
-                <input 
-                  type="password" 
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                />
-              </div>
-
-              <div className="flex items-center justify-between mt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary bg-gray-50 dark:bg-[#111827] dark:border-[#374151]" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Lembrar-me</span>
-                </label>
-                <a href="#" className="text-sm font-medium text-primary hover:text-blue-500 transition-colors">Esqueceu a senha?</a>
-              </div>
-
-              <button 
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 px-4 flex items-center justify-center text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/30 mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
-              </button>
-            </form>
           </div>
           <div className="px-8 py-4 bg-gray-50 dark:bg-[#111827] border-t border-gray-200 dark:border-[#1f2937] text-center">
             <p className="text-xs text-gray-500 dark:text-gray-500">
