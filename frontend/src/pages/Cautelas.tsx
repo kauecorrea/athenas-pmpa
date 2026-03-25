@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Plus, FileText, Download, ChevronDown, CheckCircle } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface EquipamentoDisponivel {
   id: number;
@@ -142,6 +144,73 @@ const Cautelas: React.FC = () => {
     return matchBusca;
   });
 
+  const gerarRelatorioPdf = () => {
+    // 1. Instanciar PDF
+    const doc = new jsPDF();
+
+    // 2. Pegar as últimas 30 cautelas cadastradas
+    const ultimas30 = [...cautelasFiltradas].slice(0, 30);
+    
+    // Contadores
+    const qtdAtivas = ultimas30.filter(c => c.status === 'ATIVA').length;
+    const qtdDevolvidas = ultimas30.filter(c => c.status === 'DEVOLVIDA').length;
+
+    // 3. Cabeçalho Principal (Título)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELATÓRIO DE CAUTELAS", 105, 15, { align: "center" });
+    
+    // Subtítulo (Gerado em)
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const dataHora = new Date().toLocaleString('pt-BR');
+    doc.text(`Gerado em: ${dataHora}`, 105, 22, { align: "center" });
+
+    // Linha divisória
+    doc.setLineWidth(0.5);
+    doc.line(14, 28, 196, 28);
+
+    // 4. Estatísticas Resumidas
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total de Cautelas: ${ultimas30.length}`, 14, 38);
+    doc.text(`Cautelas Ativas: ${qtdAtivas}`, 14, 44);
+    doc.text(`Cautelas Devolvidas: ${qtdDevolvidas}`, 14, 50);
+
+    // 5. Montar a Tabela
+    const dataTabela = ultimas30.map(c => {
+      const nomeApresentacao = c.militar ? `${c.militar.nome}` : '-';
+      const rádio = c.equipamento.rp;
+      const statusFinal = c.status === 'ATIVA' ? 'Ativa' : (c.status === 'DEVOLVIDA' ? 'Devolvida' : 'Vencida');
+      const dataInicio = new Date(c.dataRetirada).toLocaleDateString('pt-BR');
+
+      return [nomeApresentacao, c.unidade?.nome || c.militar?.unidade?.nome || '-', rádio, statusFinal, dataInicio];
+    });
+
+    autoTable(doc, {
+      startY: 60,
+      head: [['Militar', 'Unidade', 'Rádio (RP)', 'Status', 'Data Início']],
+      body: dataTabela,
+      theme: 'plain',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fontStyle: 'bold',
+        textColor: [0, 0, 0],
+        lineWidth: { bottom: 0.5 },
+        lineColor: [0, 0, 0],
+      },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255]
+      }
+    });
+
+    // 6. Fazer Download Automático
+    doc.save('Relatorio_Cautelas_PMPA.pdf');
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
       
@@ -154,7 +223,10 @@ const Cautelas: React.FC = () => {
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gerenciamento de empréstimos e devoluções</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors">
+          <button 
+            onClick={gerarRelatorioPdf}
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
             <Download size={16} />
             Gerar Relatório
           </button>
