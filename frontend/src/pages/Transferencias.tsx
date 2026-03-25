@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, Edit2, FileText, ChevronDown, Check } from 'lucide-react';
-
-interface TransferenciaRecord {
-  id: number;
-  militar: { nome: string; posto: string; unidade: { nome: string } | null } | null;
-  destino: string;
-  dataTransferencia: string;
-  qtdRadios: number;
-  status: string;
-}
+import { Search, Plus, Edit2, FileText, ChevronDown, Check, Trash2 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface EquipamentoDisponivel {
   id: number;
   rp: string;
   numSerie: string;
-  idRadio: string;
+  idRadio?: string;
+}
+
+interface TransferenciaRecord {
+  id: number;
+  militar: { nome: string; rg?: string; contato?: string; posto: string; unidade: { nome: string } | null } | null;
+  destino: string;
+  dataTransferencia: string;
+  qtdRadios: number;
+  status: string;
+  observacoes?: string;
+  equipamentos: EquipamentoDisponivel[];
 }
 
 interface Militar {
@@ -26,6 +30,10 @@ interface Militar {
 
 const Transferencias: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [isModalEditOpen, setIsModalEditOpen] = useState(false);
+  const [transferenciaAlvo, setTransferenciaAlvo] = useState<TransferenciaRecord | null>(null);
+
   const [buscaTratada, setBuscaTratada] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Todos - Status');
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
@@ -72,12 +80,106 @@ const Transferencias: React.FC = () => {
   const fetchEquipamentosCautelados = async () => {
     try {
       const res = await axios.get('http://localhost:3333/api/equipamentos');
-      // Transfere apenas aparelhos no momento Cautelados. (Se está operacional é uma cautela nova).
       const cautelados = res.data.filter((eq: any) => eq.status === 'CAUTELADO');
       setRadiosDisponiveis(cautelados);
     } catch (error) {
       console.error("Erro ao buscar equipamentos cautelados", error);
     }
+  };
+
+  const getBase64ImageFromUrl = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject('Erro ao carregar imagem');
+      img.src = imageUrl;
+    });
+  };
+
+  // -----------------------------------------------------------------------------------------------------
+  // PDF GENERATOR
+  // -----------------------------------------------------------------------------------------------------
+  const gerarReciboTransferencia = async (t: TransferenciaRecord) => {
+    const doc = new jsPDF();
+    
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+    } catch (e) { console.error('Sem brasao_para.png'); }
+    
+    try {
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+    } catch (e) { console.error('Sem brasao_pmpa.png'); }
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 14, { align: "center" });
+    doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 19, { align: "center" });
+    doc.text("POLÍCIA MILITAR DO PARÁ", 105, 24, { align: "center" });
+    doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 29, { align: "center" });
+    doc.text("DIRETORIA DE TELEMÁTICA", 105, 34, { align: "center" });
+
+    doc.setFontSize(14);
+    doc.text(`TERMO DE REPASSE N° ${String(t.id).padStart(5, '0')}`, 105, 50, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    const missaoFormatada = t.destino ? `Destino / Missão: ${t.destino}` : 'Destino: Não Informado';
+    doc.text(missaoFormatada, 105, 58, { align: "center" });
+
+    const tableData = t.equipamentos?.map((eq, index) => [
+      index + 1,
+      `${eq.numSerie} / ${eq.rp}`,
+      t.militar ? `${t.militar.posto} ${t.militar.nome}` : 'Não Identificado',
+      t.militar?.rg || '-',
+      t.militar?.contato || '-',
+      '' // Assinatura
+    ]) || [];
+
+    autoTable(doc, {
+      startY: 70,
+      head: [['Nº', 'Nº DE SÉRIE / RP', 'RECEPTOR', 'RG', 'CONTATO', 'ASSINATURA']],
+      body: tableData,
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 4, textColor: [0, 0, 0] },
+      headStyles: { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] },
+      columnStyles: { 5: { cellWidth: 40 } },
+      didDrawCell: (data) => {
+        if (data.section === 'body' && data.column.index === 5) {
+          doc.setDrawColor(200, 200, 200);
+          doc.line(data.cell.x + 2, data.cell.y + 8, data.cell.x + data.cell.width - 2, data.cell.y + 8);
+        }
+      }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("ACOMPANHA:", 14, finalY);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`- ${t.qtdRadios} RÁDIOS HT`, 20, finalY + 10);
+    doc.text("- TODOS OS RÁDIOS ESTÃO COM PRESILHA PARA CINTO, PROTETOR LATERAL, BATERIA E ANTENA.", 20, finalY + 20);
+
+    const dataF = new Date(t.dataTransferencia).toLocaleDateString('pt-BR');
+    doc.text(`Belém PA, ${dataF}`, 14, finalY + 70);
+    
+    doc.setDrawColor(0, 0, 0);
+    doc.line(110, finalY + 70, 196, finalY + 70);
+    doc.setFontSize(9);
+    doc.text("ASSINATURA DO MILITAR RECEPTOR", 153, finalY + 75, { align: "center" });
+
+    doc.save(`Repasse_PMPA_${t.id}.pdf`);
   };
 
   const toggleRadioSelection = (id: number) => {
@@ -88,6 +190,21 @@ const Transferencias: React.FC = () => {
     }
   };
 
+  const openDeleteModal = (t: TransferenciaRecord) => {
+    setTransferenciaAlvo(t);
+    setIsModalDeleteOpen(true);
+  };
+
+  const openEditModal = (t: TransferenciaRecord) => {
+    setTransferenciaAlvo(t);
+    setDestino(t.destino);
+    setObservacoes(t.observacoes || '');
+    setIsModalEditOpen(true);
+  };
+
+  // -----------------------------------------------------------------------------------------------------
+  // CRUD
+  // -----------------------------------------------------------------------------------------------------
   const handleCreateTransferencia = async () => {
     if (!militarId || radiosSelecionados.length === 0 || !destino) {
       alert("Preencha o Destino, o Militar responsável e selecione ao menos 1 rádio.");
@@ -116,6 +233,35 @@ const Transferencias: React.FC = () => {
     }
   };
 
+  const handleDeleteTransferencia = async () => {
+    if (!transferenciaAlvo) return;
+    try {
+      await axios.delete(`http://localhost:3333/api/transferencias/${transferenciaAlvo.id}`);
+      setIsModalDeleteOpen(false);
+      setTransferenciaAlvo(null);
+      fetchTransferencias();
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao excluir a transferência.');
+    }
+  };
+
+  const handleEditTransferencia = async () => {
+    if (!transferenciaAlvo) return;
+    try {
+      await axios.put(`http://localhost:3333/api/transferencias/${transferenciaAlvo.id}`, {
+        destino,
+        observacoes
+      });
+      setIsModalEditOpen(false);
+      setTransferenciaAlvo(null);
+      fetchTransferencias();
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao editar a transferência.');
+    }
+  };
+
   // Filtragem local
   const transferenciasFiltradas = transferencias.filter(t => {
     const searchMatch = !buscaTratada || 
@@ -139,7 +285,13 @@ const Transferencias: React.FC = () => {
           <p className="text-gray-500 dark:text-gray-400 mt-1">Repasse direto de Cautelas Operacionais (Guarnição p/ Guarnição)</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setMilitarId('');
+            setDestino('');
+            setObservacoes('');
+            setRadiosSelecionados([]);
+            setIsModalOpen(true);
+          }}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
         >
           <Plus size={18} />
@@ -193,7 +345,7 @@ const Transferencias: React.FC = () => {
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data do Repasse</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Volume (Qtd)</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Termo Vtr</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
@@ -216,7 +368,7 @@ const Transferencias: React.FC = () => {
                     <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
                       {new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}
                     </td>
-                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{t.qtdRadios} Un.</td>
+                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{t.equipamentos?.length || t.qtdRadios} Un.</td>
                     <td className="px-6 py-4">
                       {t.status === 'FINALIZADA' ? (
                         <span className="px-2.5 py-1 text-[11px] font-bold text-success bg-success/10 border border-success/20 rounded-full uppercase tracking-wider">
@@ -230,8 +382,14 @@ const Transferencias: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
-                        <button className="hover:text-primary dark:hover:text-primary p-1.5 rounded-lg transition-colors hover:bg-primary/10" title="Imprimir Termo de Repasse">
+                        <button onClick={() => gerarReciboTransferencia(t)} className="hover:text-primary dark:hover:text-primary p-1.5 rounded-lg transition-colors hover:bg-primary/10" title="Imprimir Termo de Repasse">
                           <FileText size={16} />
+                        </button>
+                        <button onClick={() => openEditModal(t)} className="hover:text-blue-500 dark:hover:text-blue-400 p-1.5 rounded-lg transition-colors hover:bg-blue-500/10" title="Editar Transferência">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => openDeleteModal(t)} className="hover:text-red-500 dark:hover:text-red-400 p-1.5 rounded-lg transition-colors hover:bg-red-500/10" title="Excluir Transferência">
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -310,7 +468,7 @@ const Transferencias: React.FC = () => {
                       <p className="text-sm text-gray-500 italic text-center py-4">Nenhum rádio rodando na rua para ser transferido.</p>
                     ) : (
                       radiosDisponiveis.map((radio) => (
-                        <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
+                         <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
                           <div className="relative flex items-center justify-center w-4 h-4 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-surface group-hover:border-primary transition-colors">
                             <input 
                               type="checkbox" 
@@ -365,6 +523,77 @@ const Transferencias: React.FC = () => {
                 className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
               >
                 Transferir Instintivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EXCLUIR */}
+      {isModalDeleteOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#111827] border border-gray-800 rounded-xl w-full max-w-lg shadow-2xl p-6">
+            <h2 className="text-xl font-bold text-white mb-2">Excluir Transferência</h2>
+            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+              Tem certeza que deseja excluir esta transferência? Os rádios serão desvinculados da cautela daquele policial e marcados como operacionais livremente no estoque novamente.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setIsModalDeleteOpen(false)}
+                className="px-4 py-2 text-sm font-bold text-white border border-gray-700 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleDeleteTransferencia}
+                className="px-4 py-2 text-sm font-bold text-white bg-red-800/90 hover:bg-red-700 rounded-lg transition-colors shadow-lg shadow-red-900/50"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDITAR */}
+      {isModalEditOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/80 backdrop-blur-sm">
+          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Editar Transferência</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Missão / Destino</label>
+                <input 
+                  type="text" 
+                  value={destino}
+                  onChange={(e) => setDestino(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Observações (Avarias ou Alerta)</label>
+                <textarea 
+                  rows={3}
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button 
+                onClick={() => setIsModalEditOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleEditTransferencia}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Salvar Alterações
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Wrench, Edit2, FileText, ChevronDown, CheckCircle } from 'lucide-react';
+import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface ManutencaoRecord {
   id: number;
@@ -23,6 +24,9 @@ const Manutencao: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
   const [manutencoes, setManutencoes] = useState<ManutencaoRecord[]>([]);
+
+  const [isModalConcluirOpen, setIsModalConcluirOpen] = useState(false);
+  const [manutencaoConcluirId, setManutencaoConcluirId] = useState<number | null>(null);
 
   // Form states
   const [equipamentoId, setEquipamentoId] = useState('');
@@ -85,14 +89,21 @@ const Manutencao: React.FC = () => {
     }
   };
 
-  const handleConcluir = async (id: number) => {
-    if (window.confirm('Confirma o término da manutenção e retorno ao status Operacional?')) {
-      try {
-        await axios.put(`http://localhost:3333/api/manutencoes/${id}/concluir`);
-        fetchManutencoes();
-      } catch (error) {
-        console.error("Erro ao concluir", error);
-      }
+  const openConcluirModal = (id: number) => {
+    setManutencaoConcluirId(id);
+    setIsModalConcluirOpen(true);
+  };
+
+  const confirmConcluir = async () => {
+    if (!manutencaoConcluirId) return;
+    try {
+      await axios.put(`http://localhost:3333/api/manutencoes/${manutencaoConcluirId}/concluir`);
+      fetchManutencoes();
+    } catch (error) {
+      console.error("Erro ao concluir", error);
+    } finally {
+      setIsModalConcluirOpen(false);
+      setManutencaoConcluirId(null);
     }
   };
 
@@ -255,7 +266,7 @@ const Manutencao: React.FC = () => {
                         </button>
                         {m.status === 'EM ANDAMENTO' && (
                           <button 
-                            onClick={() => handleConcluir(m.id)}
+                            onClick={() => openConcluirModal(m.id)}
                             className="hover:text-success dark:hover:text-success p-1.5 rounded-lg transition-colors hover:bg-success/10"
                             title="Finalizar Conserto"
                           >
@@ -272,6 +283,14 @@ const Manutencao: React.FC = () => {
         </div>
       </div>
 
+      <ModalConfirmacao 
+        isOpen={isModalConcluirOpen}
+        title="Finalizar Conserto"
+        message="A oficina concluiu os reparos? O Rádio voltará automaticamente para o status OPERACIONAL e será liberado para Cautela."
+        onConfirm={confirmConcluir}
+        onCancel={() => { setIsModalConcluirOpen(false); setManutencaoConcluirId(null); }}
+        confirmText="Confirmar Retorno"
+      />
     </div>
   );
 };

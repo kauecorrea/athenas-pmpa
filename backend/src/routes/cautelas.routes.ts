@@ -11,8 +11,8 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const cautelas = await prisma.cautela.findMany({
       include: {
-        equipamento: true,
-        militar: true,
+        equipamentos: true,
+        militar: { include: { unidade: true } },
         unidade: true,
       },
       orderBy: { dataRetirada: 'desc' }
@@ -23,52 +23,80 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Emprestar Rádi(os) (Criar Cautelas em Lote)
+// Emprestar Rádi(os) (Criar Cautelas em Lote M:N)
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentosIds, militarId, unidadeId, dataPrevista } = req.body;
+  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio } = req.body;
   
   if (!equipamentosIds || !Array.isArray(equipamentosIds) || equipamentosIds.length === 0) {
     return res.status(400).json({ error: 'Nenhum equipamento fornecido.' });
   }
 
   try {
-    const cautelasCriadas: any[] = [];
+    // Usando transaction para garantir a consistência
+    const cautelaRealizada = await prisma.$transaction(async (tx) => {
+      
+      // 1. Criar a Cautela Única com Amarração M:N
+      const cautela = await tx.cautela.create({
+        data: {
+          militarId: militarId ? Number(militarId) : null,
+          unidadeId: unidadeId ? Number(unidadeId) : null,
+          missao: missao || null,
+          dataRetirada: dataInicio ? new Date(dataInicio) : new Date(),
+          dataPrevista: dataPrevista ? new Date(dataPrevista) : null,
+          status: 'ATIVA',
+          equipamentos: {
+            connect: equipamentosIds.map((id: any) => ({ id: Number(id) }))
+          }
+        },
+        include: { equipamentos: true }
+      });
 
-    // Usando transaction para garantir a consistência de múltiplos empréstimos
-    await prisma.$transaction(async (tx) => {
-      for (const equipId of equipamentosIds) {
-        // 1. Criar a Cautela para cada rádio
-        const cautela = await tx.cautela.create({
-          data: {
-            equipamentoId: Number(equipId),
-            militarId: militarId ? Number(militarId) : null,
-            unidadeId: unidadeId ? Number(unidadeId) : null,
-            dataPrevista: dataPrevista ? new Date(dataPrevista) : null,
-            status: 'ATIVA'
-          },
-        });
-        
-        cautelasCriadas.push(cautela);
+      // 2. Atualizar todos os equipamentos para CAUTELADO de uma vez
+      await tx.equipamento.updateMany({
+        where: { id: { in: equipamentosIds.map(Number) } },
+        data: { status: 'CAUTELADO' }
+      });
 
-        // 2. Atualizar status do Equipamento
-        await tx.equipamento.update({
-          where: { id: Number(equipId) },
-          data: { status: 'CAUTELADO' }
-        });
-      }
+      return cautela;
     });
 
-    // Auditoria disparada em background (Fire and Forget)
-    registrarAuditoria(req, `Emprestou ${equipamentosIds.length} rádio(s) (Cautela)`, `IDs dos Rádios: ${equipamentosIds.join(', ')}`);
+    registrarAuditoria(req, `Criou Lote de Cautela`, `Cautelou ${equipamentosIds.length} rádio(s).`);
 
-    res.status(201).json(cautelasCriadas);
+    res.status(201).json(cautelaRealizada);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Erro ao criar as cautelas em lote' });
   }
 });
 
-// Devolver um rádio (Baixa na Cautela específica)
+// Editar Cautela Base
+// @ts-ignore
+router.put('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { missao, dataInicio, dataPrevista } = req.body;
+  
+  try {
+    const updateData: any = {
+      missao: missao || null,
+      dataPrevista: dataPrevista ? new Date(dataPrevista) : null,
+    };
+    if (dataInicio) {
+      updateData.dataRetirada = new Date(dataInicio);
+    }
+
+    const cautela = await prisma.cautela.update({
+      where: { id: Number(id) },
+      data: updateData
+    });
+    registrarAuditoria(req, 'Editou Lote de Cautela', `Cautela ID: ${id}`);
+    res.json(cautela);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao editar cautela' });
+  }
+});
+
+// Devolver Lote (Baixa Total)
 // @ts-ignore
 router.put('/:id/devolver', async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -78,19 +106,41 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
       data: {
         status: 'DEVOLVIDA',
         dataDevolucao: new Date()
-      }
+      },
+      include: { equipamentos: true }
     });
 
-    await prisma.equipamento.update({
-      where: { id: cautela.equipamentoId },
+    const idsRadios = cautela.equipamentos.map(e => e.id);
+    await prisma.equipamento.updateMany({
+      where: { id: { in: idsRadios } },
       data: { status: 'OPERACIONAL' }
     });
 
-    registrarAuditoria(req, 'Devolveu rádio', `Recebeu Rádio ID Banco: ${cautela.equipamentoId}`);
+    registrarAuditoria(req, 'Devolveu Cautela Completa', `Lote Devolvido ID: ${id}`);
 
     res.json(cautela);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao devolver equipamento' });
+  }
+});
+
+// Excluir Lote
+// @ts-ignore
+router.delete('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const cautela = await prisma.cautela.findUnique({ where: { id: Number(id) }, include: { equipamentos: true } });
+    if(cautela) {
+       await prisma.equipamento.updateMany({
+         where: { id: { in: cautela.equipamentos.map(e => e.id) } },
+         data: { status: 'OPERACIONAL' }
+       });
+       await prisma.cautela.delete({ where: { id: Number(id) }});
+       registrarAuditoria(req, 'Apagou Cautela Definitivamente', `Cautela Apagada ID: ${id}`);
+    }
+    res.status(204).send();
+  } catch(error) { 
+    res.status(500).json({error: 'Erro'}); 
   }
 });
 

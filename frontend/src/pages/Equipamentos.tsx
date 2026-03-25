@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Search, Trash2, Edit2, ChevronDown } from 'lucide-react';
+import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Equipamento {
   id: number;
@@ -22,6 +23,9 @@ const Equipamentos: React.FC = () => {
   const [filtroModelo, setFiltroModelo] = useState('Todos - Modelo');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [equipamentoDeleteId, setEquipamentoDeleteId] = useState<number | null>(null);
+  const [equipamentoDeleteRp, setEquipamentoDeleteRp] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [novoEquip, setNovoEquip] = useState({
     id: 0,
@@ -83,16 +87,22 @@ const Equipamentos: React.FC = () => {
     }
   };
 
-  const handleExcluir = async (id: number, rp: string) => {
-    const confirmOuCancela = window.confirm(`Tem certeza que deseja excluir permanentemente o rádio Patrimônio ${rp}?`);
-    if (confirmOuCancela) {
-      try {
-        await axios.delete(`http://localhost:3333/api/equipamentos/${id}`);
-        setEquipamentos(equipamentos.filter(e => e.id !== id));
-      } catch (e) {
-        console.error("Erro ao excluir", e);
-        alert("Erro ao excluir este equipamento. Ele pode estar atrelado a uma cautela.");
-      }
+  const openDeleteModal = (id: number, rp: string) => {
+    setEquipamentoDeleteId(id);
+    setEquipamentoDeleteRp(rp);
+    setIsModalDeleteOpen(true);
+  };
+
+  const confirmExcluir = async () => {
+    if (!equipamentoDeleteId) return;
+    try {
+      await axios.delete(`http://localhost:3333/api/equipamentos/${equipamentoDeleteId}`);
+      setEquipamentos(equipamentos.filter(e => e.id !== equipamentoDeleteId));
+      setIsModalDeleteOpen(false);
+      setEquipamentoDeleteId(null);
+    } catch (e) {
+      console.error("Erro ao excluir", e);
+      alert("Erro ao excluir este equipamento. Ele pode estar atrelado a uma movimentação.");
     }
   };
 
@@ -223,7 +233,7 @@ const Equipamentos: React.FC = () => {
                         <Edit2 size={16} />
                       </button>
                       <button 
-                        onClick={() => handleExcluir(eq.id, eq.rp)}
+                        onClick={() => openDeleteModal(eq.id, eq.rp)}
                         className="hover:text-danger p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-danger/10"
                       >
                         <Trash2 size={16} />
@@ -337,6 +347,15 @@ const Equipamentos: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Confirmação Excluir */}
+      <ModalConfirmacao 
+        isOpen={isModalDeleteOpen}
+        title="Excluir Equipamento"
+        message={`Você está removendo definitivamente o Patrimônio ${equipamentoDeleteRp} do sistema. A ação é irreversível. Confirma?`}
+        onConfirm={confirmExcluir}
+        onCancel={() => { setIsModalDeleteOpen(false); setEquipamentoDeleteId(null); }}
+      />
     </div>
   );
 };

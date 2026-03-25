@@ -71,8 +71,8 @@ const Sidebar: React.FC = () => {
             <Radio size={18} />
           </div>
           <div>
-            <h1 className="text-gray-900 dark:text-white font-bold tracking-wide text-lg leading-tight">Controle</h1>
-            <p className="text-primary text-[10px] font-medium tracking-widest uppercase">Patrimonial</p>
+            <h1 className="text-gray-900 dark:text-white font-bold tracking-wide text-lg leading-tight uppercase">Athenas</h1>
+            <p className="text-primary text-[10px] font-medium tracking-widest uppercase">PMPA</p>
           </div>
         </div>
       </div>

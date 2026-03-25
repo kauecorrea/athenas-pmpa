@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Plus, Edit2, Trash2, ChevronDown, Users } from 'lucide-react';
+import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Unidade {
   id: number;
@@ -23,6 +24,9 @@ const Militares: React.FC = () => {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [militarDeleteId, setMilitarDeleteId] = useState<number | null>(null);
+  const [militarDeleteNome, setMilitarDeleteNome] = useState('');
   const [filtroUnidade, setFiltroUnidade] = useState('Todos - Unidade');
   const [filtroPatente, setFiltroPatente] = useState('Todos - Patente');
   const [buscaTratada, setBuscaTratada] = useState('');
@@ -113,15 +117,23 @@ const Militares: React.FC = () => {
     }
   };
 
-  const handleExcluir = async (id: number, nome: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir o militar ${nome}?`)) {
-      try {
-        await axios.delete(`http://localhost:3333/api/militares/${id}`);
-        fetchMilitares();
-      } catch (error) {
-        console.error("Erro ao excluir", error);
-        alert("Erro ao excluir. Este militar pode estar vinculado a cautelas ativas.");
-      }
+  const openDeleteModal = (id: number, nome: string) => {
+    setMilitarDeleteId(id);
+    setMilitarDeleteNome(nome);
+    setIsModalDeleteOpen(true);
+  };
+
+  const confirmExcluir = async () => {
+    if (!militarDeleteId) return;
+    try {
+      await axios.delete(`http://localhost:3333/api/militares/${militarDeleteId}`);
+      fetchMilitares();
+    } catch (error) {
+      console.error("Erro ao excluir", error);
+      alert("Erro ao excluir. Este militar pode estar vinculado a cautelas ativas.");
+    } finally {
+      setIsModalDeleteOpen(false);
+      setMilitarDeleteId(null);
     }
   };
 
@@ -261,7 +273,7 @@ const Militares: React.FC = () => {
                           <Edit2 size={16} />
                         </button>
                         <button 
-                          onClick={() => handleExcluir(m.id, m.nome)}
+                          onClick={() => openDeleteModal(m.id, m.nome)}
                           className="hover:text-danger p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-danger/10"
                         >
                           <Trash2 size={16} />
@@ -365,6 +377,13 @@ const Militares: React.FC = () => {
         </div>
       )}
 
+      <ModalConfirmacao 
+        isOpen={isModalDeleteOpen}
+        title="Excluir Fornecimento Militar"
+        message={`Tem certeza que deseja excluir a conta de armaria do militar ${militarDeleteNome}?`}
+        onConfirm={confirmExcluir}
+        onCancel={() => { setIsModalDeleteOpen(false); setMilitarDeleteId(null); }}
+      />
     </div>
   );
 };

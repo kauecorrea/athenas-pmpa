@@ -49,6 +49,7 @@ model Equipamento {
   cautelas  Cautela[]
   manutencoes Manutencao[]
   extravios   Extravio[]
+  transferencias Transferencia[]
 }
 
 enum StatusEquipamento {
@@ -56,18 +57,19 @@ enum StatusEquipamento {
   CAUTELADO
   MANUTENCAO
   EXTRAVIADO
+  BAIXADO
   TRANSFERIDO
 }
 
 model Cautela {
   id            Int         @id @default(autoincrement())
-  equipamentoId Int
-  equipamento   Equipamento @relation(fields: [equipamentoId], references: [id])
+  equipamentos  Equipamento[]
   militarId     Int?        // Quem pegou
   militar       Militar?    @relation(fields: [militarId], references: [id])
   unidadeId     Int?        // Ou a Unidade que pegou
   unidade       Unidade?    @relation(fields: [unidadeId], references: [id])
   
+  missao        String?     @db.Text
   dataRetirada  DateTime    @default(now())
   dataDevolucao DateTime?   // Quando foi devolvido
   dataPrevista  DateTime?   // Data limite para devolução (ex: evento sábado)
@@ -124,6 +126,7 @@ model Transferencia {
   dataTransferencia DateTime @default(now())
   observacoes       String?  @db.Text
   qtdRadios         Int
+  equipamentos      Equipamento[]
   status            String   @default("FINALIZADA")
 }
 

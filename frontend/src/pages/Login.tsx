@@ -45,7 +45,7 @@ const Login: React.FC = () => {
           <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white mx-auto shadow-lg shadow-primary/30 mb-4">
             <Radio size={32} />
           </div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Controle Patrimonial</h1>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic">Athenas</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Polícia Militar do Estado do Pará</p>
         </div>
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Edit2, FileText, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Plus, FileText, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
+import ModalConfirmacao from '../components/ModalConfirmacao';
+import jsPDF from 'jspdf';
 
 interface ExtravioRecord {
   id: number;
@@ -37,6 +39,12 @@ const Extraviados: React.FC = () => {
   const [dataExtravio, setDataExtravio] = useState('');
   const [local, setLocal] = useState('');
   const [descricao, setDescricao] = useState('');
+
+  // Modal states
+  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [isModalEncontradoOpen, setIsModalEncontradoOpen] = useState(false);
+  const [isModalBaixarOpen, setIsModalBaixarOpen] = useState(false);
+  const [extravioAlvo, setExtravioAlvo] = useState<ExtravioRecord | null>(null);
 
   useEffect(() => {
     fetchExtravios();
@@ -102,6 +110,157 @@ const Extraviados: React.FC = () => {
     } catch (error) {
       console.error("Erro ao registrar extravio", error);
     }
+  };
+
+  const handleEncontrado = async () => {
+    if (!extravioAlvo) return;
+    try {
+      await axios.put(`http://localhost:3333/api/extravios/${extravioAlvo.id}/encontrado`);
+      setIsModalEncontradoOpen(false);
+      setExtravioAlvo(null);
+      fetchExtravios();
+    } catch (e) { console.error(e); alert('Erro ao recuperar o rádio.'); }
+  };
+
+  const handleBaixar = async () => {
+    if (!extravioAlvo) return;
+    try {
+      await axios.put(`http://localhost:3333/api/extravios/${extravioAlvo.id}/baixar`);
+      setIsModalBaixarOpen(false);
+      setExtravioAlvo(null);
+      fetchExtravios(); // Atualiza a tabela
+    } catch (e) { console.error(e); alert('Erro ao baixar o rádio.'); }
+  };
+
+  const handleDelete = async () => {
+    if (!extravioAlvo) return;
+    try {
+      await axios.delete(`http://localhost:3333/api/extravios/${extravioAlvo.id}`);
+      setIsModalDeleteOpen(false);
+      setExtravioAlvo(null);
+      fetchExtravios(); // Atualiza a tabela
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao excluir o extravio.');
+    }
+  };
+
+  const getBase64ImageFromUrl = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject('Erro ao carregar imagem');
+      img.src = imageUrl;
+    });
+  };
+
+  const gerarBoletimPdf = async (e: ExtravioRecord) => {
+    const doc = new jsPDF();
+    
+    // 1. Brasões
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+    } catch (err) { console.error('Sem brasao_para.png'); }
+    
+    try {
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+    } catch (err) { console.error('Sem brasao_pmpa.png'); }
+
+    // 2. Título Geral e Timbre
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: "center" });
+    doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 20, { align: "center" });
+    doc.text("POLÍCIA MILITAR DO PARÁ", 105, 25, { align: "center" });
+    doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: "center" });
+    doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
+
+    // 3. Título do Documento
+    doc.setFontSize(14);
+    doc.text("COMUNICAÇÃO EXTRAORDINÁRIA DE EXTRAVIO", 105, 50, { align: "center" });
+    doc.setFontSize(11);
+    doc.text("MATERIAL CARGA DE TELECOMUNICAÇÕES", 105, 56, { align: "center" });
+    
+    // Linha divisória
+    doc.setLineWidth(0.5);
+    doc.line(14, 62, 196, 62);
+
+    // 4. Qualificação do Fato
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    
+    doc.text("1. DADOS DO EQUIPAMENTO", 14, 72);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Patrimônio (RP): `, 14, 79); doc.setFont("helvetica", "normal"); doc.text(`${e.equipamento.rp}`, 48, 79);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Número de Série: `, 105, 79); doc.setFont("helvetica", "normal"); doc.text(`${e.equipamento.numSerie}`, 138, 79);
+    doc.setFont("helvetica", "bold");
+    doc.text(`ID Lógico (Rádio): `, 14, 86); doc.setFont("helvetica", "normal"); doc.text(`${e.equipamento.idRadio || 'N/I'}`, 48, 86);
+
+    doc.setFont("helvetica", "normal");
+    doc.text("2. DADOS DO RESPONSÁVEL / DETENTOR", 14, 98);
+    const militarNome = e.militar ? `${e.militar.posto} ${e.militar.nome}` : 'NÃO IDENTIFICADO / MATERIAL DE RESERVA BASE';
+    doc.setFont("helvetica", "bold");
+    doc.text(`Militar Envolvido: `, 14, 105); doc.setFont("helvetica", "normal"); doc.text(`${militarNome}`, 48, 105);
+
+    doc.setFont("helvetica", "normal");
+    doc.text("3. CIRCUNSTÂNCIAS DO EVENTO", 14, 117);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Data da Perda/Dano: `, 14, 124); doc.setFont("helvetica", "normal"); doc.text(`${new Date(e.dataExtravio).toLocaleDateString('pt-BR')}`, 55, 124);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Localização / Missão: `, 14, 131); doc.setFont("helvetica", "normal"); doc.text(`${e.local || 'Não Informada'}`, 55, 131);
+    
+    // Quebra de texto grande no Resumo
+    doc.setFont("helvetica", "bold");
+    doc.text("Síntese do Ocorrido (B.O):", 14, 140);
+    doc.setFont("helvetica", "normal");
+    const splitDescricao = doc.splitTextToSize(e.descricao, 180);
+    doc.text(splitDescricao, 14, 147);
+
+    // 5. Termo de Responsabilidade
+    const yTermo = 147 + (splitDescricao.length * 6) + 15;
+    doc.setFont("helvetica", "bold");
+    doc.text("DECLARAÇÃO:", 14, yTermo);
+    doc.setFont("helvetica", "normal");
+    const termo = `Participo a Vossa Senhoria o extravio/dano do material público acima especificado, conforme relato em epígrafe. O presente documento visa instruir possível e posterior instauração de Inquérito Policial Militar (IPM) ou Sindicância por parte desta corporação para apuração de responsabilidades institucionais no âmbito do Estado do Pará.`;
+    const splitTermo = doc.splitTextToSize(termo, 180);
+    doc.text(splitTermo, 14, yTermo + 7);
+
+    // 6. Assinaturas
+    const dateHoje = new Date().toLocaleDateString('pt-BR');
+    const finalY = yTermo + (splitTermo.length * 5) + 30;
+    
+    doc.text(`Belém PA, ${dateHoje}`, 14, finalY - 15);
+
+    // Assinatura 1
+    doc.line(20, finalY, 90, finalY);
+    doc.setFontSize(9);
+    doc.text("ASSINATURA DO COMUNICANTE", 55, finalY + 5, { align: "center" });
+    if (e.militar) {
+       doc.text(`${e.militar.posto} ${e.militar.nome}`, 55, finalY + 10, { align: "center" });
+    }
+
+    // Assinatura 2
+    doc.line(120, finalY, 190, finalY);
+    doc.text("SUPERVISOR", 155, finalY + 5, { align: "center" });
+    doc.text("Recebimento do Formulário", 155, finalY + 10, { align: "center" });
+
+    // Endereço Padrão 
+    doc.setFontSize(8);
+    doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, 280, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: citel@pm.pa.gov.br", 105, 285, { align: "center" });
+
+    doc.save(`Extravio_RP${e.equipamento.rp}.pdf`);
   };
 
   return (
@@ -280,7 +439,33 @@ const Extraviados: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
-                        <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" title="Baixar Boletim Relatório">
+                        {e.status !== 'BAIXADO' && e.status !== 'RECUPERADO' && (
+                          <>
+                            <button 
+                              onClick={() => { setExtravioAlvo(e); setIsModalEncontradoOpen(true); }}
+                              className="px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              Encontrado
+                            </button>
+                            <button 
+                              onClick={() => { setExtravioAlvo(e); setIsModalBaixarOpen(true); }}
+                              className="px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              Baixar
+                            </button>
+                          </>
+                        )}
+                        <button 
+                          onClick={() => { setExtravioAlvo(e); setIsModalDeleteOpen(true); }}
+                          className="hover:text-red-500 p-1.5 rounded-lg transition-colors hover:bg-red-500/10" title="Excluir Registro de B.O"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => gerarBoletimPdf(e)}
+                          className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" 
+                          title="Baixar Boletim Relatório (PDF Oficial da PMPA)"
+                        >
                           <FileText size={16} />
                         </button>
                       </div>
@@ -293,6 +478,32 @@ const Extraviados: React.FC = () => {
         </div>
       </div>
 
+      {/* MODAIS DE AÇÃO */}
+      <ModalConfirmacao 
+        isOpen={isModalEncontradoOpen}
+        title="Rádio Encontrado"
+        message={`Confirma que o rádio ${extravioAlvo?.equipamento.rp} que estava extraviado foi recuperado? Isto devolverá o rádio ao status OPERACIONAL e encerrará as buscas.`}
+        onConfirm={handleEncontrado}
+        onCancel={() => { setIsModalEncontradoOpen(false); setExtravioAlvo(null); }}
+        confirmText="Confirmar Recuperação"
+      />
+
+      <ModalConfirmacao 
+        isOpen={isModalBaixarOpen}
+        title="Baixa Definitiva do Bem"
+        message={`Confirma a baixa definitiva do rádio ${extravioAlvo?.equipamento.rp}? Ele perderá permanentemente seu status ativo e será considerado destruído ou roubado definitivamente.`}
+        onConfirm={handleBaixar}
+        onCancel={() => { setIsModalBaixarOpen(false); setExtravioAlvo(null); }}
+        confirmText="Baixar Material"
+      />
+
+      <ModalConfirmacao 
+        isOpen={isModalDeleteOpen}
+        title="Excluir Histórico de Extravio"
+        message="Use apenas em caso de ERRO MATERIAL na hora de registrar (clicou sem querer num B.O falso). O Rádio voltará silenciosamente para o estoque e a ordem militar de extravio deixará de constar no painel. Confirma alteração agressiva de log?"
+        onConfirm={handleDelete}
+        onCancel={() => { setIsModalDeleteOpen(false); setExtravioAlvo(null); }}
+      />
     </div>
   );
 };

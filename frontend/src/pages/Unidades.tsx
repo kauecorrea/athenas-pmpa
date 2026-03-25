@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Plus, Edit2, Trash2, ChevronDown } from 'lucide-react';
+import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Unidade {
   id: number;
@@ -17,6 +18,10 @@ const Unidades: React.FC = () => {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [unidadeDeleteId, setUnidadeDeleteId] = useState<number | null>(null);
+  const [unidadeDeleteNome, setUnidadeDeleteNome] = useState('');
   
   const [buscaTratada, setBuscaTratada] = useState('');
   const [filtroLocalizacao, setFiltroLocalizacao] = useState('Todos - Localização');
@@ -83,19 +88,27 @@ const Unidades: React.FC = () => {
     }
   };
 
-  const handleExcluir = async (id: number, nome: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir a unidade ${nome}?`)) {
-      try {
-        await axios.delete(`http://localhost:3333/api/unidades/${id}`);
-        fetchUnidades();
-      } catch (error: any) {
-        console.error("Erro ao excluir", error);
-        if (error.response && error.response.status === 400) {
-          alert("Erro: Não é possível excluir uma unidade que possui militares cadastrados.");
-        } else {
-          alert("Erro ao excluir. Tente novamente.");
-        }
+  const openDeleteModal = (id: number, nome: string) => {
+    setUnidadeDeleteId(id);
+    setUnidadeDeleteNome(nome);
+    setIsModalDeleteOpen(true);
+  };
+
+  const confirmExcluir = async () => {
+    if (!unidadeDeleteId) return;
+    try {
+      await axios.delete(`http://localhost:3333/api/unidades/${unidadeDeleteId}`);
+      fetchUnidades();
+    } catch (error: any) {
+      console.error("Erro ao excluir", error);
+      if (error.response && error.response.status === 400) {
+        alert("Erro: Não é possível excluir uma unidade que possui militares cadastrados.");
+      } else {
+        alert("Erro ao excluir. Tente novamente.");
       }
+    } finally {
+      setIsModalDeleteOpen(false);
+      setUnidadeDeleteId(null);
     }
   };
 
@@ -214,7 +227,7 @@ const Unidades: React.FC = () => {
                           <Edit2 size={16} />
                         </button>
                         <button 
-                          onClick={() => handleExcluir(u.id, u.nome)}
+                          onClick={() => openDeleteModal(u.id, u.nome)}
                           className="hover:text-danger p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-danger/10"
                         >
                           <Trash2 size={16} />
@@ -289,6 +302,13 @@ const Unidades: React.FC = () => {
         </div>
       )}
 
+      <ModalConfirmacao 
+        isOpen={isModalDeleteOpen}
+        title="Excluir Unidade"
+        message={`Tem certeza que deseja excluir a unidade ${unidadeDeleteNome}? Esta ação não pode ser desfeita.`}
+        onConfirm={confirmExcluir}
+        onCancel={() => { setIsModalDeleteOpen(false); setUnidadeDeleteId(null); }}
+      />
     </div>
   );
 };

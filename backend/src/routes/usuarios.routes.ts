@@ -68,7 +68,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { nomeCompleto, nomeGuerra, posto, unidade, permissao, senha } = req.body;
+    const { nomeCompleto, nomeGuerra, posto, unidade, permissao, senha, email } = req.body;
 
     let hashedPassword;
     if (senha) {
@@ -81,6 +81,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       data: {
         nomeCompleto,
         nomeGuerra,
+        email,
         posto,
         unidade,
         permissao,

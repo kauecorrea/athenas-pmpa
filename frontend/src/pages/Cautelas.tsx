@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, FileText, Download, ChevronDown, CheckCircle } from 'lucide-react';
+import { Search, Plus, FileText, Download, ChevronDown, CheckCircle, Edit2, Trash2 } from 'lucide-react';
+import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -20,9 +21,10 @@ interface Militar {
 
 interface Cautela {
   id: number;
-  militar: { nome: string; posto: string } | null;
+  militar: { id: number; nome: string; posto: string; rg: string; contato: string; unidade: { nome: string } } | null;
   unidade: { nome: string } | null;
-  equipamento: { rp: string; numSerie: string; idRadio: string };
+  equipamentos: EquipamentoDisponivel[];
+  missao: string | null;
   dataRetirada: string;
   dataDevolucao: string | null;
   dataPrevista: string | null;
@@ -42,7 +44,19 @@ const Cautelas: React.FC = () => {
 
   // Form states
   const [militarId, setMilitarId] = useState('');
+  const [dataInicio, setDataInicio] = useState('');
   const [dataPrevista, setDataPrevista] = useState('');
+  const [missao, setMissao] = useState('');
+  
+  // Edit State
+  const [editingCautelaId, setEditingCautelaId] = useState<number | null>(null);
+
+  // Modals de Confirmação
+  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [cautelaDeleteId, setCautelaDeleteId] = useState<number | null>(null);
+  
+  const [isModalDevolverOpen, setIsModalDevolverOpen] = useState(false);
+  const [cautelaDevolverId, setCautelaDevolverId] = useState<number | null>(null);
 
   // Initial Data Fetch
   useEffect(() => {
@@ -56,7 +70,10 @@ const Cautelas: React.FC = () => {
       fetchEquipamentosOperacionais();
       setRadiosSelecionados([]);
       setMilitarId('');
+      setDataInicio('');
       setDataPrevista('');
+      setMissao('');
+      setEditingCautelaId(null);
     }
   }, [isModalOpen]);
 
@@ -103,27 +120,73 @@ const Cautelas: React.FC = () => {
     }
 
     try {
-      await axios.post('http://localhost:3333/api/cautelas', {
-        equipamentosIds: radiosSelecionados,
-        militarId: Number(militarId),
-        dataPrevista: dataPrevista ? new Date(dataPrevista).toISOString() : null
-      });
+      if (editingCautelaId) {
+        await axios.put(`http://localhost:3333/api/cautelas/${editingCautelaId}`, {
+          missao,
+          dataInicio: dataInicio ? new Date(dataInicio).toISOString() : undefined,
+          dataPrevista: dataPrevista ? new Date(dataPrevista).toISOString() : null
+        });
+      } else {
+        await axios.post('http://localhost:3333/api/cautelas', {
+          equipamentosIds: radiosSelecionados,
+          militarId: Number(militarId),
+          missao,
+          dataInicio: dataInicio ? new Date(dataInicio).toISOString() : undefined,
+          dataPrevista: dataPrevista ? new Date(dataPrevista).toISOString() : null
+        });
+      }
       setIsModalOpen(false);
       fetchCautelas(); // Refresh table
     } catch (error) {
-      console.error("Erro ao criar cautela:", error);
-      alert("Ocorreu um erro ao emprestar o rádio.");
+      console.error("Erro ao salvar cautela:", error);
+      alert("Ocorreu um erro ao processar a requisição.");
     }
   };
 
-  const handleDevolver = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja registrar a devolução deste equipamento?')) {
-      try {
-        await axios.put(`http://localhost:3333/api/cautelas/${id}/devolver`);
-        fetchCautelas(); // Refresh table
-      } catch (error) {
-        console.error("Erro ao devolver:", error);
-      }
+  const handleEdit = (c: Cautela) => {
+    setEditingCautelaId(c.id);
+    setMilitarId(c.militar ? String(c.militar.id) : '');
+    setMissao(c.missao || '');
+    setDataInicio(c.dataRetirada ? new Date(c.dataRetirada).toISOString().split('T')[0] : '');
+    setDataPrevista(c.dataPrevista ? new Date(c.dataPrevista).toISOString().split('T')[0] : '');
+    setRadiosSelecionados(c.equipamentos.map(e => e.id));
+    // Forçamos abrir a tela pra edição (apenas dados de missão e data podem ser mudados por padrao de segurança, ou injetar todos. Dependerá da visão do usuario, aqui forçaremos visual base).
+    setIsModalOpen(true);
+  };
+
+  const openDeleteModal = (id: number) => {
+    setCautelaDeleteId(id);
+    setIsModalDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!cautelaDeleteId) return;
+    try {
+      await axios.delete(`http://localhost:3333/api/cautelas/${cautelaDeleteId}`);
+      fetchCautelas(); // Refresh table
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+    } finally {
+      setIsModalDeleteOpen(false);
+      setCautelaDeleteId(null);
+    }
+  };
+
+  const openDevolverModal = (id: number) => {
+    setCautelaDevolverId(id);
+    setIsModalDevolverOpen(true);
+  };
+
+  const confirmDevolver = async () => {
+    if (!cautelaDevolverId) return;
+    try {
+      await axios.put(`http://localhost:3333/api/cautelas/${cautelaDevolverId}/devolver`);
+      fetchCautelas(); // Refresh table
+    } catch (error) {
+      console.error("Erro ao devolver:", error);
+    } finally {
+      setIsModalDevolverOpen(false);
+      setCautelaDevolverId(null);
     }
   };
 
@@ -132,9 +195,10 @@ const Cautelas: React.FC = () => {
     const termo = buscaTratada.toLowerCase();
     const nome = c.militar?.nome?.toLowerCase() || '';
     const unidade = c.unidade?.nome?.toLowerCase() || c.militar?.unidade?.nome?.toLowerCase() || '';
-    const rp = c.equipamento?.rp?.toLowerCase() || '';
+    const rpList = c.equipamentos?.map(e => e.rp).join(' ') || '';
+    const missaoDesc = c.missao?.toLowerCase() || '';
     
-    const matchBusca = nome.includes(termo) || unidade.includes(termo) || rp.includes(termo);
+    const matchBusca = nome.includes(termo) || unidade.includes(termo) || rpList.includes(termo) || missaoDesc.includes(termo);
     
     if (filtroStatus === 'Todos - Status') return matchBusca;
     if (filtroStatus === 'Ativa') return matchBusca && c.status === 'ATIVA';
@@ -144,9 +208,35 @@ const Cautelas: React.FC = () => {
     return matchBusca;
   });
 
-  const gerarRelatorioPdf = () => {
-    // 1. Instanciar PDF
+  const getBase64ImageFromUrl = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject('Erro ao carregar imagem');
+      img.src = imageUrl;
+    });
+  };
+
+  const gerarRelatorioPdf = async () => {
     const doc = new jsPDF();
+
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+    } catch (e) { console.error('Sem brasao_para.png no public'); }
+    
+    try {
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+    } catch (e) { console.error('Sem brasao_pmpa.png no public'); }
 
     // 2. Pegar as últimas 30 cautelas cadastradas
     const ultimas30 = [...cautelasFiltradas].slice(0, 30);
@@ -158,38 +248,37 @@ const Cautelas: React.FC = () => {
     // 3. Cabeçalho Principal (Título)
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text("RELATÓRIO DE CAUTELAS", 105, 15, { align: "center" });
+    doc.text("RELATÓRIO DE CAUTELAS", 105, 18, { align: "center" });
     
     // Subtítulo (Gerado em)
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     const dataHora = new Date().toLocaleString('pt-BR');
-    doc.text(`Gerado em: ${dataHora}`, 105, 22, { align: "center" });
+    doc.text(`Gerado em: ${dataHora}`, 105, 25, { align: "center" });
 
     // Linha divisória
     doc.setLineWidth(0.5);
-    doc.line(14, 28, 196, 28);
+    doc.line(14, 34, 196, 34);
 
     // 4. Estatísticas Resumidas
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text(`Total de Cautelas: ${ultimas30.length}`, 14, 38);
-    doc.text(`Cautelas Ativas: ${qtdAtivas}`, 14, 44);
-    doc.text(`Cautelas Devolvidas: ${qtdDevolvidas}`, 14, 50);
+    doc.text(`Total de Cautelas: ${ultimas30.length}`, 14, 44);
+    doc.text(`Cautelas Ativas: ${qtdAtivas}`, 14, 50);
+    doc.text(`Cautelas Devolvidas: ${qtdDevolvidas}`, 14, 56);
 
     // 5. Montar a Tabela
     const dataTabela = ultimas30.map(c => {
       const nomeApresentacao = c.militar ? `${c.militar.nome}` : '-';
-      const rádio = c.equipamento.rp;
       const statusFinal = c.status === 'ATIVA' ? 'Ativa' : (c.status === 'DEVOLVIDA' ? 'Devolvida' : 'Vencida');
       const dataInicio = new Date(c.dataRetirada).toLocaleDateString('pt-BR');
 
-      return [nomeApresentacao, c.unidade?.nome || c.militar?.unidade?.nome || '-', rádio, statusFinal, dataInicio];
+      return [nomeApresentacao, c.unidade?.nome || c.militar?.unidade?.nome || '-', String(c.equipamentos?.length || 0), statusFinal, dataInicio];
     });
 
     autoTable(doc, {
-      startY: 60,
-      head: [['Militar', 'Unidade', 'Rádio (RP)', 'Status', 'Data Início']],
+      startY: 65,
+      head: [['Militar', 'Unidade', 'Quantidade', 'Status', 'Data Início']],
       body: dataTabela,
       theme: 'plain',
       styles: {
@@ -209,6 +298,91 @@ const Cautelas: React.FC = () => {
 
     // 6. Fazer Download Automático
     doc.save('Relatorio_Cautelas_PMPA.pdf');
+  };
+
+  const gerarReciboIndividual = async (c: Cautela) => {
+    const doc = new jsPDF();
+    
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+    } catch (e) { console.error('Sem brasao_para.png'); }
+    
+    try {
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+    } catch (e) { console.error('Sem brasao_pmpa.png'); }
+
+    // Título Geral e Timbre Fake
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: "center" });
+    doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 20, { align: "center" });
+    doc.text("POLÍCIA MILITAR DO PARÁ", 105, 25, { align: "center" });
+    doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: "center" });
+    doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.text(`CAUTELA N° ${String(c.id).padStart(5, '0')}`, 105, 50, { align: "center" });
+    if (c.missao) {
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Missão: ${c.missao}`, 105, 56, { align: "center" });
+    }
+
+    // Tabela individual de Rádios com Autotable
+    const radiosTabela = c.equipamentos.map((eq, index) => {
+      return [
+        index + 1,
+        eq.numSerie + " / " + eq.rp,
+        c.militar ? `${c.militar.posto} ${c.militar.nome}` : '',
+        c.militar?.rg || '',
+        c.militar?.contato || '',
+        ''
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 65,
+      head: [['Nº', 'Nº DE SÉRIE / RP', 'RESPONSÁVEL', 'RG', 'CONTATO', 'ASSINATURA']],
+      body: radiosTabela,
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fontStyle: 'bold', lineWidth: { bottom: 0.5 }, lineColor: [0, 0, 0] },
+      columnStyles: {
+        5: { cellWidth: 40 } // Espaço maior para assinatura da linha
+      },
+      didDrawCell: (data) => {
+        // Desenha uma linha na coluna de assinatura no corpo da tabela
+        if (data.section === 'body' && data.column.index === 5) {
+          doc.setLineWidth(0.1);
+          doc.line(data.cell.x + 2, data.cell.y + data.cell.height - 3, data.cell.x + data.cell.width - 2, data.cell.y + data.cell.height - 3);
+        }
+      }
+    });
+
+    // Rodapé de Informações ("ACOMPANHA")
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
+    doc.setFont("helvetica", "bold");
+    doc.text("ACOMPANHA:", 14, finalY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`- ${c.equipamentos.length} RÁDIOS HT`, 20, finalY + 7);
+    doc.text("- TODOS OS RÁDIOS ESTÃO COM PRESILHA PARA CINTO, PROTETOR LATERAL, BATERIA E ANTENA.", 20, finalY + 14);
+
+    // Assinatura Final
+    const dateHoje = new Date().toLocaleDateString('pt-BR');
+    doc.text(`Belém PA, ${dateHoje}`, 14, finalY + 60);
+
+    doc.line(110, finalY + 60, 196, finalY + 60);
+    doc.setFontSize(9);
+    doc.text("ASSINATURA DO MILITAR RESPONSÁVEL", 153, finalY + 65, { align: "center" });
+
+    // Endereço Padrão (Rodapé absoluto, mas fixo para PMPA)
+    doc.setFontSize(8);
+    doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, 280, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: citel@pm.pa.gov.br", 105, 285, { align: "center" });
+
+    doc.save(`Cautela_${String(c.id).padStart(5, '0')}.pdf`);
   };
 
   return (
@@ -279,9 +453,10 @@ const Cautelas: React.FC = () => {
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Rádio (RP/Série)</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Saída</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Devolução</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-center">Quantidade</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Inicio</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Retorno</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Missão</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
               </tr>
@@ -295,14 +470,17 @@ const Cautelas: React.FC = () => {
                   <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
                     {c.militar?.unidade?.nome || c.unidade?.nome || '-'}
                   </td>
-                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-medium">
-                    {c.equipamento.rp} <span className="text-gray-400 font-normal">({c.equipamento.numSerie})</span>
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-medium text-center">
+                    {c.equipamentos?.length || 0}
                   </td>
                   <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
                     {new Date(c.dataRetirada).toLocaleDateString('pt-BR')}
                   </td>
                   <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
                     {c.dataDevolucao ? new Date(c.dataDevolucao).toLocaleDateString('pt-BR') : (c.dataPrevista ? new Date(c.dataPrevista).toLocaleDateString('pt-BR') : '-')}
+                  </td>
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300 max-w-[200px] truncate" title={c.missao || ''}>
+                    {c.missao || '-'}
                   </td>
                   <td className="px-6 py-4">
                     {c.status === 'ATIVA' && (
@@ -323,18 +501,24 @@ const Cautelas: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
-                      <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" title="Emitir Recibo">
+                      <button onClick={() => gerarReciboIndividual(c)} className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" title="Gerar Recibo Oficial (PDF)">
                         <FileText size={16} />
+                      </button>
+                      <button onClick={() => handleEdit(c)} className="hover:text-primary dark:hover:text-primary p-1.5 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-500/10" title="Editar Informações da Cautela">
+                        <Edit2 size={16} />
                       </button>
                       {c.status === 'ATIVA' && (
                         <button 
-                          onClick={() => handleDevolver(c.id)}
+                          onClick={() => openDevolverModal(c.id)}
                           className="hover:text-success dark:hover:text-success p-1.5 rounded-lg transition-colors hover:bg-success/10" 
                           title="Registrar Devolução"
                         >
                           <CheckCircle size={16} />
                         </button>
                       )}
+                      <button onClick={() => openDeleteModal(c.id)} className="hover:text-danger dark:hover:text-danger p-1.5 rounded-lg transition-colors hover:bg-danger/10" title="Excluir Lote Definitivamente">
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -385,13 +569,40 @@ const Cautelas: React.FC = () => {
               </div>
 
               {/* Datas */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data de Início</label>
+                  <div className="relative">
+                    <input 
+                      type="date"
+                      value={dataInicio}
+                      onChange={(e) => setDataInicio(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data de Retorno</label>
+                  <div className="relative">
+                    <input 
+                      type="date"
+                      value={dataPrevista}
+                      onChange={(e) => setDataPrevista(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Missão */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Previsão de Retorno (Opcional)</label>
-                <input 
-                  type="date"
-                  value={dataPrevista}
-                  onChange={(e) => setDataPrevista(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Missão (Opcional)</label>
+                <textarea 
+                  rows={3}
+                  value={missao}
+                  onChange={(e) => setMissao(e.target.value)}
+                  placeholder="Descreva a finalidade ou a missão que motivou o empréstimo..."
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
                 />
               </div>
 
@@ -439,7 +650,7 @@ const Cautelas: React.FC = () => {
             <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0">
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-lg transition-colors border border-transparent dark:border-[#374151]"
               >
                 Cancelar
               </button>
@@ -448,13 +659,29 @@ const Cautelas: React.FC = () => {
                 disabled={radiosSelecionados.length === 0 || !militarId}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Emprestar Rádios
+                {editingCautelaId ? 'Salvar Edições' : 'Criar Cautela'}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      <ModalConfirmacao 
+        isOpen={isModalDevolverOpen}
+        title="Registrar Devolução"
+        message="Confirma o recebimento desta cautela? Todos os aparelhos vinculados a ela voltarão ao status OPERACIONAL livre na Reserva."
+        onConfirm={confirmDevolver}
+        onCancel={() => { setIsModalDevolverOpen(false); setCautelaDevolverId(null); }}
+        confirmText="Confirmar Devolução"
+      />
+
+      <ModalConfirmacao 
+        isOpen={isModalDeleteOpen}
+        title="Exclusão de Histórico (Cautela)"
+        message="CUIDADO: Você está deletando o B.O inteiro da cautela e seu rastro na base de estatísticas do patrimônio. Esta ação é estritamente em caso de erro na hora de formular a Cautela. Confirma exclusão?"
+        onConfirm={confirmDelete}
+        onCancel={() => { setIsModalDeleteOpen(false); setCautelaDeleteId(null); }}
+      />
     </div>
   );
 };
