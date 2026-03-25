@@ -36,6 +36,7 @@ interface DashboardStats {
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [historyData, setHistoryData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -46,19 +47,21 @@ const Dashboard: React.FC = () => {
         console.error('Erro ao buscar estatísticas:', error);
       }
     };
+
+    const fetchFlow = async () => {
+      try {
+        const response = await axios.get('http://localhost:3333/api/dashboard/flow');
+        setHistoryData(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar fluxo de cautelas:', error);
+      }
+    };
+
     fetchStats();
+    fetchFlow();
   }, []);
 
-  // Dados Mockados para os Gráficos enquanto a API não fornece o histórico
-  const historyData = [
-    { name: 'Seg', cautelas: 4 },
-    { name: 'Ter', cautelas: 7 },
-    { name: 'Qua', cautelas: 3 },
-    { name: 'Qui', cautelas: 8 },
-    { name: 'Sex', cautelas: 12 },
-    { name: 'Sáb', cautelas: 2 },
-    { name: 'Dom', cautelas: 5 },
-  ];
+
 
   const pieData = [
     { name: 'Operacionais', value: stats?.operacional || 0, color: '#3b82f6' }, // Azul
