@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Upload, Shield, Mail, Lock, User } from 'lucide-react';
 
 const Perfil: React.FC = () => {
-  const [userId, setUserId] = useState<number | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Basico
   const [nomeCompleto, setNomeCompleto] = useState('');
@@ -58,6 +58,7 @@ const Perfil: React.FC = () => {
         const base64String = reader.result as string;
         setAvatar(base64String);
         localStorage.setItem('avatar', base64String); // Salvar localmente
+        window.dispatchEvent(new Event('avatar-updated'));
       };
       reader.readAsDataURL(file);
     }

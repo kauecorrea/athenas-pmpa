@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Search, Activity, CalendarDays, User, Target, ChevronDown, Check } from 'lucide-react';
 
 interface AuditoriaRecord {
-  id: number;
+  id: string;
   usuario: string;
   acao: string;
   detalhes: string | null;

@@ -5,14 +5,14 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 interface EquipamentoDisponivel {
-  id: number;
+  id: string;
   rp: string;
   numSerie: string;
   idRadio?: string;
 }
 
 interface TransferenciaRecord {
-  id: number;
+  id: string;
   militar: { nome: string; rg?: string; contato?: string; posto: string; unidade: { nome: string } | null } | null;
   destino: string;
   dataTransferencia: string;
@@ -23,7 +23,7 @@ interface TransferenciaRecord {
 }
 
 interface Militar {
-  id: number;
+  id: string;
   nome: string;
   posto: string;
 }
@@ -37,7 +37,8 @@ const Transferencias: React.FC = () => {
   const [buscaTratada, setBuscaTratada] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Todos - Status');
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
-  const [radiosSelecionados, setRadiosSelecionados] = useState<number[]>([]);
+  const [radiosSelecionados, setRadiosSelecionados] = useState<string[]>([]);
+  const [buscaRadioModal, setBuscaRadioModal] = useState('');
   
   const [transferencias, setTransferencias] = useState<TransferenciaRecord[]>([]);
   const [militares, setMilitares] = useState<Militar[]>([]);
@@ -182,7 +183,7 @@ const Transferencias: React.FC = () => {
     doc.save(`Repasse_PMPA_${t.id}.pdf`);
   };
 
-  const toggleRadioSelection = (id: number) => {
+  const toggleRadioSelection = (id: string) => {
     if (radiosSelecionados.includes(id)) {
       setRadiosSelecionados(radiosSelecionados.filter(selectedId => selectedId !== id));
     } else {
@@ -214,7 +215,7 @@ const Transferencias: React.FC = () => {
     try {
       await axios.post('http://localhost:3333/api/transferencias', {
         equipamentosIds: radiosSelecionados,
-        militarId: Number(militarId),
+        militarId: militarId,
         destino,
         dataTransferencia: dataTransferencia ? new Date(dataTransferencia).toISOString() : new Date().toISOString(),
         observacoes,
@@ -273,6 +274,16 @@ const Transferencias: React.FC = () => {
     return searchMatch && statusMatch;
   });
 
+  const radiosDisponiveisFiltrados = radiosDisponiveis.filter(radio => {
+    if (!buscaRadioModal.trim()) return true;
+    const term = buscaRadioModal.toLowerCase();
+    return (
+      (radio.numSerie && radio.numSerie.toLowerCase().includes(term)) ||
+      (radio.rp && radio.rp.toLowerCase().includes(term)) ||
+      (radio.idRadio && radio.idRadio.toLowerCase().includes(term))
+    );
+  });
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
       
@@ -290,6 +301,7 @@ const Transferencias: React.FC = () => {
             setDestino('');
             setObservacoes('');
             setRadiosSelecionados([]);
+            setBuscaRadioModal('');
             setIsModalOpen(true);
           }}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
@@ -462,12 +474,25 @@ const Transferencias: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rádios Atualmente na Rua *</label>
                 <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
+                  {/* Search bar inside block */}
+                  <div className="p-2 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                      <input 
+                        type="text"
+                        placeholder="Buscar rádio cautelado..."
+                        value={buscaRadioModal}
+                        onChange={e => setBuscaRadioModal(e.target.value)}
+                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-1.5 focus:outline-none placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
                   {/* List of checkboxes */}
                   <div className="max-h-48 overflow-y-auto p-4 space-y-3">
-                    {radiosDisponiveis.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic text-center py-4">Nenhum rádio rodando na rua para ser transferido.</p>
+                    {radiosDisponiveisFiltrados.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic text-center py-4">Nenhum rádio encontrado.</p>
                     ) : (
-                      radiosDisponiveis.map((radio) => (
+                      radiosDisponiveisFiltrados.map((radio) => (
                          <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
                           <div className="relative flex items-center justify-center w-4 h-4 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-surface group-hover:border-primary transition-colors">
                             <input 
@@ -482,8 +507,9 @@ const Transferencias: React.FC = () => {
                               </svg>
                             </div>
                           </div>
-                          <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium">
-                            {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''}
+                          <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium text-left">
+                            {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''} 
+                            {radio.idRadio && ` - [${radio.idRadio}]`} 
                           </span>
                         </label>
                       ))

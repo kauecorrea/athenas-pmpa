@@ -4,18 +4,18 @@ import { Search, Plus, Edit2, Trash2, ChevronDown, Users } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Unidade {
-  id: number;
+  id: string;
   nome: string;
   sigla: string;
 }
 
 interface Militar {
-  id: number;
+  id: string;
   nome: string;
   rg: string;
   contato: string;
   posto: string; // Patente
-  unidadeId: number;
+  unidadeId: string;
   unidade?: Unidade;
 }
 
@@ -25,7 +25,7 @@ const Militares: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [militarDeleteId, setMilitarDeleteId] = useState<number | null>(null);
+  const [militarDeleteId, setMilitarDeleteId] = useState<string | null>(null);
   const [militarDeleteNome, setMilitarDeleteNome] = useState('');
   const [filtroUnidade, setFiltroUnidade] = useState('Todos - Unidade');
   const [filtroPatente, setFiltroPatente] = useState('Todos - Patente');
@@ -117,7 +117,7 @@ const Militares: React.FC = () => {
     }
   };
 
-  const openDeleteModal = (id: number, nome: string) => {
+  const openDeleteModal = (id: string, nome: string) => {
     setMilitarDeleteId(id);
     setMilitarDeleteNome(nome);
     setIsModalDeleteOpen(true);
@@ -348,7 +348,7 @@ const Militares: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unidade</label>
                 <select 
                   value={novoMilitar.unidadeId || ''}
-                  onChange={e => setNovoMilitar({...novoMilitar, unidadeId: Number(e.target.value)})}
+                  onChange={e => setNovoMilitar({...novoMilitar, unidadeId: e.target.value})}
                   className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
                 >
                   <option value="" disabled>Selecione uma unidade</option>

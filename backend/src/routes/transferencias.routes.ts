@@ -37,7 +37,7 @@ router.post('/', async (req: Request, res: Response) => {
       for (const equipId of equipamentosIds) {
         // Acha todas as cautelas ATIVAS que seguram ESSE rádio
         const cautelasAtivas = await tx.cautela.findMany({
-          where: { status: 'ATIVA', equipamentos: { some: { id: Number(equipId) } } },
+          where: { status: 'ATIVA', equipamentos: { some: { id: equipId } } },
           include: { equipamentos: true }
         });
 
@@ -45,7 +45,7 @@ router.post('/', async (req: Request, res: Response) => {
           // Desconecta o rádio da Cautela Originária
           await tx.cautela.update({
             where: { id: c.id },
-            data: { equipamentos: { disconnect: { id: Number(equipId) } } }
+            data: { equipamentos: { disconnect: { id: equipId } } }
           });
 
           // Se a cautela original agora esvaziou (tinha só esse rádio), nós a damos como devolvida
@@ -61,12 +61,12 @@ router.post('/', async (req: Request, res: Response) => {
       // 2. Criar UMA única Nova Cautela em Lote para agrupar esses rádios que chegaram
       const novaCautela = await tx.cautela.create({
         data: {
-          militarId: Number(militarId),
+          militarId: militarId,
           status: 'ATIVA',
           dataRetirada: dataTransferencia ? new Date(dataTransferencia) : new Date(),
           missao: `REPASSE TÁTICO: ${destino}`,
           equipamentos: {
-            connect: equipamentosIds.map((id: number) => ({ id: Number(id) }))
+            connect: equipamentosIds.map((id: string) => ({ id }))
           }
         }
       });
@@ -74,14 +74,14 @@ router.post('/', async (req: Request, res: Response) => {
       // 3. Criar a Transferência Histórica no Banco com o Array de Equipamentos
       const trans = await tx.transferencia.create({
         data: {
-          militarId: Number(militarId),
+          militarId: militarId,
           destino,
           dataTransferencia: dataTransferencia ? new Date(dataTransferencia) : new Date(),
           observacoes,
           qtdRadios: equipamentosIds.length,
           status: 'FINALIZADA',
           equipamentos: {
-            connect: equipamentosIds.map((id: number) => ({ id: Number(id) }))
+            connect: equipamentosIds.map((id: string) => ({ id }))
           }
         },
       });
@@ -89,7 +89,7 @@ router.post('/', async (req: Request, res: Response) => {
       // 4. Garantir que o Rádio continue como CAUTELADO
       for (const equipId of equipamentosIds) {
         await tx.equipamento.update({
-          where: { id: Number(equipId) },
+          where: { id: equipId },
           data: { status: 'CAUTELADO' }
         });
       }
@@ -108,12 +108,12 @@ router.post('/', async (req: Request, res: Response) => {
 // Editar dados de texto da Transferência
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const { destino, observacoes } = req.body;
 
   try {
     const updated = await prisma.transferencia.update({
-      where: { id: Number(id) },
+      where: { id: id as string },
       data: { destino, observacoes }
     });
     registrarAuditoria(req, 'Editou Destino de Transferência', `Transferência ID: ${id} editada para Destino: ${destino}`);
@@ -126,13 +126,13 @@ router.put('/:id', async (req: Request, res: Response) => {
 // Excluir e Reverter Transferência (Radio para OPERACIONAL)
 // @ts-ignore
 router.delete('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
 
   try {
     const result = await prisma.$transaction(async (tx) => {
       // Pega a transferência antes de excluir pra saber quais eram os rádios e o destino
       const trans = await tx.transferencia.findUnique({
-        where: { id: Number(id) },
+        where: { id: id as string },
         include: { equipamentos: true }
       });
 
@@ -171,7 +171,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
       // E finalmente exlcui a transferência do sistema
       const deletedTrans = await tx.transferencia.delete({
-        where: { id: Number(id) }
+        where: { id: id as string }
       });
 
       return deletedTrans;

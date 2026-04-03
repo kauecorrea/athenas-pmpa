@@ -4,7 +4,7 @@ import { Plus, ShieldOff, Shield, Trash2 } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Usuario {
-  id: number;
+  id: string;
   nomeCompleto: string;
   nomeGuerra: string;
   email: string;
@@ -27,7 +27,7 @@ const Usuarios: React.FC = () => {
 
   // Delete Modal States
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [usuarioDeleteId, setUsuarioDeleteId] = useState<number | null>(null);
+  const [usuarioDeleteId, setUsuarioDeleteId] = useState<string | null>(null);
   const [usuarioDeleteNome, setUsuarioDeleteNome] = useState('');
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const Usuarios: React.FC = () => {
     }
   };
 
-  const handleTogglePermissao = async (id: number, currentPerm: string) => {
+  const handleTogglePermissao = async (id: string, currentPerm: string) => {
     const newPerm = currentPerm === 'Administrador' ? 'Comum' : 'Administrador';
     try {
       await axios.put(`http://localhost:3333/api/usuarios/${id}`, { permissao: newPerm });
@@ -69,7 +69,7 @@ const Usuarios: React.FC = () => {
     }
   };
 
-  const openDeleteModal = (id: number, nome: string) => {
+  const openDeleteModal = (id: string, nome: string) => {
     setUsuarioDeleteId(id);
     setUsuarioDeleteNome(nome);
     setIsModalDeleteOpen(true);

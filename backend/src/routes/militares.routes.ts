@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
         cpf,
         contato: req.body.contato,
         posto,
-        unidadeId: Number(unidadeId),
+        unidadeId: unidadeId,
       },
     });
     res.status(201).json(militar);
@@ -44,19 +44,19 @@ router.post('/', async (req, res) => {
 
 // Atualizar Militar
 router.put('/:id', async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const { nome, rg, cpf, contato, posto, unidadeId } = req.body;
   
   try {
     const militar = await prisma.militar.update({
-      where: { id: Number(id) },
+      where: { id: id as string },
       data: {
         nome,
         rg,
         cpf,
         contato,
         posto,
-        unidadeId: Number(unidadeId),
+        unidadeId: unidadeId,
       },
     });
     res.json(militar);
@@ -67,13 +67,13 @@ router.put('/:id', async (req, res) => {
 
 // Excluir Militar
 router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   
   try {
     // Check if there are active cautelas for this militar
     const activeCautelas = await prisma.cautela.findFirst({
       where: {
-        militarId: Number(id),
+        militarId: id,
         status: 'ATIVA'
       }
     });
@@ -83,7 +83,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     await prisma.militar.delete({
-      where: { id: Number(id) },
+      where: { id: id as string },
     });
     
     res.status(204).send();

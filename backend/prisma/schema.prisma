@@ -1,17 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model Unidade {
-  id        Int        @id @default(autoincrement())
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
   nome        String     @unique // Ex: 1º BPM, BOPE, CME
   sigla       String?
   coint       String?
@@ -23,13 +20,13 @@ model Unidade {
 }
 
 model Militar {
-  id        Int        @id @default(autoincrement())
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
   nome      String
   rg        String?    
   cpf       String?
   contato   String?    
   posto     String?    // Ex: SD, CB, SGT, TEN
-  unidadeId Int
+  unidadeId String     @db.ObjectId
   unidade   Unidade    @relation(fields: [unidadeId], references: [id])
   cautelas  Cautela[]
   extravios Extravio[]
@@ -37,19 +34,25 @@ model Militar {
 }
 
 model Equipamento {
-  id          Int       @id @default(autoincrement()) // ID interno do Banco
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   idRadio     String?   @unique // "ID do Rádio" que aparece na interface
   rp          String    @unique // Número de Patrimônio
   numSerie    String    @unique // Número de Série
   marca       String?   // Motorola, Tait
   modelo      String?   // APX 900, APX 2000, TP9400, TP9100
   status      StatusEquipamento @default(OPERACIONAL)
-  unidadeId   Int?
-  unidade   Unidade?  @relation(fields: [unidadeId], references: [id])
-  cautelas  Cautela[]
+  
+  unidadeId   String?   @db.ObjectId
+  unidade     Unidade?  @relation(fields: [unidadeId], references: [id])
+  
+  cautelaIds  String[]  @db.ObjectId
+  cautelas    Cautela[] @relation(fields: [cautelaIds], references: [id])
+  
   manutencoes Manutencao[]
   extravios   Extravio[]
-  transferencias Transferencia[]
+  
+  transferenciaIds String[]        @db.ObjectId
+  transferencias   Transferencia[] @relation(fields: [transferenciaIds], references: [id])
 }
 
 enum StatusEquipamento {
@@ -62,14 +65,18 @@ enum StatusEquipamento {
 }
 
 model Cautela {
-  id            Int         @id @default(autoincrement())
-  equipamentos  Equipamento[]
-  militarId     Int?        // Quem pegou
-  militar       Militar?    @relation(fields: [militarId], references: [id])
-  unidadeId     Int?        // Ou a Unidade que pegou
-  unidade       Unidade?    @relation(fields: [unidadeId], references: [id])
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
   
-  missao        String?     @db.Text
+  equipamentoIds String[]     @db.ObjectId
+  equipamentos   Equipamento[] @relation(fields: [equipamentoIds], references: [id])
+  
+  militarId     String?       @db.ObjectId
+  militar       Militar?      @relation(fields: [militarId], references: [id])
+  
+  unidadeId     String?       @db.ObjectId
+  unidade       Unidade?      @relation(fields: [unidadeId], references: [id])
+  
+  missao        String?
   dataRetirada  DateTime    @default(now())
   dataDevolucao DateTime?   // Quando foi devolvido
   dataPrevista  DateTime?   // Data limite para devolução (ex: evento sábado)
@@ -84,7 +91,7 @@ enum StatusCautela {
 }
 
 model Usuario {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   nomeCompleto String
   nomeGuerra   String
   email        String   @unique
@@ -96,10 +103,10 @@ model Usuario {
 }
 
 model Manutencao {
-  id              Int         @id @default(autoincrement())
-  equipamentoId   Int
+  id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  equipamentoId   String      @db.ObjectId
   equipamento     Equipamento @relation(fields: [equipamentoId], references: [id])
-  problema        String      @db.Text
+  problema        String
   dataEntrada     DateTime    @default(now())
   previsaoRetorno DateTime?
   dataConclusao   DateTime?
@@ -107,33 +114,36 @@ model Manutencao {
 }
 
 model Extravio {
-  id            Int         @id @default(autoincrement())
-  equipamentoId Int
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  equipamentoId String      @db.ObjectId
   equipamento   Equipamento @relation(fields: [equipamentoId], references: [id])
-  militarId     Int?        // Quem estava responsável quando sumiu
+  militarId     String?     @db.ObjectId
   militar       Militar?    @relation(fields: [militarId], references: [id])
   dataExtravio  DateTime    @default(now())
   local         String?
-  descricao     String      @db.Text
+  descricao     String
   status        String      @default("INVESTIGACAO") // INVESTIGACAO, LOCALIZADO, BAIXADO
 }
 
 model Transferencia {
-  id                Int      @id @default(autoincrement())
-  militarId         Int      // Novo detentor
-  militar           Militar  @relation(fields: [militarId], references: [id])
+  id                String      @id @default(auto()) @map("_id") @db.ObjectId
+  militarId         String      @db.ObjectId
+  militar           Militar     @relation(fields: [militarId], references: [id])
   destino           String
-  dataTransferencia DateTime @default(now())
-  observacoes       String?  @db.Text
+  dataTransferencia DateTime    @default(now())
+  observacoes       String?
   qtdRadios         Int
-  equipamentos      Equipamento[]
-  status            String   @default("FINALIZADA")
+  
+  equipamentoIds    String[]    @db.ObjectId
+  equipamentos      Equipamento[] @relation(fields: [equipamentoIds], references: [id])
+  
+  status            String      @default("FINALIZADA")
 }
 
 model Auditoria {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   usuario     String   // Nome do usuário ou 'Sistema'
-  acao        String   @db.Text // O que foi feito
-  detalhes    String?  @db.Text // Opcional, como JSON ou IDs
+  acao        String   // O que foi feito
+  detalhes    String?  // Opcional, como JSON ou IDs
   dataHora    DateTime @default(now())
 }

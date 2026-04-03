@@ -4,7 +4,7 @@ import { Search, Plus, Edit2, Trash2, ChevronDown } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Unidade {
-  id: number;
+  id: string;
   nome: string;
   sigla: string;
   coint?: string;
@@ -20,7 +20,7 @@ const Unidades: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [unidadeDeleteId, setUnidadeDeleteId] = useState<number | null>(null);
+  const [unidadeDeleteId, setUnidadeDeleteId] = useState<string | null>(null);
   const [unidadeDeleteNome, setUnidadeDeleteNome] = useState('');
   
   const [buscaTratada, setBuscaTratada] = useState('');
@@ -88,7 +88,7 @@ const Unidades: React.FC = () => {
     }
   };
 
-  const openDeleteModal = (id: number, nome: string) => {
+  const openDeleteModal = (id: string, nome: string) => {
     setUnidadeDeleteId(id);
     setUnidadeDeleteNome(nome);
     setIsModalDeleteOpen(true);

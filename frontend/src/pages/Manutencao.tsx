@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Wrench, Edit2, FileText, ChevronDown, CheckCircle } from 'lucide-react';
+import { Plus, Wrench, FileText, CheckCircle, Search } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
+import jsPDF from 'jspdf';
 
 interface ManutencaoRecord {
-  id: number;
-  equipamento: { rp: string; numSerie: string; idRadio: string };
+  id: string;
+  equipamento: { 
+    rp: string; 
+    numSerie: string; 
+    idRadio: string;
+    marca: string | null;
+    modelo: string | null;
+  };
   problema: string;
   dataEntrada: string;
   previsaoRetorno: string | null;
@@ -14,7 +21,7 @@ interface ManutencaoRecord {
 }
 
 interface EquipamentoDisponivel {
-  id: number;
+  id: string;
   rp: string;
   numSerie: string;
   idRadio: string;
@@ -26,13 +33,14 @@ const Manutencao: React.FC = () => {
   const [manutencoes, setManutencoes] = useState<ManutencaoRecord[]>([]);
 
   const [isModalConcluirOpen, setIsModalConcluirOpen] = useState(false);
-  const [manutencaoConcluirId, setManutencaoConcluirId] = useState<number | null>(null);
+  const [manutencaoConcluirId, setManutencaoConcluirId] = useState<string | null>(null);
 
   // Form states
   const [equipamentoId, setEquipamentoId] = useState('');
   const [problema, setProblema] = useState('');
   const [dataEntrada, setDataEntrada] = useState('');
   const [previsaoRetorno, setPrevisaoRetorno] = useState('');
+  const [buscaRadioModal, setBuscaRadioModal] = useState('');
 
   useEffect(() => {
     fetchManutencoes();
@@ -41,6 +49,7 @@ const Manutencao: React.FC = () => {
   useEffect(() => {
     // Buscar equipamentos quando o formulário for aberto
     if (isFormOpen) {
+      setBuscaRadioModal('');
       fetchEquipamentosParaManutencao();
     }
   }, [isFormOpen]);
@@ -73,7 +82,7 @@ const Manutencao: React.FC = () => {
 
     try {
       await axios.post('http://localhost:3333/api/manutencoes', {
-        equipamentoId: Number(equipamentoId),
+        equipamentoId: equipamentoId,
         problema,
         dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : new Date().toISOString(),
         previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
@@ -89,7 +98,7 @@ const Manutencao: React.FC = () => {
     }
   };
 
-  const openConcluirModal = (id: number) => {
+  const openConcluirModal = (id: string) => {
     setManutencaoConcluirId(id);
     setIsModalConcluirOpen(true);
   };
@@ -106,6 +115,119 @@ const Manutencao: React.FC = () => {
       setManutencaoConcluirId(null);
     }
   };
+
+  const getBase64ImageFromUrl = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject('Erro ao carregar imagem');
+      img.src = imageUrl;
+    });
+  };
+
+  const gerarOrdemServicoPdf = async (m: ManutencaoRecord) => {
+    const doc = new jsPDF();
+    
+    // 1. Brasões
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+    } catch (err) { console.error('Sem brasao_para.png'); }
+    
+    try {
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+    } catch (err) { console.error('Sem brasao_pmpa.png'); }
+
+    // 2. Título Geral e Timbre
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: "center" });
+    doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 20, { align: "center" });
+    doc.text("POLÍCIA MILITAR DO PARÁ", 105, 25, { align: "center" });
+    doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: "center" });
+    doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
+
+    // 3. Título do Documento
+    doc.setFontSize(14);
+    doc.text("ORDEM DE SERVIÇO DE MANUTENÇÃO (OSM)", 105, 50, { align: "center" });
+    doc.setFontSize(11);
+    doc.text(`Nº ${m.id}/${new Date().getFullYear()} - ATHENAS SYSTEM`, 105, 56, { align: "center" });
+    
+    // Linha divisória
+    doc.setLineWidth(0.5);
+    doc.line(14, 62, 196, 62);
+
+    // 4. Seção 1: Dados do Equipamento
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("1. IDENTIFICAÇÃO DO EQUIPAMENTO", 14, 67);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Patrimônio (RP): ${m.equipamento.rp}`, 14, 75);
+    doc.text(`Nº de Série: ${m.equipamento.numSerie}`, 105, 75);
+    doc.text(`Marca/Modelo: ${m.equipamento.marca || 'N/I'} / ${m.equipamento.modelo || 'N/I'}`, 14, 82);
+    doc.text(`ID Lógico (Rádio): ${m.equipamento.idRadio || 'N/I'}`, 105, 82);
+
+    // 5. Seção 2: Diagnóstico Inicial
+    doc.setFont("helvetica", "bold");
+    doc.text("2. DESCRIÇÃO DO PROBLEMA (RELATO DA UNIDADE)", 14, 95);
+    doc.setFont("helvetica", "normal");
+    const splitProblema = doc.splitTextToSize(m.problema, 180);
+    doc.text(splitProblema, 14, 102);
+
+    // 6. Seção 3: Campo Técnico (Espaço para Preenchimento Manual)
+    const yCampoTecnico = 102 + (splitProblema.length * 6) + 10;
+    doc.setFont("helvetica", "bold");
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(14, yCampoTecnico, 182, 50); // Caixa para preenchimento
+    doc.text("3. PARECER TÉCNICO / SERVIÇOS EXECUTADOS (USO DITEL)", 14, yCampoTecnico - 2);
+    
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.text("Espaço reservado para o técnico descrever peças trocadas, limpeza ou reparos efetuados.", 16, yCampoTecnico + 5);
+
+    // 7. Datas
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    const yDatas = yCampoTecnico + 60;
+    doc.text(`Data de Entrada: ${new Date(m.dataEntrada).toLocaleDateString('pt-BR')}`, 14, yDatas);
+    doc.text(`Previsão de Retorno: ${m.previsaoRetorno ? new Date(m.previsaoRetorno).toLocaleDateString('pt-BR') : 'N/A'}`, 105, yDatas);
+
+    // 8. Assinaturas
+    const finalY = yDatas + 40;
+    doc.line(20, finalY, 90, finalY);
+    doc.text("REQUISITANTE (UNIDADE)", 55, finalY + 5, { align: "center" });
+    
+    doc.line(120, finalY, 190, finalY);
+    doc.text("RECEBIDO POR (DITEL)", 155, finalY + 5, { align: "center" });
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, 280, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: citel@pm.pa.gov.br", 105, 285, { align: "center" });
+
+    doc.save(`OSM_${m.equipamento.rp}_${m.id}.pdf`);
+  };
+
+  const radiosDisponiveisFiltrados = radiosDisponiveis.filter(radio => {
+    if (!buscaRadioModal.trim()) return true;
+    const term = buscaRadioModal.toLowerCase();
+    return (
+      (radio.numSerie && radio.numSerie.toLowerCase().includes(term)) ||
+      (radio.rp && radio.rp.toLowerCase().includes(term)) ||
+      (radio.idRadio && radio.idRadio.toLowerCase().includes(term))
+    );
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
@@ -140,20 +262,44 @@ const Manutencao: React.FC = () => {
             {/* Equipamento */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Equipamento</label>
-              <div className="relative">
-                <select 
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                  value={equipamentoId}
-                  onChange={(e) => setEquipamentoId(e.target.value)}
-                >
-                  <option value="" disabled>Selecione o rádio com problema</option>
-                  {radiosDisponiveis.map(radio => (
-                    <option key={radio.id} value={radio.id}>
-                      {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''} - [{radio.idRadio || 'Sem ID'}]
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+              <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
+                {/* Search bar inside block */}
+                <div className="p-2 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                    <input 
+                      type="text"
+                      placeholder="Buscar máquina (Série, RP, ID)..."
+                      value={buscaRadioModal}
+                      onChange={e => setBuscaRadioModal(e.target.value)}
+                      className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-1.5 focus:outline-none placeholder-gray-400"
+                    />
+                  </div>
+                </div>
+                {/* List of radio buttons */}
+                <div className="max-h-48 overflow-y-auto p-4 space-y-3">
+                  {radiosDisponiveisFiltrados.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic text-center py-2">Nenhuma máquina encontrada.</p>
+                  ) : (
+                    radiosDisponiveisFiltrados.map((radio) => (
+                      <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 dark:border-gray-500 bg-white dark:bg-surface group-hover:border-primary transition-colors">
+                          <input 
+                            type="radio" 
+                            name="manutencaoRadioSelect"
+                            className="peer w-full h-full opacity-0 cursor-pointer absolute" 
+                            checked={equipamentoId === String(radio.id)}
+                            onChange={() => setEquipamentoId(String(radio.id))}
+                          />
+                          <div className="hidden peer-checked:block pointer-events-none absolute w-2 h-2 rounded-full bg-primary" />
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium text-left">
+                          {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''} - [{radio.idRadio || 'Sem ID'}]
+                        </span>
+                      </label>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
@@ -261,7 +407,11 @@ const Manutencao: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
-                        <button className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" title="Emitir Ordem de Serviço">
+                        <button 
+                          onClick={() => gerarOrdemServicoPdf(m)}
+                          className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" 
+                          title="Emitir Ordem de Serviço"
+                        >
                           <FileText size={16} />
                         </button>
                         {m.status === 'EM ANDAMENTO' && (

@@ -4,7 +4,7 @@ import { Plus, Search, Trash2, Edit2, ChevronDown } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Equipamento {
-  id: number;
+  id: string;
   idRadio: string;
   rp: string;
   numSerie: string;
@@ -21,10 +21,11 @@ const Equipamentos: React.FC = () => {
   const [filtroStatus, setFiltroStatus] = useState('Todos - Status');
   const [filtroMarca, setFiltroMarca] = useState('Todos - Marca');
   const [filtroModelo, setFiltroModelo] = useState('Todos - Modelo');
+  const [busca, setBusca] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [equipamentoDeleteId, setEquipamentoDeleteId] = useState<number | null>(null);
+  const [equipamentoDeleteId, setEquipamentoDeleteId] = useState<string | null>(null);
   const [equipamentoDeleteRp, setEquipamentoDeleteRp] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [novoEquip, setNovoEquip] = useState({
@@ -87,7 +88,7 @@ const Equipamentos: React.FC = () => {
     }
   };
 
-  const openDeleteModal = (id: number, rp: string) => {
+  const openDeleteModal = (id: string, rp: string) => {
     setEquipamentoDeleteId(id);
     setEquipamentoDeleteRp(rp);
     setIsModalDeleteOpen(true);
@@ -123,6 +124,16 @@ const Equipamentos: React.FC = () => {
     if (filtroStatus !== 'Todos - Status' && eq.status.toUpperCase() !== filtroStatus.toUpperCase().replace('Ç', 'C').replace('Ã', 'A')) match = false;
     if (filtroMarca !== 'Todos - Marca' && eq.marca !== filtroMarca) match = false;
     if (filtroModelo !== 'Todos - Modelo' && eq.modelo !== filtroModelo) match = false;
+    
+    if (busca.trim() !== '') {
+      const term = busca.toLowerCase();
+      const matchBusca = 
+        (eq.numSerie && eq.numSerie.toLowerCase().includes(term)) ||
+        (eq.rp && eq.rp.toLowerCase().includes(term)) ||
+        (eq.idRadio && eq.idRadio.toLowerCase().includes(term));
+      if (!matchBusca) match = false;
+    }
+
     return match;
   });
 
@@ -149,6 +160,8 @@ const Equipamentos: React.FC = () => {
             <input 
               type="text" 
               placeholder="Buscar por série, ID, patrimônio..." 
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
               className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg pl-10 pr-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
             />
           </div>

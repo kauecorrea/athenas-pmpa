@@ -31,7 +31,7 @@ router.post('/', async (req, res) => {
         marca,
         modelo,
         status: status || 'OPERACIONAL',
-        unidadeId: unidadeId ? Number(unidadeId) : null,
+        unidadeId: unidadeId ? unidadeId : null,
       },
     });
 
@@ -45,11 +45,11 @@ router.post('/', async (req, res) => {
 
 // Atualizar Equipamento (Edit)
 router.put('/:id', async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const { rp, numSerie, idRadio, marca, modelo, status, unidadeId } = req.body;
   try {
     const equipamento = await prisma.equipamento.update({
-      where: { id: Number(id) },
+      where: { id: id as string },
       data: {
         rp,
         numSerie,
@@ -57,7 +57,7 @@ router.put('/:id', async (req, res) => {
         marca,
         modelo,
         status,
-        unidadeId: unidadeId ? Number(unidadeId) : null,
+        unidadeId: unidadeId ? unidadeId : null,
       },
     });
 
@@ -71,10 +71,10 @@ router.put('/:id', async (req, res) => {
 
 // Excluir Equipamento (Delete)
 router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   try {
     await prisma.equipamento.delete({
-      where: { id: Number(id) }
+      where: { id: id as string }
     });
 
     registrarAuditoria(req, 'Excluiu um Rádio permanentemente do Banco', `ID Banco: ${id}`);

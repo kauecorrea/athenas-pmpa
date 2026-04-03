@@ -67,7 +67,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 // Atualizar Usuário (ex: Remover Admin / Alterar Dados no Meu Perfil)
 router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { nomeCompleto, nomeGuerra, posto, unidade, permissao, senha, email } = req.body;
 
     let hashedPassword;
@@ -77,7 +77,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     }
 
     const usuario = await prisma.usuario.update({
-      where: { id: Number(id) },
+      where: { id: id as string },
       data: {
         nomeCompleto,
         nomeGuerra,
@@ -108,8 +108,8 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 // Excluir Usuário
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
-    await prisma.usuario.delete({ where: { id: Number(id) } });
+    const { id } = req.params as { id: string };
+    await prisma.usuario.delete({ where: { id: id as string } });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Erro ao excluir usuário.' });

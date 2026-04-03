@@ -35,6 +35,7 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [usuario, setUsuario] = React.useState<any>(null);
+  const [avatar, setAvatar] = React.useState<string | null>(null);
 
   const [isDarkMode, setIsDarkMode] = React.useState<boolean>(() => {
     return document.documentElement.className.includes('dark');
@@ -43,6 +44,16 @@ const Sidebar: React.FC = () => {
   React.useEffect(() => {
     const userStr = localStorage.getItem('usuario');
     if (userStr) setUsuario(JSON.parse(userStr));
+
+    const savedAvatar = localStorage.getItem('avatar');
+    if (savedAvatar) setAvatar(savedAvatar);
+
+    const handleAvatarUpdate = () => {
+      const updatedAvatar = localStorage.getItem('avatar');
+      if (updatedAvatar) setAvatar(updatedAvatar);
+    };
+    window.addEventListener('avatar-updated', handleAvatarUpdate);
+    return () => window.removeEventListener('avatar-updated', handleAvatarUpdate);
   }, []);
 
   const isAdmin = usuario?.permissao === 'Administrador';
@@ -140,9 +151,13 @@ const Sidebar: React.FC = () => {
 
         <NavLink to="/perfil" className="flex items-center justify-between mb-4 px-2 hover:bg-gray-100 dark:hover:bg-[#1f2937] p-2 rounded-lg transition-colors cursor-pointer">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs ring-1 ring-primary/30 shrink-0">
-              {usuario?.nomeGuerra ? usuario.nomeGuerra.slice(0, 2).toUpperCase() : 'PM'}
-            </div>
+            {avatar ? (
+              <img src={avatar} alt="Perfil" className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs ring-1 ring-primary/30 shrink-0">
+                {usuario?.nomeGuerra ? usuario.nomeGuerra.slice(0, 2).toUpperCase() : 'PM'}
+              </div>
+            )}
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">{usuario?.nomeGuerra || 'Usuário'}</p>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">{usuario?.permissao || 'Operador'}</p>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, FileText, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
+import { Plus, FileText, ChevronDown, AlertTriangle, Trash2, Search } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 
 interface ExtravioRecord {
-  id: number;
+  id: string;
   equipamento: { rp: string; numSerie: string; idRadio: string };
   militar: { nome: string; posto: string } | null;
   dataExtravio: string;
@@ -15,14 +15,14 @@ interface ExtravioRecord {
 }
 
 interface EquipamentoDisponivel {
-  id: number;
+  id: string;
   rp: string;
   numSerie: string;
   idRadio: string;
 }
 
 interface Militar {
-  id: number;
+  id: string;
   nome: string;
   posto: string;
 }
@@ -45,6 +45,7 @@ const Extraviados: React.FC = () => {
   const [isModalEncontradoOpen, setIsModalEncontradoOpen] = useState(false);
   const [isModalBaixarOpen, setIsModalBaixarOpen] = useState(false);
   const [extravioAlvo, setExtravioAlvo] = useState<ExtravioRecord | null>(null);
+  const [buscaRadioModal, setBuscaRadioModal] = useState('');
 
   useEffect(() => {
     fetchExtravios();
@@ -52,6 +53,7 @@ const Extraviados: React.FC = () => {
 
   useEffect(() => {
     if (isFormOpen) {
+      setBuscaRadioModal('');
       fetchEquipamentosParaExtravio();
       fetchMilitares();
     }
@@ -94,8 +96,8 @@ const Extraviados: React.FC = () => {
 
     try {
       await axios.post('http://localhost:3333/api/extravios', {
-        equipamentoId: Number(equipamentoId),
-        militarId: militarId ? Number(militarId) : null,
+        equipamentoId: equipamentoId,
+        militarId: militarId ? militarId : null,
         dataExtravio: dataExtravio ? new Date(dataExtravio).toISOString() : new Date().toISOString(),
         local,
         descricao
@@ -263,6 +265,16 @@ const Extraviados: React.FC = () => {
     doc.save(`Extravio_RP${e.equipamento.rp}.pdf`);
   };
 
+  const radiosDisponiveisFiltrados = radiosDisponiveis.filter(radio => {
+    if (!buscaRadioModal.trim()) return true;
+    const term = buscaRadioModal.toLowerCase();
+    return (
+      (radio.numSerie && radio.numSerie.toLowerCase().includes(term)) ||
+      (radio.rp && radio.rp.toLowerCase().includes(term)) ||
+      (radio.idRadio && radio.idRadio.toLowerCase().includes(term))
+    );
+  });
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
       
@@ -299,20 +311,44 @@ const Extraviados: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Equipamento Ausente</label>
-                <div className="relative">
-                  <select 
-                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                    value={equipamentoId}
-                    onChange={(e) => setEquipamentoId(e.target.value)}
-                  >
-                    <option value="" disabled>Selecione a máquina perdida</option>
-                    {radiosDisponiveis.map(radio => (
-                      <option key={radio.id} value={radio.id}>
-                        {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+                <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
+                  {/* Search bar inside block */}
+                  <div className="p-2 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                      <input 
+                        type="text"
+                        placeholder="Buscar máquina (Série, RP, ID)..."
+                        value={buscaRadioModal}
+                        onChange={e => setBuscaRadioModal(e.target.value)}
+                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-1.5 focus:outline-none placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
+                  {/* List of radio buttons */}
+                  <div className="max-h-48 overflow-y-auto p-4 space-y-3">
+                    {radiosDisponiveisFiltrados.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic text-center py-2">Nenhuma máquina encontrada.</p>
+                    ) : (
+                      radiosDisponiveisFiltrados.map((radio) => (
+                        <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
+                          <div className="relative flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 dark:border-gray-500 bg-white dark:bg-surface group-hover:border-primary transition-colors">
+                            <input 
+                              type="radio" 
+                              name="extravioRadioSelect"
+                              className="peer w-full h-full opacity-0 cursor-pointer absolute" 
+                              checked={equipamentoId === String(radio.id)}
+                              onChange={() => setEquipamentoId(String(radio.id))}
+                            />
+                            <div className="hidden peer-checked:block pointer-events-none absolute w-2 h-2 rounded-full bg-primary" />
+                          </div>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium text-left">
+                            {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 

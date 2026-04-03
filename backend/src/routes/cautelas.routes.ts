@@ -39,14 +39,14 @@ router.post('/', async (req: Request, res: Response) => {
       // 1. Criar a Cautela Única com Amarração M:N
       const cautela = await tx.cautela.create({
         data: {
-          militarId: militarId ? Number(militarId) : null,
-          unidadeId: unidadeId ? Number(unidadeId) : null,
+          militarId: militarId ? militarId : null,
+          unidadeId: unidadeId ? unidadeId : null,
           missao: missao || null,
           dataRetirada: dataInicio ? new Date(dataInicio) : new Date(),
           dataPrevista: dataPrevista ? new Date(dataPrevista) : null,
           status: 'ATIVA',
           equipamentos: {
-            connect: equipamentosIds.map((id: any) => ({ id: Number(id) }))
+            connect: equipamentosIds.map((id: any) => ({ id: id }))
           }
         },
         include: { equipamentos: true }
@@ -54,7 +54,7 @@ router.post('/', async (req: Request, res: Response) => {
 
       // 2. Atualizar todos os equipamentos para CAUTELADO de uma vez
       await tx.equipamento.updateMany({
-        where: { id: { in: equipamentosIds.map(Number) } },
+        where: { id: { in: equipamentosIds as string[] } },
         data: { status: 'CAUTELADO' }
       });
 
@@ -73,7 +73,7 @@ router.post('/', async (req: Request, res: Response) => {
 // Editar Cautela Base
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const { missao, dataInicio, dataPrevista } = req.body;
   
   try {
@@ -86,7 +86,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     const cautela = await prisma.cautela.update({
-      where: { id: Number(id) },
+      where: { id: id as string },
       data: updateData
     });
     registrarAuditoria(req, 'Editou Lote de Cautela', `Cautela ID: ${id}`);
@@ -99,10 +99,10 @@ router.put('/:id', async (req: Request, res: Response) => {
 // Devolver Lote (Baixa Total)
 // @ts-ignore
 router.put('/:id/devolver', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   try {
     const cautela = await prisma.cautela.update({
-      where: { id: Number(id) },
+      where: { id: id as string },
       data: {
         status: 'DEVOLVIDA',
         dataDevolucao: new Date()
@@ -110,7 +110,7 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
       include: { equipamentos: true }
     });
 
-    const idsRadios = cautela.equipamentos.map(e => e.id);
+    const idsRadios = cautela.equipamentoIds as string[];
     await prisma.equipamento.updateMany({
       where: { id: { in: idsRadios } },
       data: { status: 'OPERACIONAL' }
@@ -127,15 +127,15 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
 // Excluir Lote
 // @ts-ignore
 router.delete('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   try {
-    const cautela = await prisma.cautela.findUnique({ where: { id: Number(id) }, include: { equipamentos: true } });
+    const cautela = await prisma.cautela.findUnique({ where: { id: id as string }, include: { equipamentos: true } });
     if(cautela) {
        await prisma.equipamento.updateMany({
          where: { id: { in: cautela.equipamentos.map(e => e.id) } },
          data: { status: 'OPERACIONAL' }
        });
-       await prisma.cautela.delete({ where: { id: Number(id) }});
+       await prisma.cautela.delete({ where: { id: id as string }});
        registrarAuditoria(req, 'Apagou Cautela Definitivamente', `Cautela Apagada ID: ${id}`);
     }
     res.status(204).send();

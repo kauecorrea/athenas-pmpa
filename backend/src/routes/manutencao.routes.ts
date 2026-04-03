@@ -32,7 +32,7 @@ router.post('/', async (req: Request, res: Response) => {
       // 1. Criar o registro de Manutenção
       const manut = await tx.manutencao.create({
         data: {
-          equipamentoId: Number(equipamentoId),
+          equipamentoId: equipamentoId,
           problema,
           dataEntrada: dataEntrada ? new Date(dataEntrada) : new Date(),
           previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno) : null,
@@ -42,7 +42,7 @@ router.post('/', async (req: Request, res: Response) => {
 
       // 2. Atualizar status do Equipamento para MANUTENCAO
       await tx.equipamento.update({
-        where: { id: Number(equipamentoId) },
+        where: { id: equipamentoId as string },
         data: { status: 'MANUTENCAO' }
       });
 
@@ -50,7 +50,7 @@ router.post('/', async (req: Request, res: Response) => {
       // O sistema assume que apenas o adm manda para manutenção após devolução,
       // mas podemos forçar a baixa de cautelas ativas se existirem.
       const cautelasAtivas = await tx.cautela.findMany({
-        where: { equipamentoId: Number(equipamentoId), status: 'ATIVA' }
+        where: { equipamentoIds: { has: equipamentoId as string }, status: 'ATIVA' }
       });
 
       for (const c of cautelasAtivas) {
@@ -74,10 +74,10 @@ router.post('/', async (req: Request, res: Response) => {
 // Finalizar manutenção e devolver a operacional
 // @ts-ignore
 router.put('/:id/concluir', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   try {
     const manutencao = await prisma.manutencao.update({
-      where: { id: Number(id) },
+      where: { id: id as string },
       data: {
         status: 'CONCLUIDA',
         dataConclusao: new Date()

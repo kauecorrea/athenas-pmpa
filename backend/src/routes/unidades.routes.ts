@@ -35,11 +35,11 @@ router.post('/', async (req, res) => {
 
 // Atualizar Unidade
 router.put('/:id', async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const { nome, sigla, coint, localizacao } = req.body;
   try {
     const unidade = await prisma.unidade.update({
-      where: { id: Number(id) },
+      where: { id: id as string },
       data: { nome, sigla, coint, localizacao },
     });
     res.json(unidade);
@@ -50,11 +50,11 @@ router.put('/:id', async (req, res) => {
 
 // Deletar Unidade
 router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   try {
     // Checar se existem militares vinculados
     const militares = await prisma.militar.findFirst({
-      where: { unidadeId: Number(id) }
+      where: { unidadeId: id }
     });
 
     if (militares) {
@@ -62,7 +62,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     await prisma.unidade.delete({
-      where: { id: Number(id) }
+      where: { id: id as string }
     });
     res.status(204).send();
   } catch (error) {

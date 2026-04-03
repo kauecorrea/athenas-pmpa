@@ -6,22 +6,22 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 interface EquipamentoDisponivel {
-  id: number;
+  id: string;
   rp: string;
   numSerie: string;
   idRadio: string;
 }
 
 interface Militar {
-  id: number;
+  id: string;
   nome: string;
   posto: string;
   unidade: { nome: string };
 }
 
 interface Cautela {
-  id: number;
-  militar: { id: number; nome: string; posto: string; rg: string; contato: string; unidade: { nome: string } } | null;
+  id: string;
+  militar: { id: string; nome: string; posto: string; rg: string; contato: string; unidade: { nome: string } } | null;
   unidade: { nome: string } | null;
   equipamentos: EquipamentoDisponivel[];
   missao: string | null;
@@ -37,7 +37,8 @@ const Cautelas: React.FC = () => {
   const [filtroStatus, setFiltroStatus] = useState('Todos - Status');
   
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
-  const [radiosSelecionados, setRadiosSelecionados] = useState<number[]>([]);
+  const [radiosSelecionados, setRadiosSelecionados] = useState<string[]>([]);
+  const [buscaRadioModal, setBuscaRadioModal] = useState('');
   
   const [militares, setMilitares] = useState<Militar[]>([]);
   const [cautelas, setCautelas] = useState<Cautela[]>([]);
@@ -49,14 +50,14 @@ const Cautelas: React.FC = () => {
   const [missao, setMissao] = useState('');
   
   // Edit State
-  const [editingCautelaId, setEditingCautelaId] = useState<number | null>(null);
+  const [editingCautelaId, setEditingCautelaId] = useState<string | null>(null);
 
   // Modals de Confirmação
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [cautelaDeleteId, setCautelaDeleteId] = useState<number | null>(null);
+  const [cautelaDeleteId, setCautelaDeleteId] = useState<string | null>(null);
   
   const [isModalDevolverOpen, setIsModalDevolverOpen] = useState(false);
-  const [cautelaDevolverId, setCautelaDevolverId] = useState<number | null>(null);
+  const [cautelaDevolverId, setCautelaDevolverId] = useState<string | null>(null);
 
   // Initial Data Fetch
   useEffect(() => {
@@ -69,6 +70,7 @@ const Cautelas: React.FC = () => {
     if (isModalOpen) {
       fetchEquipamentosOperacionais();
       setRadiosSelecionados([]);
+      setBuscaRadioModal('');
       setMilitarId('');
       setDataInicio('');
       setDataPrevista('');
@@ -105,7 +107,7 @@ const Cautelas: React.FC = () => {
     }
   };
 
-  const toggleRadioSelection = (id: number) => {
+  const toggleRadioSelection = (id: string) => {
     if (radiosSelecionados.includes(id)) {
       setRadiosSelecionados(radiosSelecionados.filter(selectedId => selectedId !== id));
     } else {
@@ -129,7 +131,7 @@ const Cautelas: React.FC = () => {
       } else {
         await axios.post('http://localhost:3333/api/cautelas', {
           equipamentosIds: radiosSelecionados,
-          militarId: Number(militarId),
+          militarId: militarId,
           missao,
           dataInicio: dataInicio ? new Date(dataInicio).toISOString() : undefined,
           dataPrevista: dataPrevista ? new Date(dataPrevista).toISOString() : null
@@ -154,7 +156,7 @@ const Cautelas: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const openDeleteModal = (id: number) => {
+  const openDeleteModal = (id: string) => {
     setCautelaDeleteId(id);
     setIsModalDeleteOpen(true);
   };
@@ -172,7 +174,7 @@ const Cautelas: React.FC = () => {
     }
   };
 
-  const openDevolverModal = (id: number) => {
+  const openDevolverModal = (id: string) => {
     setCautelaDevolverId(id);
     setIsModalDevolverOpen(true);
   };
@@ -384,6 +386,16 @@ const Cautelas: React.FC = () => {
 
     doc.save(`Cautela_${String(c.id).padStart(5, '0')}.pdf`);
   };
+
+  const radiosDisponiveisFiltrados = radiosDisponiveis.filter(radio => {
+    if (!buscaRadioModal.trim()) return true;
+    const term = buscaRadioModal.toLowerCase();
+    return (
+      (radio.numSerie && radio.numSerie.toLowerCase().includes(term)) ||
+      (radio.rp && radio.rp.toLowerCase().includes(term)) ||
+      (radio.idRadio && radio.idRadio.toLowerCase().includes(term))
+    );
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
@@ -608,14 +620,29 @@ const Cautelas: React.FC = () => {
 
               {/* Rádios Disponíveis Component */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rádios Disponíveis para Empréstimo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex justify-between items-center">
+                  <span>Rádios Disponíveis para Empréstimo</span>
+                </label>
                 <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
+                  {/* Search bar inside block */}
+                  <div className="p-2 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                      <input 
+                        type="text"
+                        placeholder="Buscar rádio (Série, RP, ID)..."
+                        value={buscaRadioModal}
+                        onChange={e => setBuscaRadioModal(e.target.value)}
+                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-1.5 focus:outline-none placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
                   {/* List of checkboxes */}
                   <div className="max-h-48 overflow-y-auto p-4 space-y-3">
-                    {radiosDisponiveis.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic text-center py-2">Nenhum rádio operacional disponível no momento.</p>
+                    {radiosDisponiveisFiltrados.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic text-center py-2">Nenhum rádio encontrado.</p>
                     ) : (
-                      radiosDisponiveis.map((radio) => (
+                      radiosDisponiveisFiltrados.map((radio) => (
                         <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
                           <div className="relative flex items-center justify-center w-4 h-4 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-surface group-hover:border-primary transition-colors">
                             <input 

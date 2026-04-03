@@ -32,8 +32,8 @@ router.post('/', async (req: Request, res: Response) => {
       // 1. Criar o registro de Extravio
       const extr = await tx.extravio.create({
         data: {
-          equipamentoId: Number(equipamentoId),
-          militarId: militarId ? Number(militarId) : null,
+          equipamentoId: equipamentoId,
+          militarId: militarId ? militarId : null,
           dataExtravio: dataExtravio ? new Date(dataExtravio) : new Date(),
           local,
           descricao,
@@ -43,20 +43,20 @@ router.post('/', async (req: Request, res: Response) => {
 
       // 2. Atualizar status do Equipamento
       await tx.equipamento.update({
-        where: { id: Number(equipamentoId) },
+        where: { id: equipamentoId as string },
         data: { status: 'EXTRAVIADO' }
       });
 
       // 3. Arrancar da cautela original caso estivesse na rua
       const cautelasAtivas = await tx.cautela.findMany({
-        where: { status: 'ATIVA', equipamentos: { some: { id: Number(equipamentoId) } } },
+        where: { status: 'ATIVA', equipamentos: { some: { id: equipamentoId } } },
         include: { equipamentos: true }
       });
 
       for (const c of cautelasAtivas) {
         await tx.cautela.update({
           where: { id: c.id },
-          data: { equipamentos: { disconnect: { id: Number(equipamentoId) } } }
+          data: { equipamentos: { disconnect: { id: equipamentoId } } }
         });
 
         // Se era o último rádio e vazou da cautela, a gente fecha ela
@@ -82,16 +82,16 @@ router.post('/', async (req: Request, res: Response) => {
 // Marcar Rádio como Encontrado
 // @ts-ignore
 router.put('/:id/encontrado', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const ext = await tx.extravio.findUnique({ where: { id: Number(id) } });
+      const ext = await tx.extravio.findUnique({ where: { id: id as string } });
       if (!ext) throw new Error('Extravio não localizado.');
 
       // Muda o status do Extravio para Histórico
       const updatedExt = await tx.extravio.update({
-        where: { id: Number(id) },
+        where: { id: id as string },
         data: { status: 'RECUPERADO' }
       });
 
@@ -114,16 +114,16 @@ router.put('/:id/encontrado', async (req: Request, res: Response) => {
 // Marcar Rádio como Baixado Descartado
 // @ts-ignore
 router.put('/:id/baixar', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const ext = await tx.extravio.findUnique({ where: { id: Number(id) } });
+      const ext = await tx.extravio.findUnique({ where: { id: id as string } });
       if (!ext) throw new Error('Extravio não localizado.');
 
       // Finaliza documentação de perda
       const updatedExt = await tx.extravio.update({
-        where: { id: Number(id) },
+        where: { id: id as string },
         data: { status: 'BAIXADO' }
       });
 
@@ -146,11 +146,11 @@ router.put('/:id/baixar', async (req: Request, res: Response) => {
 // Excluir Registro de Extravio
 // @ts-ignore
 router.delete('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const ext = await tx.extravio.findUnique({ where: { id: Number(id) } });
+      const ext = await tx.extravio.findUnique({ where: { id: id as string } });
       if (!ext) throw new Error('Extravio não localizado.');
 
       // Solta Rádio novamente caso tenha sido clicado extraviado por acidente
@@ -160,7 +160,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       });
 
       const deletado = await tx.extravio.delete({
-        where: { id: Number(id) }
+        where: { id: id as string }
       });
 
       return deletado;

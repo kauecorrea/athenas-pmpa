@@ -1,0 +1,6 @@
+src/routes/cautelas.routes.ts(57,24): error TS2322: Type 'number[]' is not assignable to type 'string[] | FieldRef<"Equipamento", "String[]"> | undefined'.
+  Type 'number[]' is not assignable to type 'string[]'.
+    Type 'number' is not assignable to type 'string'.
+src/routes/cautelas.routes.ts(113,57): error TS2339: Property 'id' does not exist on type 'string'.
+src/routes/cautelas.routes.ts(135,63): error TS2339: Property 'id' does not exist on type 'string'.
+src/routes/manutencao.routes.ts(53,18): error TS2561: Object literal may only specify known properties, but 'equipamentoId' does not exist in type 'CautelaWhereInput'. Did you mean to write 'equipamentoIds'?
