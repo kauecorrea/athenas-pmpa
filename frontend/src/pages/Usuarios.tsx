@@ -36,7 +36,7 @@ const Usuarios: React.FC = () => {
 
   const fetchUsuarios = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/usuarios');
+      const res = await axios.get('/api/usuarios');
       setUsuarios(res.data);
     } catch (error) {
       console.error("Erro ao buscar usuários", error);
@@ -49,7 +49,7 @@ const Usuarios: React.FC = () => {
       return;
     }
     try {
-      await axios.post('http://localhost:3333/api/usuarios', novoUsuario);
+      await axios.post('/api/usuarios', novoUsuario);
       setIsModalOpen(false);
       setNovoUsuario({ nomeCompleto: '', nomeGuerra: '', email: '', senha: '', permissao: 'Administrador' });
       fetchUsuarios();
@@ -62,7 +62,7 @@ const Usuarios: React.FC = () => {
   const handleTogglePermissao = async (id: string, currentPerm: string) => {
     const newPerm = currentPerm === 'Administrador' ? 'Comum' : 'Administrador';
     try {
-      await axios.put(`http://localhost:3333/api/usuarios/${id}`, { permissao: newPerm });
+      await axios.put(`/api/usuarios/${id}`, { permissao: newPerm });
       fetchUsuarios();
     } catch (error) {
       console.error("Erro ao alterar permissão", error);
@@ -78,7 +78,7 @@ const Usuarios: React.FC = () => {
   const confirmExcluir = async () => {
     if (!usuarioDeleteId) return;
     try {
-      await axios.delete(`http://localhost:3333/api/usuarios/${usuarioDeleteId}`);
+      await axios.delete(`/api/usuarios/${usuarioDeleteId}`);
       fetchUsuarios();
     } catch (error) {
       console.error("Erro ao excluir", error);
@@ -112,8 +112,9 @@ const Usuarios: React.FC = () => {
 
       {/* TABELA DE USUÁRIOS */}
       <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
-        <div className="flex-1 overflow-auto z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+        {/* TABELA - Responsiva */}
+        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[700px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nome Completo</th>
@@ -174,10 +175,9 @@ const Usuarios: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL: NOVO USUÁRIO */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[500px] shadow-2xl flex flex-col">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[500px] shadow-2xl flex flex-col my-auto max-h-[95vh]">
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Criar Novo Usuário</h2>

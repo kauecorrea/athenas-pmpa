@@ -61,7 +61,7 @@ const Extraviados: React.FC = () => {
 
   const fetchExtravios = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/extravios');
+      const res = await axios.get('/api/extravios');
       setExtravios(res.data);
     } catch (error) {
       console.error("Erro ao buscar extravios", error);
@@ -70,7 +70,7 @@ const Extraviados: React.FC = () => {
 
   const fetchMilitares = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/militares');
+      const res = await axios.get('/api/militares');
       setMilitares(res.data);
     } catch (error) {
       console.error("Erro ao buscar militares", error);
@@ -79,7 +79,7 @@ const Extraviados: React.FC = () => {
 
   const fetchEquipamentosParaExtravio = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/equipamentos');
+      const res = await axios.get('/api/equipamentos');
       // Qualquer rádio pode ser extraviado (até os operacionais), exceto os que JÁ ESTÃO extraviados
       const disponiveis = res.data.filter((eq: any) => eq.status !== 'EXTRAVIADO');
       setRadiosDisponiveis(disponiveis);
@@ -95,7 +95,7 @@ const Extraviados: React.FC = () => {
     }
 
     try {
-      await axios.post('http://localhost:3333/api/extravios', {
+      await axios.post('/api/extravios', {
         equipamentoId: equipamentoId,
         militarId: militarId ? militarId : null,
         dataExtravio: dataExtravio ? new Date(dataExtravio).toISOString() : new Date().toISOString(),
@@ -117,7 +117,7 @@ const Extraviados: React.FC = () => {
   const handleEncontrado = async () => {
     if (!extravioAlvo) return;
     try {
-      await axios.put(`http://localhost:3333/api/extravios/${extravioAlvo.id}/encontrado`);
+      await axios.put(`/api/extravios/${extravioAlvo.id}/encontrado`);
       setIsModalEncontradoOpen(false);
       setExtravioAlvo(null);
       fetchExtravios();
@@ -127,7 +127,7 @@ const Extraviados: React.FC = () => {
   const handleBaixar = async () => {
     if (!extravioAlvo) return;
     try {
-      await axios.put(`http://localhost:3333/api/extravios/${extravioAlvo.id}/baixar`);
+      await axios.put(`/api/extravios/${extravioAlvo.id}/baixar`);
       setIsModalBaixarOpen(false);
       setExtravioAlvo(null);
       fetchExtravios(); // Atualiza a tabela
@@ -137,7 +137,7 @@ const Extraviados: React.FC = () => {
   const handleDelete = async () => {
     if (!extravioAlvo) return;
     try {
-      await axios.delete(`http://localhost:3333/api/extravios/${extravioAlvo.id}`);
+      await axios.delete(`/api/extravios/${extravioAlvo.id}`);
       setIsModalDeleteOpen(false);
       setExtravioAlvo(null);
       fetchExtravios(); // Atualiza a tabela
@@ -289,7 +289,7 @@ const Extraviados: React.FC = () => {
         {!isFormOpen && (
           <button 
             onClick={() => setIsFormOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20 whitespace-nowrap"
           >
             <Plus size={18} />
             Registrar B.O de Extravio
@@ -434,8 +434,9 @@ const Extraviados: React.FC = () => {
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Relação de Documentos Físicos de Extravio</h2>
         </div>
         
-        <div className="flex-1 overflow-auto z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+        {/* TABELA - Responsiva */}
+        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[1000px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">RP / Série</th>

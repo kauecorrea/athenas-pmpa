@@ -29,7 +29,7 @@ const Equipamentos: React.FC = () => {
   const [equipamentoDeleteRp, setEquipamentoDeleteRp] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [novoEquip, setNovoEquip] = useState({
-    id: 0,
+    id: '',
     numSerie: '',
     idRadio: '',
     rp: '',
@@ -44,7 +44,7 @@ const Equipamentos: React.FC = () => {
 
   const fetchEquipamentos = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/equipamentos');
+      const res = await axios.get('/api/equipamentos');
       setEquipamentos(res.data);
     } catch (e) {
       console.error("Conexão com a API falhou. Certifique que o backend está rodando.", e);
@@ -54,7 +54,7 @@ const Equipamentos: React.FC = () => {
 
   const openNovoModal = () => {
     setIsEditing(false);
-    setNovoEquip({ id: 0, numSerie: '', idRadio: '', rp: '', marca: 'Motorola', modelo: 'APX 900', status: 'OPERACIONAL' });
+    setNovoEquip({ id: '', numSerie: '', idRadio: '', rp: '', marca: 'Motorola', modelo: 'APX 900', status: 'OPERACIONAL' });
     setIsModalOpen(true);
   };
 
@@ -75,10 +75,10 @@ const Equipamentos: React.FC = () => {
   const handleSalvar = async () => {
     try {
       if (isEditing) {
-        const res = await axios.put(`http://localhost:3333/api/equipamentos/${novoEquip.id}`, novoEquip);
+        const res = await axios.put(`/api/equipamentos/${novoEquip.id}`, novoEquip);
         setEquipamentos(equipamentos.map(e => e.id === novoEquip.id ? res.data : e));
       } else {
-        const res = await axios.post('http://localhost:3333/api/equipamentos', novoEquip);
+        const res = await axios.post('/api/equipamentos', novoEquip);
         setEquipamentos([...equipamentos, res.data]);
       }
       setIsModalOpen(false);
@@ -97,7 +97,7 @@ const Equipamentos: React.FC = () => {
   const confirmExcluir = async () => {
     if (!equipamentoDeleteId) return;
     try {
-      await axios.delete(`http://localhost:3333/api/equipamentos/${equipamentoDeleteId}`);
+      await axios.delete(`/api/equipamentos/${equipamentoDeleteId}`);
       setEquipamentos(equipamentos.filter(e => e.id !== equipamentoDeleteId));
       setIsModalDeleteOpen(false);
       setEquipamentoDeleteId(null);
@@ -210,9 +210,9 @@ const Equipamentos: React.FC = () => {
           </div>
         </div>
         
-        {/* Tabela */}
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+        {/* Tabela com scroll horizontal no mobile */}
+        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[800px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Número de Série</th>
@@ -260,10 +260,9 @@ const Equipamentos: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Novo Equipamento */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl flex flex-col my-auto max-h-[95vh]">
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {isEditing ? 'Editar Equipamento' : 'Novo Equipamento'}

@@ -12,8 +12,14 @@ import {
   Activity,
   LogOut,
   Moon,
-  Sun
+  Sun,
+  X
 } from 'lucide-react';
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
 const menuPrincipal = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -31,7 +37,7 @@ const menuAdmin = [
   { icon: Activity, label: 'Auditoria', path: '/auditoria' }, // Changed from Configurações
 ];
 
-const Sidebar: React.FC = () => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [usuario, setUsuario] = React.useState<any>(null);
@@ -42,15 +48,21 @@ const Sidebar: React.FC = () => {
   });
 
   React.useEffect(() => {
+    let currentUser: any = null;
     const userStr = localStorage.getItem('usuario');
-    if (userStr) setUsuario(JSON.parse(userStr));
+    if (userStr) {
+      currentUser = JSON.parse(userStr);
+      setUsuario(currentUser);
 
-    const savedAvatar = localStorage.getItem('avatar');
-    if (savedAvatar) setAvatar(savedAvatar);
+      const savedAvatar = localStorage.getItem(`avatar_${currentUser.id}`);
+      if (savedAvatar) setAvatar(savedAvatar);
+    }
 
     const handleAvatarUpdate = () => {
-      const updatedAvatar = localStorage.getItem('avatar');
-      if (updatedAvatar) setAvatar(updatedAvatar);
+      if (currentUser) {
+        const updatedAvatar = localStorage.getItem(`avatar_${currentUser.id}`);
+        if (updatedAvatar) setAvatar(updatedAvatar);
+      }
     };
     window.addEventListener('avatar-updated', handleAvatarUpdate);
     return () => window.removeEventListener('avatar-updated', handleAvatarUpdate);
@@ -74,19 +86,39 @@ const Sidebar: React.FC = () => {
     }
   };
   return (
-    <aside className="w-64 bg-white dark:bg-[#0a0f1d] border-r border-gray-200 dark:border-[#1f2937] flex flex-col h-full transition-colors duration-200">
-      {/* Logo/Header */}
-      <div className="h-20 flex items-center px-6 border-b border-gray-200 dark:border-[#1f2937]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-            <Radio size={18} />
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-[#0a0f1d] border-r border-gray-200 dark:border-[#1f2937] flex flex-col h-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:z-auto
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:flex'}
+      `}>
+        {/* Logo/Header */}
+        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200 dark:border-[#1f2937]">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+              <Radio size={18} />
+            </div>
+            <div>
+              <h1 className="text-gray-900 dark:text-white font-bold tracking-wide text-lg leading-tight uppercase">Athenas</h1>
+              <p className="text-primary text-[10px] font-medium tracking-widest uppercase">PMPA</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-gray-900 dark:text-white font-bold tracking-wide text-lg leading-tight uppercase">Athenas</h1>
-            <p className="text-primary text-[10px] font-medium tracking-widest uppercase">PMPA</p>
-          </div>
+          
+          {/* Close button for mobile */}
+          <button 
+            onClick={onClose}
+            className="p-2 -mr-2 text-gray-500 hover:text-gray-900 dark:hover:text-white md:hidden"
+          >
+            <X size={20} />
+          </button>
         </div>
-      </div>
 
       <div className="flex-1 overflow-y-auto py-6">
           <h2 className="px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
@@ -121,6 +153,7 @@ const Sidebar: React.FC = () => {
                   <NavLink
                     key={item.path}
                     to={item.path}
+                    onClick={onClose}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-6 py-3 text-sm transition-all duration-200 ${
                         isActive 
@@ -171,6 +204,7 @@ const Sidebar: React.FC = () => {
         </button>
       </div>
     </aside>
+    </>
   );
 };
 

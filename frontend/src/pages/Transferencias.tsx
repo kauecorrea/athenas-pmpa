@@ -62,7 +62,7 @@ const Transferencias: React.FC = () => {
 
   const fetchTransferencias = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/transferencias');
+      const res = await axios.get('/api/transferencias');
       setTransferencias(res.data);
     } catch (error) {
       console.error("Erro ao buscar transferências", error);
@@ -71,7 +71,7 @@ const Transferencias: React.FC = () => {
 
   const fetchMilitares = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/militares');
+      const res = await axios.get('/api/militares');
       setMilitares(res.data);
     } catch (error) {
       console.error("Erro ao buscar militares", error);
@@ -80,7 +80,7 @@ const Transferencias: React.FC = () => {
 
   const fetchEquipamentosCautelados = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/equipamentos');
+      const res = await axios.get('/api/equipamentos');
       const cautelados = res.data.filter((eq: any) => eq.status === 'CAUTELADO');
       setRadiosDisponiveis(cautelados);
     } catch (error) {
@@ -213,7 +213,7 @@ const Transferencias: React.FC = () => {
     }
 
     try {
-      await axios.post('http://localhost:3333/api/transferencias', {
+      await axios.post('/api/transferencias', {
         equipamentosIds: radiosSelecionados,
         militarId: militarId,
         destino,
@@ -237,7 +237,7 @@ const Transferencias: React.FC = () => {
   const handleDeleteTransferencia = async () => {
     if (!transferenciaAlvo) return;
     try {
-      await axios.delete(`http://localhost:3333/api/transferencias/${transferenciaAlvo.id}`);
+      await axios.delete(`/api/transferencias/${transferenciaAlvo.id}`);
       setIsModalDeleteOpen(false);
       setTransferenciaAlvo(null);
       fetchTransferencias();
@@ -250,7 +250,7 @@ const Transferencias: React.FC = () => {
   const handleEditTransferencia = async () => {
     if (!transferenciaAlvo) return;
     try {
-      await axios.put(`http://localhost:3333/api/transferencias/${transferenciaAlvo.id}`, {
+      await axios.put(`/api/transferencias/${transferenciaAlvo.id}`, {
         destino,
         observacoes
       });
@@ -346,9 +346,9 @@ const Transferencias: React.FC = () => {
           </div>
         </div>
         
-        {/* TABLE CONTENT */}
-        <div className="flex-1 overflow-auto z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+        {/* TABLE CONTENT - Responsivo */}
+        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[900px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar Substituto</th>
@@ -413,10 +413,9 @@ const Transferencias: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL: NOVA TRANSFERÊNCIA */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[600px] shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[600px] shadow-2xl flex flex-col my-auto max-h-[95vh]">
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Repasse Tático de Material</h2>
@@ -581,10 +580,9 @@ const Transferencias: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL EDITAR */}
       {isModalEditOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl p-6 my-auto max-h-[95vh]">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Editar Transferência</h2>
             
             <div className="space-y-4">

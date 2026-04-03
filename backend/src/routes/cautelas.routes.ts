@@ -9,6 +9,22 @@ const prisma = new PrismaClient();
 // @ts-ignore
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const now = new Date();
+
+    // 1. Atualizar automaticamente para VENCIDA itens que passaram do prazo
+    await prisma.cautela.updateMany({
+      where: {
+        status: 'ATIVA',
+        dataPrevista: {
+          lt: now
+        }
+      },
+      data: {
+        status: 'VENCIDA'
+      }
+    });
+
+    // 2. Buscar cautelas (agora com status atualizados no banco)
     const cautelas = await prisma.cautela.findMany({
       include: {
         equipamentos: true,
@@ -17,8 +33,10 @@ router.get('/', async (req: Request, res: Response) => {
       },
       orderBy: { dataRetirada: 'desc' }
     });
+    
     res.json(cautelas);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Erro ao buscar cautelas' });
   }
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
+import { Menu, Radio } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Equipamentos from './pages/Equipamentos';
@@ -14,9 +15,16 @@ import Usuarios from './pages/Usuarios';
 import Auditoria from './pages/Auditoria';
 import Perfil from './pages/Perfil';
 import Login from './pages/Login';
+// URL Base global (Evita vazamentos e duplicação)
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 
-// Configurar o interceptor do Axios para espetar quem está logado em toda chamada HTTP
+// Configurar o interceptor do Axios para injetar o Token e monitorar Sessão
 axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  
   const usuarioInfo = localStorage.getItem('usuario');
   if (usuarioInfo) {
     const usuarioObj = JSON.parse(usuarioInfo);
@@ -26,6 +34,19 @@ axios.interceptors.request.use((config) => {
 }, (error) => {
   return Promise.reject(error);
 });
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Se o backend jogar um 401 (Token Expired ou sem permissão), desloga a pessoa
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Componente para Proteger as Rotas Internas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -38,11 +59,36 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Layout Padrão com Sidebar para as Telas Internas
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-background text-gray-900 dark:text-gray-100 overflow-hidden transition-colors duration-200">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-y-auto w-full">
-        <main className="flex-1 p-4 md:p-6 w-full">
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
+      
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* TopBar for Mobile */}
+        <header className="h-16 flex items-center justify-between px-4 bg-white dark:bg-[#0a0f1d] border-b border-gray-200 dark:border-[#1f2937] md:hidden shrink-0">
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+          >
+            <Menu size={24} />
+          </button>
+          
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white scale-90">
+              <Radio size={16} />
+            </div>
+            <span className="font-bold text-gray-900 dark:text-white uppercase tracking-tight">Athenas</span>
+          </div>
+          
+          <div className="w-10" /> {/* Spacer for centering */}
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
           {children}
         </main>
       </div>

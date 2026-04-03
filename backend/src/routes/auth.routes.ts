@@ -37,7 +37,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         nomeGuerra: usuario.nomeGuerra
       },
       JWT_SECRET,
-      { expiresIn: '8h' }
+      { expiresIn: '24h' }
     );
 
     // Auditoria de Logon manual

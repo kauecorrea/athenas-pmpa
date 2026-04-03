@@ -81,7 +81,7 @@ const Cautelas: React.FC = () => {
 
   const fetchCautelas = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/cautelas');
+      const res = await axios.get('/api/cautelas');
       setCautelas(res.data);
     } catch (error) {
       console.error("Erro ao buscar cautelas", error);
@@ -90,7 +90,7 @@ const Cautelas: React.FC = () => {
 
   const fetchMilitares = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/militares');
+      const res = await axios.get('/api/militares');
       setMilitares(res.data);
     } catch (error) {
       console.error("Erro ao buscar militares", error);
@@ -99,7 +99,7 @@ const Cautelas: React.FC = () => {
 
   const fetchEquipamentosOperacionais = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/equipamentos');
+      const res = await axios.get('/api/equipamentos');
       const operacionais = res.data.filter((eq: any) => eq.status === 'OPERACIONAL');
       setRadiosDisponiveis(operacionais);
     } catch (error) {
@@ -123,13 +123,13 @@ const Cautelas: React.FC = () => {
 
     try {
       if (editingCautelaId) {
-        await axios.put(`http://localhost:3333/api/cautelas/${editingCautelaId}`, {
+        await axios.put(`/api/cautelas/${editingCautelaId}`, {
           missao,
           dataInicio: dataInicio ? new Date(dataInicio).toISOString() : undefined,
           dataPrevista: dataPrevista ? new Date(dataPrevista).toISOString() : null
         });
       } else {
-        await axios.post('http://localhost:3333/api/cautelas', {
+        await axios.post('/api/cautelas', {
           equipamentosIds: radiosSelecionados,
           militarId: militarId,
           missao,
@@ -164,7 +164,7 @@ const Cautelas: React.FC = () => {
   const confirmDelete = async () => {
     if (!cautelaDeleteId) return;
     try {
-      await axios.delete(`http://localhost:3333/api/cautelas/${cautelaDeleteId}`);
+      await axios.delete(`/api/cautelas/${cautelaDeleteId}`);
       fetchCautelas(); // Refresh table
     } catch (error) {
       console.error("Erro ao excluir:", error);
@@ -182,7 +182,7 @@ const Cautelas: React.FC = () => {
   const confirmDevolver = async () => {
     if (!cautelaDevolverId) return;
     try {
-      await axios.put(`http://localhost:3333/api/cautelas/${cautelaDevolverId}/devolver`);
+      await axios.put(`/api/cautelas/${cautelaDevolverId}/devolver`);
       fetchCautelas(); // Refresh table
     } catch (error) {
       console.error("Erro ao devolver:", error);
@@ -458,9 +458,9 @@ const Cautelas: React.FC = () => {
           </div>
         </div>
         
-        {/* TABLE CONTENT */}
-        <div className="flex-1 overflow-auto z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+        {/* TABLE CONTENT - Responsivo */}
+        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[1000px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar</th>
@@ -496,17 +496,17 @@ const Cautelas: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     {c.status === 'ATIVA' && (
-                      <span className="px-2.5 py-1 text-[11px] font-bold text-orange-600 bg-orange-500/10 border border-orange-500/20 rounded-full lowercase tracking-wider">
+                      <span className="px-2.5 py-1 text-[11px] font-bold text-success bg-success/10 border border-success/20 rounded-full lowercase tracking-wider">
                         Ativa
                       </span>
                     )}
                     {c.status === 'DEVOLVIDA' && (
-                      <span className="px-2.5 py-1 text-[11px] font-bold text-success bg-success/10 border border-success/20 rounded-full lowercase tracking-wider">
+                      <span className="px-2.5 py-1 text-[11px] font-bold text-danger bg-danger/10 border border-danger/20 rounded-full lowercase tracking-wider">
                         Devolvida
                       </span>
                     )}
                     {c.status === 'VENCIDA' && (
-                      <span className="px-2.5 py-1 text-[11px] font-bold text-danger bg-danger/10 border border-danger/20 rounded-full lowercase tracking-wider">
+                      <span className="px-2.5 py-1 text-[11px] font-bold text-warning bg-warning/10 border border-warning/20 rounded-full lowercase tracking-wider">
                         Vencida
                       </span>
                     )}
@@ -546,10 +546,9 @@ const Cautelas: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL: NOVA CAUTELA */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[600px] shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[600px] shadow-2xl flex flex-col my-auto max-h-[95vh]">
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nova Cautela</h2>

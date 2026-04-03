@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, Edit2, Trash2, ChevronDown, Users } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, ChevronDown } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Unidade {
@@ -52,20 +52,20 @@ const Militares: React.FC = () => {
 
   const fetchMilitares = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/militares');
+      const res = await axios.get('/api/militares');
       setMilitares(res.data);
     } catch (error) {
       console.error("Erro ao carregar militares", error);
       // Fallback em caso de falha temporária
       setMilitares([
         {
-          id: 1,
+          id: '1',
           nome: 'Mario',
           rg: '56848',
           contato: '65564.56432',
           posto: '2° Tenente',
-          unidadeId: 1,
-          unidade: { id: 1, nome: 'CIEPAS', sigla: 'CIEPAS' }
+          unidadeId: '1',
+          unidade: { id: '1', nome: 'CIEPAS', sigla: 'CIEPAS' }
         }
       ]);
     }
@@ -73,14 +73,14 @@ const Militares: React.FC = () => {
 
   const fetchUnidades = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/unidades');
+      const res = await axios.get('/api/unidades');
       setUnidades(res.data);
     } catch {
       // Fallback 
       setUnidades([
-        { id: 1, nome: 'CIEPAS', sigla: 'CIEPAS' },
-        { id: 2, nome: '1° BME', sigla: '1BME' },
-        { id: 3, nome: '1° BPM', sigla: '1BPM' }
+        { id: '1', nome: 'CIEPAS', sigla: 'CIEPAS' },
+        { id: '2', nome: '1° BME', sigla: '1BME' },
+        { id: '3', nome: '1° BPM', sigla: '1BPM' }
       ]);
     }
   };
@@ -105,9 +105,9 @@ const Militares: React.FC = () => {
 
     try {
       if (isEditing) {
-        await axios.put(`http://localhost:3333/api/militares/${novoMilitar.id}`, novoMilitar);
+        await axios.put(`/api/militares/${novoMilitar.id}`, novoMilitar);
       } else {
-        await axios.post('http://localhost:3333/api/militares', novoMilitar);
+        await axios.post('/api/militares', novoMilitar);
       }
       setIsModalOpen(false);
       fetchMilitares(); // Atualiza a lista
@@ -126,7 +126,7 @@ const Militares: React.FC = () => {
   const confirmExcluir = async () => {
     if (!militarDeleteId) return;
     try {
-      await axios.delete(`http://localhost:3333/api/militares/${militarDeleteId}`);
+      await axios.delete(`/api/militares/${militarDeleteId}`);
       fetchMilitares();
     } catch (error) {
       console.error("Erro ao excluir", error);
@@ -236,9 +236,9 @@ const Militares: React.FC = () => {
           </div>
         </div>
         
-        {/* TABELA */}
-        <div className="flex-1 overflow-auto z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+        {/* TABELA - Responsiva */}
+        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[800px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nome de Guerra</th>
@@ -288,10 +288,9 @@ const Militares: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl flex flex-col my-auto max-h-[95vh]">
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {isEditing ? 'Editar Militar' : 'Novo Militar'}

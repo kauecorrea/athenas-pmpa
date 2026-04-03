@@ -18,7 +18,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3333/api/auth/login', {
+      const response = await axios.post('/api/auth/login', {
         email,
         senha
       });

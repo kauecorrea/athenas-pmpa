@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Activity, CalendarDays, User, Target, ChevronDown, Check } from 'lucide-react';
+import { Search, Activity, CalendarDays, User } from 'lucide-react';
 
 interface AuditoriaRecord {
   id: string;
@@ -21,7 +21,7 @@ const Auditoria: React.FC = () => {
 
   const fetchLogs = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/auditoria');
+      const res = await axios.get('/api/auditoria');
       setLogs(res.data);
     } catch (error) {
       console.error("Erro ao carregar auditoria de sistema", error);
@@ -62,9 +62,9 @@ const Auditoria: React.FC = () => {
             className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-[#111827] px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#374151]">
-            Mostrando os últimos: {logs.length} eventos
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-[#111827] px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#374151] whitespace-nowrap">
+            Logs: {logs.length}
           </span>
         </div>
       </div>

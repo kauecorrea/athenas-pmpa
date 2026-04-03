@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
+
+import { authMiddleware } from './middlewares/auth.middleware';
 
 import unidadesRoutes from './routes/unidades.routes';
 import equipamentosRoutes from './routes/equipamentos.routes';
@@ -21,21 +24,44 @@ const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 3333;
 
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.FRONTEND_URL || 'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado pelo CORS do Athenas!'));
+    }
+  }
+}));
 app.use(express.json());
 
-// Rotas da API
-app.use('/api/unidades', unidadesRoutes);
-app.use('/api/equipamentos', equipamentosRoutes);
-app.use('/api/cautelas', cautelasRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/militares', militaresRoutes);
-app.use('/api/usuarios', usuariosRoutes);
+// Rate Limiter Global contra DDoS
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 300, // limite de 300 requests por IP
+  message: { error: 'Muitas requisições. Tente novamente mais tarde.' },
+});
+app.use('/api', limiter);
+
+// Rota de Autenticação (Aberta)
 app.use('/api/auth', authRoutes);
-app.use('/api/manutencoes', manutencaoRoutes);
-app.use('/api/extravios', extraviosRoutes);
-app.use('/api/transferencias', transferenciasRoutes);
-app.use('/api/auditoria', auditoriaRoutes);
+
+// Rotas da API (Protegidas)
+app.use('/api/unidades', authMiddleware, unidadesRoutes);
+app.use('/api/equipamentos', authMiddleware, equipamentosRoutes);
+app.use('/api/cautelas', authMiddleware, cautelasRoutes);
+app.use('/api/dashboard', authMiddleware, dashboardRoutes);
+app.use('/api/militares', authMiddleware, militaresRoutes);
+app.use('/api/usuarios', authMiddleware, usuariosRoutes);
+app.use('/api/manutencoes', authMiddleware, manutencaoRoutes);
+app.use('/api/extravios', authMiddleware, extraviosRoutes);
+app.use('/api/transferencias', authMiddleware, transferenciasRoutes);
+app.use('/api/auditoria', authMiddleware, auditoriaRoutes);
 
 // Rota inicial / Teste
 app.get('/', (req: express.Request, res: express.Response) => {

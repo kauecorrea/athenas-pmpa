@@ -39,14 +39,14 @@ const Unidades: React.FC = () => {
 
   const fetchUnidades = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/unidades');
+      const res = await axios.get('/api/unidades');
       setUnidades(res.data);
     } catch (error) {
       console.error("Erro ao carregar unidades", error);
       // Fallback em caso de API offline
       setUnidades([
-        { id: 1, nome: '25° CIPM', sigla: '25 CIPM', coint: 'XIV', localizacao: 'ELDORADO DOS CARAJÁS', _count: { militares: 0 } },
-        { id: 2, nome: '40° BPM', sigla: '40 BPM', coint: 'XIV', localizacao: 'CANAÃ DOS CARAJÁS', _count: { militares: 0 } },
+        { id: '1', nome: '25° CIPM', sigla: '25 CIPM', coint: 'XIV', localizacao: 'ELDORADO DOS CARAJÁS', _count: { militares: 0 } },
+        { id: '2', nome: '40° BPM', sigla: '40 BPM', coint: 'XIV', localizacao: 'CANAÃ DOS CARAJÁS', _count: { militares: 0 } },
       ]);
     }
   };
@@ -76,9 +76,9 @@ const Unidades: React.FC = () => {
 
     try {
       if (isEditing) {
-        await axios.put(`http://localhost:3333/api/unidades/${novaUnidade.id}`, novaUnidade);
+        await axios.put(`/api/unidades/${novaUnidade.id}`, novaUnidade);
       } else {
-        await axios.post('http://localhost:3333/api/unidades', novaUnidade);
+        await axios.post('/api/unidades', novaUnidade);
       }
       setIsModalOpen(false);
       fetchUnidades();
@@ -97,7 +97,7 @@ const Unidades: React.FC = () => {
   const confirmExcluir = async () => {
     if (!unidadeDeleteId) return;
     try {
-      await axios.delete(`http://localhost:3333/api/unidades/${unidadeDeleteId}`);
+      await axios.delete(`/api/unidades/${unidadeDeleteId}`);
       fetchUnidades();
     } catch (error: any) {
       console.error("Erro ao excluir", error);
@@ -189,8 +189,9 @@ const Unidades: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+        {/* TABELA - Responsiva */}
+        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[800px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
@@ -243,8 +244,8 @@ const Unidades: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl flex flex-col my-auto max-h-[95vh]">
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {isEditing ? 'Editar Unidade' : 'Nova Unidade'}

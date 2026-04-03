@@ -56,7 +56,7 @@ const Manutencao: React.FC = () => {
 
   const fetchManutencoes = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/manutencoes');
+      const res = await axios.get('/api/manutencoes');
       setManutencoes(res.data);
     } catch (error) {
       console.error("Erro ao buscar manutenções", error);
@@ -65,7 +65,7 @@ const Manutencao: React.FC = () => {
 
   const fetchEquipamentosParaManutencao = async () => {
     try {
-      const res = await axios.get('http://localhost:3333/api/equipamentos');
+      const res = await axios.get('/api/equipamentos');
       // Filtra Rádios que não estão em manutenção e nem extraviados permanentemente
       const disponiveis = res.data.filter((eq: any) => eq.status !== 'MANUTENCAO' && eq.status !== 'EXTRAVIADO');
       setRadiosDisponiveis(disponiveis);
@@ -81,7 +81,7 @@ const Manutencao: React.FC = () => {
     }
 
     try {
-      await axios.post('http://localhost:3333/api/manutencoes', {
+      await axios.post('/api/manutencoes', {
         equipamentoId: equipamentoId,
         problema,
         dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : new Date().toISOString(),
@@ -106,7 +106,7 @@ const Manutencao: React.FC = () => {
   const confirmConcluir = async () => {
     if (!manutencaoConcluirId) return;
     try {
-      await axios.put(`http://localhost:3333/api/manutencoes/${manutencaoConcluirId}/concluir`);
+      await axios.put(`/api/manutencoes/${manutencaoConcluirId}/concluir`);
       fetchManutencoes();
     } catch (error) {
       console.error("Erro ao concluir", error);
@@ -243,7 +243,7 @@ const Manutencao: React.FC = () => {
         {!isFormOpen && (
           <button 
             onClick={() => setIsFormOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20 whitespace-nowrap"
           >
             <Plus size={18} />
             Nova Manutenção
@@ -363,8 +363,9 @@ const Manutencao: React.FC = () => {
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Equipamentos em Manutenção</h2>
         </div>
         
-        <div className="flex-1 overflow-auto z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+        {/* TABELA - Responsiva */}
+        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[900px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">ID do Rádio</th>

@@ -34,11 +34,11 @@ const Perfil: React.FC = () => {
       setPosto(u.posto || '');
       setUnidade(u.unidade || 'DITEL');
       setEmailAtual(u.email || '');
+      
+      // Recuperar avatar (UI Local)
+      const savedAvatar = localStorage.getItem(`avatar_${u.id}`);
+      if (savedAvatar) setAvatar(savedAvatar);
     }
-    
-    // Recuperar avatar (UI Local)
-    const savedAvatar = localStorage.getItem('avatar');
-    if (savedAvatar) setAvatar(savedAvatar);
   }, []);
 
   const getInitials = () => {
@@ -57,7 +57,9 @@ const Perfil: React.FC = () => {
       reader.onloadend = () => {
         const base64String = reader.result as string;
         setAvatar(base64String);
-        localStorage.setItem('avatar', base64String); // Salvar localmente
+        if (userId) {
+          localStorage.setItem(`avatar_${userId}`, base64String); // Salvar localmente vinculado ao perfil
+        }
         window.dispatchEvent(new Event('avatar-updated'));
       };
       reader.readAsDataURL(file);
@@ -79,7 +81,7 @@ const Perfil: React.FC = () => {
   const handleSalvarBasico = async () => {
     if (!userId) return;
     try {
-      await axios.put(`http://localhost:3333/api/usuarios/${userId}`, {
+      await axios.put(`/api/usuarios/${userId}`, {
         nomeCompleto,
         nomeGuerra,
         posto,
@@ -99,7 +101,7 @@ const Perfil: React.FC = () => {
       return;
     }
     try {
-      await axios.put(`http://localhost:3333/api/usuarios/${userId}`, {
+      await axios.put(`/api/usuarios/${userId}`, {
         email: novoEmail
       });
       syncLocalUsuario({ email: novoEmail });
@@ -123,7 +125,7 @@ const Perfil: React.FC = () => {
       return;
     }
     try {
-      await axios.put(`http://localhost:3333/api/usuarios/${userId}`, {
+      await axios.put(`/api/usuarios/${userId}`, {
         senha: novaSenha
       });
       setNovaSenha('');
