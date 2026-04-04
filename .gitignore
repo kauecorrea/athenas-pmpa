@@ -8,3 +8,10 @@ coverage
 .DS_Store
 backend/node_modules
 frontend/node_modules
+
+mongodb_data/
+setup_mongodb_replset.ps1
+mongod_original.cfg
+INICIAR_SISTEMA.bat
+backend/prisma/rs_initiate_27017.js
+
