@@ -43,7 +43,7 @@ app.use(express.json());
 // Rate Limiter Global contra DDoS
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 1000, // limite aumentado temporariamente para importação massiva
+  max: 300, // limite original restaurado após importação massiva
   message: { error: 'Muitas requisições. Tente novamente mais tarde.' },
 });
 app.use('/api', limiter);
