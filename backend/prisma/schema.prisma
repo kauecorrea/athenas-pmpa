@@ -35,9 +35,9 @@ model Militar {
 
 model Equipamento {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  idRadio     String?   @unique // "ID do Rádio" que aparece na interface
-  rp          String?    @unique // Número de Patrimônio
-  numSerie    String    @unique // Número de Série
+  idRadio     String?   // "ID do Rádio" (não é mais único para aceitar vários vazios)
+  rp          String?   // Número de Patrimônio (não é mais único para aceitar vários vazios)
+  numSerie    String    @unique // Número de Série (Garante a unicidade real)
   marca       String?   // Motorola, Tait
   modelo      String?   // APX 900, APX 2000, TP9400, TP9100
   status      StatusEquipamento @default(OPERACIONAL)
