@@ -341,21 +341,20 @@ const Cautelas: React.FC = () => {
     }
 
     // Tabela individual de Rádios com Autotable
-    const radiosTabela = c.equipamentos.map((eq, index) => {
-      return [
-        index + 1,
-        eq.numSerie + " / " + eq.rp,
-        c.militar ? `${c.militar.posto} ${c.militar.nome}` : '',
-        c.militar?.rg || '',
-        c.militar?.contato || '',
-        ''
-      ];
-    });
+    const tableColumn = ["Nº", "Nº DE SÉRIE", "RESPONSÁVEL", "RG", "CONTATO", "ASSINATURA"];
+    const tableRows = c.equipamentos.map((e) => [
+      e.idRadio || '-',
+      e.numSerie,
+      c.militar ? `${c.militar.posto} ${c.militar.nome}` : '-',
+      c.militar?.rg || '-',
+      c.militar?.contato || '-',
+      ""
+    ]);
 
     autoTable(doc, {
       startY: 65,
-      head: [['Nº', 'Nº DE SÉRIE / RP', 'RESPONSÁVEL', 'RG', 'CONTATO', 'ASSINATURA']],
-      body: radiosTabela,
+      head: [tableColumn],
+      body: tableRows,
       theme: 'plain',
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fontStyle: 'bold', lineWidth: { bottom: 0.5 }, lineColor: [0, 0, 0] },

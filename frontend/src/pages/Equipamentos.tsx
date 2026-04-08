@@ -215,8 +215,8 @@ const Equipamentos: React.FC = () => {
           <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[800px]">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
               <tr>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nº</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Número de Série</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">ID do Rádio</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Patrimônio</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Marca</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Modelo</th>
@@ -227,8 +227,8 @@ const Equipamentos: React.FC = () => {
             <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
               {equipamentosFiltrados.map((eq) => (
                 <tr key={eq.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{eq.numSerie}</td>
                   <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{eq.idRadio || '-'}</td>
+                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{eq.numSerie}</td>
                   <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{eq.rp}</td>
                   <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{eq.marca || '-'}</td>
                   <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{eq.modelo || '-'}</td>
@@ -272,21 +272,21 @@ const Equipamentos: React.FC = () => {
             
             <div className="p-6 overflow-y-auto space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Número de Série</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nº</label>
                 <input 
                   type="text" 
-                  value={novoEquip.numSerie}
-                  onChange={e => setNovoEquip({...novoEquip, numSerie: e.target.value})}
+                  value={novoEquip.idRadio}
+                  onChange={e => setNovoEquip({...novoEquip, idRadio: e.target.value})}
                   className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">ID do Rádio</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Número de Série</label>
                 <input 
                   type="text" 
-                  value={novoEquip.idRadio}
-                  onChange={e => setNovoEquip({...novoEquip, idRadio: e.target.value})}
+                  value={novoEquip.numSerie}
+                  onChange={e => setNovoEquip({...novoEquip, numSerie: e.target.value})}
                   className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                 />
               </div>
