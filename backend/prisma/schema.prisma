@@ -66,6 +66,7 @@ enum StatusEquipamento {
 
 model Cautela {
   id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  numeroSequencial Int?        // Número amigável (1, 2, 3...)
   
   equipamentoIds String[]     @db.ObjectId
   equipamentos   Equipamento[] @relation(fields: [equipamentoIds], references: [id])

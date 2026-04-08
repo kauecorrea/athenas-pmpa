@@ -21,6 +21,7 @@ interface Militar {
 
 interface Cautela {
   id: string;
+  numeroSequencial: number | null;
   militar: { id: string; nome: string; posto: string; rg: string; contato: string; unidade: { nome: string } } | null;
   unidade: { nome: string } | null;
   equipamentos: EquipamentoDisponivel[];
@@ -69,13 +70,16 @@ const Cautelas: React.FC = () => {
   useEffect(() => {
     if (isModalOpen) {
       fetchEquipamentosOperacionais();
-      setRadiosSelecionados([]);
-      setBuscaRadioModal('');
-      setMilitarId('');
-      setDataInicio('');
-      setDataPrevista('');
-      setMissao('');
-      setEditingCautelaId(null);
+      
+      // Só resetamos se NÃO for uma edição
+      if (!editingCautelaId) {
+        setRadiosSelecionados([]);
+        setBuscaRadioModal('');
+        setMilitarId('');
+        setDataInicio('');
+        setDataPrevista('');
+        setMissao('');
+      }
     }
   }, [isModalOpen]);
 
@@ -100,7 +104,10 @@ const Cautelas: React.FC = () => {
   const fetchEquipamentosOperacionais = async () => {
     try {
       const res = await axios.get('/api/equipamentos');
-      const operacionais = res.data.filter((eq: any) => eq.status === 'OPERACIONAL');
+      // Mostra operacionais OU os rádios que já fazem parte da cautela sendo editada
+      const operacionais = res.data.filter((eq: any) => 
+        eq.status === 'OPERACIONAL' || (editingCautelaId && radiosSelecionados.includes(eq.id))
+      );
       setRadiosDisponiveis(operacionais);
     } catch (error) {
       console.error("Erro ao buscar equipamentos operacionais", error);
@@ -325,7 +332,7 @@ const Cautelas: React.FC = () => {
     doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
 
     doc.setFontSize(12);
-    doc.text(`CAUTELA N° ${String(c.id).padStart(5, '0')}`, 105, 50, { align: "center" });
+    doc.text(`CAUTELA N° ${String(c.numeroSequencial || '00').padStart(2, '0')}`, 105, 50, { align: "center" });
     if (c.missao) {
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
@@ -384,7 +391,7 @@ const Cautelas: React.FC = () => {
     doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, 280, { align: "center" });
     doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: citel@pm.pa.gov.br", 105, 285, { align: "center" });
 
-    doc.save(`Cautela_${String(c.id).padStart(5, '0')}.pdf`);
+    doc.save(`Cautela_${String(c.numeroSequencial || '00').padStart(2, '0')}.pdf`);
   };
 
   const radiosDisponiveisFiltrados = radiosDisponiveis.filter(radio => {
@@ -417,7 +424,10 @@ const Cautelas: React.FC = () => {
             Gerar Relatório
           </button>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingCautelaId(null);
+              setIsModalOpen(true);
+            }}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
           >
             <Plus size={18} />
@@ -551,8 +561,12 @@ const Cautelas: React.FC = () => {
           <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[600px] shadow-2xl flex flex-col my-auto max-h-[95vh]">
             <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nova Cautela</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Selecione o militar e os equipamentos</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {editingCautelaId ? 'Editar Cautela' : 'Nova Cautela'}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {editingCautelaId ? 'Atualize as informações do empréstimo' : 'Selecione o militar e os equipamentos'}
+                </p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                 ✕
