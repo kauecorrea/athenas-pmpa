@@ -68,7 +68,26 @@ app.get('/', (req: express.Request, res: express.Response) => {
   res.send('API Controle Patrimonial PMPA v1.0.0 está online!');
 });
 
+// Endpoint de Keep-Alive para monitoramento externo
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'UP', timestamp: new Date() });
+});
+
 // Inicia o servidor
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
+
+  // Lógica de Keep-Alive (Ping a cada 10 minutos)
+  const URL_SISTEMA = process.env.RENDER_EXTERNAL_URL;
+  if (URL_SISTEMA) {
+    const https = require('https');
+    console.log(`Auto-ping configurado para: ${URL_SISTEMA}`);
+    setInterval(() => {
+      https.get(`${URL_SISTEMA}/api/health`, (res: any) => {
+        console.log(`Ping de atividade: ${res.statusCode}`);
+      }).on('error', (err: any) => {
+        console.error('Erro no auto-ping:', err.message);
+      });
+    }, 10 * 60 * 1000); // 10 minutos
+  }
 });
