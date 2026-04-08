@@ -55,7 +55,7 @@ router.post('/', async (req: Request, res: Response) => {
     const cautelaRealizada = await prisma.$transaction(async (tx) => {
       
       // Pegar o último número sequencial para incrementar
-      const ultimaCautela = await tx.cautela.findFirst({
+      const ultimaCautela = await (tx.cautela as any).findFirst({
         orderBy: { numeroSequencial: 'desc' },
         select: { numeroSequencial: true }
       });
@@ -63,7 +63,7 @@ router.post('/', async (req: Request, res: Response) => {
       const proximoNumero = (ultimaCautela?.numeroSequencial || 0) + 1;
 
       // 1. Criar a Cautela Única com Amarração M:N
-      const cautela = await tx.cautela.create({
+      const cautela = await (tx.cautela as any).create({
         data: {
           numeroSequencial: proximoNumero,
           militarId: militarId ? militarId : null,
