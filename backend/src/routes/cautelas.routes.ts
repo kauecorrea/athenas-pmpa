@@ -24,7 +24,19 @@ router.get('/', async (req: Request, res: Response) => {
       }
     });
 
-    // 2. Buscar cautelas (agora com status atualizados no banco)
+    // 2. Sincronizar Status dos Equipamentos (Garantir que os rádios fiquem como CAUTELADOS)
+    const cautelasAtivas = await prisma.cautela.findMany({
+      where: { status: 'ATIVA' },
+      select: { equipamentoIds: true }
+    });
+    for (const c of cautelasAtivas) {
+      await prisma.equipamento.updateMany({
+        where: { id: { in: (c.equipamentoIds as string[]) } },
+        data: { status: 'CAUTELADO' }
+      });
+    }
+
+    // 3. Buscar cautelas (agora com status atualizados no banco)
     const cautelas = await prisma.cautela.findMany({
       include: {
         equipamentos: true,
