@@ -1,3 +1,4 @@
+// Atualização de Cautelas - v1.0.1
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Plus, FileText, Download, ChevronDown, CheckCircle, Edit2, Trash2 } from 'lucide-react';
