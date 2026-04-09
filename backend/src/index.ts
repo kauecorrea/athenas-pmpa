@@ -17,6 +17,7 @@ import manutencaoRoutes from './routes/manutencao.routes';
 import extraviosRoutes from './routes/extravios.routes';
 import transferenciasRoutes from './routes/transferencias.routes';
 import auditoriaRoutes from './routes/auditoria.routes';
+import vtrRoutes from './routes/vtr.routes';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use('/api/manutencoes', authMiddleware, manutencaoRoutes);
 app.use('/api/extravios', authMiddleware, extraviosRoutes);
 app.use('/api/transferencias', authMiddleware, transferenciasRoutes);
 app.use('/api/auditoria', authMiddleware, auditoriaRoutes);
+app.use('/api/vtr', authMiddleware, vtrRoutes);
 
 // Rota inicial / Teste
 app.get('/', (req: express.Request, res: express.Response) => {

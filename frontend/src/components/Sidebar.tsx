@@ -13,7 +13,8 @@ import {
   LogOut,
   Moon,
   Sun,
-  X
+  X,
+  Truck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +30,7 @@ const menuPrincipal = [
   { icon: ClipboardList, label: 'Cautelas', path: '/cautelas' }, // Changed from FileSignature to ClipboardList
   { icon: ArrowRightLeft, label: 'Transferências', path: '/transferencias' }, // Changed from Settings to ArrowRightLeft
   { icon: Wrench, label: 'Manutenção', path: '/manutencao' }, // Changed from AlertTriangle to Wrench
+  { icon: Truck, label: 'VTR', path: '/vtr' },
   { icon: AlertTriangle, label: 'Extraviados', path: '/extraviados' },
 ];
 

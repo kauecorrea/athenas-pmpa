@@ -13,6 +13,7 @@ import Manutencao from './pages/Manutencao';
 import Extraviados from './pages/Extraviados';
 import Usuarios from './pages/Usuarios';
 import Auditoria from './pages/Auditoria';
+import Vtr from './pages/Vtr';
 import Perfil from './pages/Perfil';
 import Login from './pages/Login';
 // URL Base global (Evita vazamentos e duplicação)
@@ -115,7 +116,8 @@ const App: React.FC = () => {
                 <Route path="/cautelas" element={<Cautelas />} />
                 <Route path="/transferencias" element={<Transferencias />} />
                 <Route path="/manutencao" element={<Manutencao />} />
-                <Route path="/extraviados" element={<Extraviados />} />
+                <Route path="/vtr" element={<Vtr />} />
+                <Route path="/extraviados" element={<Extravios />} />
                 <Route path="/usuarios" element={<Usuarios />} />
                 <Route path="/auditoria" element={<Auditoria />} />
                 <Route path="/perfil" element={<Perfil />} />
