@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Truck, 
   Plus, 
   Search, 
   FileText, 
   Calendar, 
   CheckCircle2, 
   X, 
-  Trash2
+  Trash2,
+  Car
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -283,7 +283,7 @@ const Vtr: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-surface p-6 rounded-2xl border border-gray-100 dark:border-[#1f2937] shadow-sm">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
-            <Truck className="text-primary" size={32} />
+            <Car className="text-primary" size={32} />
             Manutenção de Viaturas (VTR)
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
@@ -446,7 +446,7 @@ const Vtr: React.FC = () => {
             <div className="px-8 py-6 bg-gray-50 dark:bg-[#0a0f1d] border-b border-gray-100 dark:border-[#1f2937] flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-primary/10 rounded-xl">
-                  <Truck className="text-primary" size={24} />
+                  <Car className="text-primary" size={24} />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nova Manutenção VTR</h2>
