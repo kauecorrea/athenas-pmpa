@@ -6,13 +6,9 @@ import {
   Search, 
   FileText, 
   Calendar, 
-  User, 
-  Wrench, 
   CheckCircle2, 
   X, 
-  Eye,
-  Trash2,
-  AlertCircle
+  Trash2
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
