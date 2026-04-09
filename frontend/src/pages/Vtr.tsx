@@ -60,6 +60,14 @@ const Vtr: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filtro, setFiltro] = useState('');
   
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [idToDelete, setIdToDelete] = useState<string | null>(null);
+  
   // Form State
   const [formData, setFormData] = useState({
     paeNumero: '',
@@ -81,6 +89,11 @@ const Vtr: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtro]);
 
   const fetchData = async () => {
     try {
@@ -136,9 +149,16 @@ const Vtr: React.FC = () => {
   };
 
   const deleteManutencao = async (id: string) => {
-    if (!window.confirm('Deseja excluir este registro de manutenção?')) return;
+    setIdToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!idToDelete) return;
     try {
-      await axios.delete(`/api/vtr/${id}`);
+      await axios.delete(`/api/vtr/${idToDelete}`);
+      setIsDeleteModalOpen(false);
+      setIdToDelete(null);
       fetchData();
     } catch (error) {
       alert('Erro ao excluir');
@@ -251,6 +271,11 @@ const Vtr: React.FC = () => {
     m.osNumero.toString().includes(filtro)
   );
 
+  // Pagination Logic
+  const totalPages = Math.ceil(manutencoesFiltradas.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const manutencoesPaginadas = manutencoesFiltradas.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white pb-10">
       
@@ -312,7 +337,7 @@ const Vtr: React.FC = () => {
                   <td colSpan={6} className="px-6 py-10 text-center text-gray-400 italic">Nenhum registro encontrado.</td>
                 </tr>
               ) : (
-                manutencoesFiltradas.map((m) => (
+                manutencoesPaginadas.map((m) => (
                   <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
                     <td className="px-6 py-4 font-bold text-primary">#{m.osNumero.toString().padStart(3, '0')}</td>
                     <td className="px-6 py-4">
@@ -353,6 +378,64 @@ const Vtr: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION CONTROLS */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 bg-gray-50 dark:bg-[#0a0f1d] border-t border-gray-100 dark:border-[#1f2937] flex items-center justify-between">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              Mostrando <span className="text-gray-900 dark:text-white">{startIndex + 1}</span> a <span className="text-gray-900 dark:text-white">{Math.min(startIndex + itemsPerPage, manutencoesFiltradas.length)}</span> de <span className="text-gray-900 dark:text-white">{manutencoesFiltradas.length}</span> registros
+            </p>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-[#1f2937] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+              >
+                Anterior
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const pageNumber = i + 1;
+                  // Show current page, first, last, and pages around current
+                  if (
+                    pageNumber === 1 || 
+                    pageNumber === totalPages || 
+                    (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                          currentPage === pageNumber 
+                            ? 'bg-primary text-white shadow-md' 
+                            : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  } else if (
+                    pageNumber === currentPage - 2 || 
+                    pageNumber === currentPage + 2
+                  ) {
+                    return <span key={pageNumber} className="text-gray-400">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-[#1f2937] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL DE CADASTRO */}
@@ -578,6 +661,40 @@ const Vtr: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-surface w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trash2 className="text-red-500" size={40} />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Excluir Registro?</h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                Esta ação não pode ser desfeita. O laudo de manutenção será removido permanentemente do sistema.
+              </p>
+            </div>
+            <div className="px-8 py-6 bg-gray-50 dark:bg-[#0a0f1d] border-t border-gray-100 dark:border-[#1f2937] flex gap-3">
+              <button 
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setIdToDelete(null);
+                }}
+                className="flex-1 px-6 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Confirmar Exclusão
+              </button>
+            </div>
           </div>
         </div>
       )}
