@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // @ts-ignore
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const manutencoes = await prisma.manutencaoVTR.findMany({
+    const manutencoes = await (prisma as any).manutencaoVTR.findMany({
       include: {
         unidade: true,
       },
@@ -51,7 +51,7 @@ router.post('/', async (req: Request, res: Response) => {
     const manutencaoRealizada = await prisma.$transaction(async (tx) => {
       
       // Pegar o último número de OS para incrementar
-      const ultimaManut = await (tx.manutencaoVTR as any).findFirst({
+      const ultimaManut = await (tx as any).manutencaoVTR.findFirst({
         orderBy: { osNumero: 'desc' },
         select: { osNumero: true }
       });
@@ -59,7 +59,7 @@ router.post('/', async (req: Request, res: Response) => {
       // Começar do 1 se não houver registros, ou o próximo
       const proximoNumero = (ultimaManut?.osNumero || 0) + 1;
 
-      const novaManut = await (tx.manutencaoVTR as any).create({
+      const novaManut = await (tx as any).manutencaoVTR.create({
         data: {
           osNumero: proximoNumero,
           paeNumero,
@@ -99,7 +99,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   const data = req.body;
   
   try {
-    const manutencao = await prisma.manutencaoVTR.update({
+    const manutencao = await (prisma as any).manutencaoVTR.update({
       where: { id },
       data: {
         ...data,
@@ -119,7 +119,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const manut = await prisma.manutencaoVTR.delete({ where: { id } });
+    const manut = await (prisma as any).manutencaoVTR.delete({ where: { id } });
     registrarAuditoria(req, 'Excluiu Manutenção VTR', `OS nº ${manut.osNumero}`);
     res.status(204).send();
   } catch (error) {
