@@ -1,4 +1,5 @@
 import React from 'react';
+// Build trigger: VTR module integration v1.0.1
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { Menu, Radio } from 'lucide-react';
