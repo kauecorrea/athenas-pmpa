@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 
 // Criar equipamento
 router.post('/', async (req, res) => {
-  const { rp, numSerie, idRadio, marca, modelo, status, unidadeId } = req.body;
+  const { rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId } = req.body;
   try {
     const equipamento = await prisma.equipamento.create({
       data: {
@@ -31,6 +31,7 @@ router.post('/', async (req, res) => {
         marca,
         modelo,
         status: status || 'OPERACIONAL',
+        garantia: garantia || 'Não',
         unidadeId: unidadeId ? unidadeId : null,
       },
     });
@@ -46,7 +47,7 @@ router.post('/', async (req, res) => {
 // Atualizar Equipamento (Edit)
 router.put('/:id', async (req, res) => {
   const { id } = req.params as { id: string };
-  const { rp, numSerie, idRadio, marca, modelo, status, unidadeId } = req.body;
+  const { rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId } = req.body;
   try {
     const equipamento = await prisma.equipamento.update({
       where: { id: id as string },
@@ -57,6 +58,7 @@ router.put('/:id', async (req, res) => {
         marca,
         modelo,
         status,
+        garantia,
         unidadeId: unidadeId ? unidadeId : null,
       },
     });

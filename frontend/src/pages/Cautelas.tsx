@@ -529,7 +529,7 @@ const Cautelas: React.FC = () => {
                       <button onClick={() => handleEdit(c)} className="hover:text-primary dark:hover:text-primary p-1.5 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-500/10" title="Editar Informações da Cautela">
                         <Edit2 size={16} />
                       </button>
-                      {c.status === 'ATIVA' && (
+                      {(c.status === 'ATIVA' || c.status === 'VENCIDA') && (
                         <button 
                           onClick={() => openDevolverModal(c.id)}
                           className="hover:text-success dark:hover:text-success p-1.5 rounded-lg transition-colors hover:bg-success/10" 

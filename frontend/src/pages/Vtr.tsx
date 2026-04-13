@@ -35,6 +35,7 @@ interface ManutencaoVTR {
   defeitoReclamado: string;
   defeitoConstatado: string;
   solucao: string;
+  status: string;
   servicos: string[];
 }
 
@@ -59,6 +60,7 @@ const Vtr: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('Todos');
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,6 +84,7 @@ const Vtr: React.FC = () => {
     defeitoReclamado: '',
     defeitoConstatado: '',
     solucao: '',
+    status: 'Pendente',
     servicos: [] as string[],
     dataInicio: new Date().toISOString().split('T')[0]
   });
@@ -131,6 +134,7 @@ const Vtr: React.FC = () => {
         defeitoReclamado: '',
         defeitoConstatado: '',
         solucao: '',
+        status: 'Pendente',
         servicos: [],
         dataInicio: new Date().toISOString().split('T')[0]
       });
@@ -257,19 +261,27 @@ const Vtr: React.FC = () => {
 
     // Rodapé Assinatura
     const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("1º TEN QOPM MADAKE", 105, pageHeight - 30, { align: "center" });
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text("____________________________________________________________", 105, pageHeight - 30, { align: "center" });
-    doc.text("ASSINATURA DO TÉCNICO RESPONSÁVEL", 105, pageHeight - 25, { align: "center" });
+    doc.text("Chefe da Seção de Manutenção - DITEL", 105, pageHeight - 25, { align: "center" });
 
     doc.save(`Laudo_VTR_OS_${m.osNumero}.pdf`);
   };
 
-  const manutencoesFiltradas = manutencoes.filter(m => 
-    m.placaVrt.toLowerCase().includes(filtro.toLowerCase()) ||
-    m.prefixo.toLowerCase().includes(filtro.toLowerCase()) ||
-    m.unidade?.nome.toLowerCase().includes(filtro.toLowerCase()) ||
-    m.osNumero.toString().includes(filtro)
-  );
+  const manutencoesFiltradas = manutencoes.filter(m => {
+    let matchString = 
+      (m.placaVrt || '').toLowerCase().includes(filtro.toLowerCase()) ||
+      (m.prefixo || '').toLowerCase().includes(filtro.toLowerCase()) ||
+      (m.unidade?.nome || '').toLowerCase().includes(filtro.toLowerCase()) ||
+      (m.osNumero || '').toString().includes(filtro);
+    
+    let matchStatus = filtroStatus === 'Todos' || m.status === filtroStatus;
+
+    return matchString && matchStatus;
+  });
 
   // Pagination Logic
   const totalPages = Math.ceil(manutencoesFiltradas.length / itemsPerPage);
@@ -300,8 +312,8 @@ const Vtr: React.FC = () => {
       </div>
 
       {/* FILTROS E BUSCA */}
-      <div className="bg-white dark:bg-surface p-4 rounded-xl border border-gray-100 dark:border-[#1f2937] shadow-sm flex items-center gap-4">
-        <div className="flex-1 relative">
+      <div className="bg-white dark:bg-surface p-4 rounded-xl border border-gray-100 dark:border-[#1f2937] shadow-sm flex flex-col md:flex-row items-center gap-4">
+        <div className="flex-1 relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
@@ -310,6 +322,18 @@ const Vtr: React.FC = () => {
             onChange={(e) => setFiltro(e.target.value)}
             className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#1f2937] rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
           />
+        </div>
+        <div className="w-full md:w-auto">
+          <select
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+            className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white"
+          >
+            <option value="Todos">Todos os Status</option>
+            <option value="Pronto">Pronto</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Assistência Técnica">Assistência Técnica</option>
+          </select>
         </div>
       </div>
 
@@ -323,7 +347,7 @@ const Vtr: React.FC = () => {
                 <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">VTR / Prefixo</th>
                 <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Unidade</th>
                 <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Data</th>
-                <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Técnico</th>
+                <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Status</th>
                 <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937] text-center">Ações</th>
               </tr>
             </thead>
@@ -353,7 +377,15 @@ const Vtr: React.FC = () => {
                         {new Date(m.dataServico).toLocaleDateString('pt-BR')}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{m.tecnico}</td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                      <span className={`px-2.5 py-1 text-[11px] font-bold tracking-wide rounded-full border ${
+                        m.status === 'Pronto' ? 'text-success bg-success/10 border-success/20' :
+                        m.status === 'Assistência Técnica' ? 'text-danger bg-danger/10 border-danger/20' :
+                        'text-warning bg-warning/10 border-warning/20'
+                      }`}>
+                        {m.status || 'Pendente'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
@@ -474,7 +506,6 @@ const Vtr: React.FC = () => {
                   <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Unidade VRT</label>
                     <select 
-                      required
                       value={formData.unidadeId}
                       onChange={(e) => setFormData({...formData, unidadeId: e.target.value})}
                       className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white"
@@ -498,7 +529,6 @@ const Vtr: React.FC = () => {
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Data do Serviço</label>
                     <input 
                       type="date" 
-                      required
                       value={formData.dataInicio}
                       onChange={(e) => setFormData({...formData, dataInicio: e.target.value})}
                       className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -510,7 +540,6 @@ const Vtr: React.FC = () => {
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Solicitante</label>
                     <input 
                       type="text" 
-                      required
                       value={formData.solicitante}
                       onChange={(e) => setFormData({...formData, solicitante: e.target.value})}
                       className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -520,7 +549,6 @@ const Vtr: React.FC = () => {
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Técnico Responsável</label>
                     <input 
                       type="text" 
-                      required
                       value={formData.tecnico}
                       onChange={(e) => setFormData({...formData, tecnico: e.target.value})}
                       className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -540,7 +568,6 @@ const Vtr: React.FC = () => {
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Placa VRT</label>
                     <input 
                       type="text" 
-                      required
                       placeholder="ABC-1234"
                       value={formData.placaVrt}
                       onChange={(e) => setFormData({...formData, placaVrt: e.target.value.toUpperCase()})}
@@ -551,7 +578,6 @@ const Vtr: React.FC = () => {
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Prefixo</label>
                     <input 
                       type="text" 
-                      required
                       value={formData.prefixo}
                       onChange={(e) => setFormData({...formData, prefixo: e.target.value})}
                       className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -561,7 +587,6 @@ const Vtr: React.FC = () => {
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Km VRT</label>
                     <input 
                       type="number" 
-                      required
                       value={formData.kmVrt}
                       onChange={(e) => setFormData({...formData, kmVrt: e.target.value})}
                       className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -635,12 +660,30 @@ const Vtr: React.FC = () => {
                 <div>
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Solução Técnica</label>
                   <textarea 
-                    required
                     value={formData.solucao}
                     onChange={(e) => setFormData({...formData, solucao: e.target.value})}
                     className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[120px]"
                     placeholder="Descreva detalhadamente o serviço executado..."
                   />
+                </div>
+              </div>
+
+              {/* Seção 5: Status */}
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-[#1f2937]">
+                <div className="flex items-center gap-2 text-primary">
+                  <div className="w-1.5 h-6 bg-primary rounded-full" />
+                  <h3 className="font-bold uppercase tracking-wider text-sm">Status Final da Manutenção</h3>
+                </div>
+                <div>
+                  <select 
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white font-bold"
+                  >
+                    <option value="Pronto">Pronto</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Assistência Técnica">Assistência Técnica</option>
+                  </select>
                 </div>
               </div>
 

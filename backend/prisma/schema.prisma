@@ -41,6 +41,7 @@ model Equipamento {
   numSerie    String    @unique // Número de Série (Garante a unicidade real)
   marca       String?   // Motorola, Tait
   modelo      String?   // APX 900, APX 2000, TP9400, TP9100
+  garantia    String    @default("Não")
   status      StatusEquipamento @default(OPERACIONAL)
   
   unidadeId   String?   @db.ObjectId
@@ -156,14 +157,14 @@ model ManutencaoVTR {
   paeNumero         String?
   dataServico       DateTime @default(now())
   
-  unidadeId         String   @db.ObjectId
-  unidade           Unidade  @relation(fields: [unidadeId], references: [id])
+  unidadeId         String?   @db.ObjectId
+  unidade           Unidade?  @relation(fields: [unidadeId], references: [id])
   
-  solicitante       String
-  tecnico           String
+  solicitante       String?
+  tecnico           String?
   
-  placaVrt          String
-  prefixo           String
+  placaVrt          String?
+  prefixo           String?
   kmVrt             Int?
   
   modeloRadio       String?
@@ -172,6 +173,7 @@ model ManutencaoVTR {
   defeitoReclamado  String?
   defeitoConstatado String?
   solucao           String?
+  status            String    @default("Pendente") // Pronto, Pendente, Assistência Técnica
   
   // Lista de serviços realizados (Checkbox slugs)
   servicos          String[]

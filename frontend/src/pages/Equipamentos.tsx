@@ -11,10 +11,18 @@ interface Equipamento {
   marca: string;
   modelo: string;
   status: string;
+  garantia?: string;
+  unidadeId?: string;
+}
+
+interface Unidade {
+  id: string;
+  nome: string;
 }
 
 const Equipamentos: React.FC = () => {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
   
   
   // Filtros
@@ -35,12 +43,24 @@ const Equipamentos: React.FC = () => {
     rp: '',
     marca: 'Motorola',
     modelo: 'APX 900',
-    status: 'OPERACIONAL'
+    status: 'OPERACIONAL',
+    garantia: 'Não',
+    unidadeId: ''
   });
 
   useEffect(() => {
     fetchEquipamentos();
+    fetchUnidades();
   }, []);
+
+  const fetchUnidades = async () => {
+    try {
+      const res = await axios.get('/api/unidades');
+      setUnidades(res.data);
+    } catch(e) {
+      console.error(e);
+    }
+  };
 
   const fetchEquipamentos = async () => {
     try {
@@ -54,7 +74,7 @@ const Equipamentos: React.FC = () => {
 
   const openNovoModal = () => {
     setIsEditing(false);
-    setNovoEquip({ id: '', numSerie: '', idRadio: '', rp: '', marca: 'Motorola', modelo: 'APX 900', status: 'OPERACIONAL' });
+    setNovoEquip({ id: '', numSerie: '', idRadio: '', rp: '', marca: 'Motorola', modelo: 'APX 900', status: 'OPERACIONAL', garantia: 'Não', unidadeId: '' });
     setIsModalOpen(true);
   };
 
@@ -67,7 +87,9 @@ const Equipamentos: React.FC = () => {
       rp: eq.rp,
       marca: eq.marca || 'Motorola',
       modelo: eq.modelo || 'APX 900',
-      status: eq.status
+      status: eq.status,
+      garantia: eq.garantia || 'Não',
+      unidadeId: eq.unidadeId || ''
     });
     setIsModalOpen(true);
   };
@@ -338,6 +360,32 @@ const Equipamentos: React.FC = () => {
                   <option value="CAUTELADO">Cautelado</option>
                   <option value="MANUTENCAO">Em Manutenção</option>
                   <option value="EXTRAVIADO">Extraviado</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Garantia</label>
+                <select 
+                  value={novoEquip.garantia}
+                  onChange={e => setNovoEquip({...novoEquip, garantia: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                >
+                  <option value="Sim">Sim</option>
+                  <option value="Não">Não</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unidade</label>
+                <select 
+                  value={novoEquip.unidadeId}
+                  onChange={e => setNovoEquip({...novoEquip, unidadeId: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                >
+                  <option value="">Selecione uma Unidade (Opcional)</option>
+                  {unidades.map(u => (
+                    <option key={u.id} value={u.id}>{u.nome}</option>
+                  ))}
                 </select>
               </div>
             </div>

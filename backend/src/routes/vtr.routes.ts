@@ -40,12 +40,11 @@ router.post('/', async (req: Request, res: Response) => {
     defeitoConstatado, 
     solucao, 
     servicos,
+    status,
     dataInicio 
   } = req.body;
   
-  if (!unidadeId || !placaVrt || !prefixo) {
-    return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
-  }
+  // Removed strict validation to make all fields optional
 
   try {
     const manutencaoRealizada = await prisma.$transaction(async (tx) => {
@@ -74,6 +73,7 @@ router.post('/', async (req: Request, res: Response) => {
           defeitoReclamado,
           defeitoConstatado,
           solucao,
+          status: status || 'Pendente',
           servicos: Array.isArray(servicos) ? servicos : [],
           dataServico: dataInicio ? new Date(dataInicio) : new Date(),
         },
