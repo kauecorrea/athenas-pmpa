@@ -1,5 +1,5 @@
 import React from 'react';
-// Build trigger: VTR module integration v1.0.1
+// Build trigger: Resync production build v1.0.2 - Force update
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { Menu, Radio } from 'lucide-react';
