@@ -13,6 +13,10 @@ interface Equipamento {
   status: string;
   garantia?: string;
   unidadeId?: string;
+  unidade?: {
+    id: string;
+    nome: string;
+  };
 }
 
 interface Unidade {
@@ -28,6 +32,7 @@ const Equipamentos: React.FC = () => {
   const [filtroStatus, setFiltroStatus] = useState("Todos - Status");
   const [filtroMarca, setFiltroMarca] = useState("Todos - Marca");
   const [filtroModelo, setFiltroModelo] = useState("Todos - Modelo");
+  const [filtroUnidade, setFiltroUnidade] = useState("Todas - Unidade");
   const [busca, setBusca] = useState("");
 
   const [viewMode, setViewMode] = useState<"form" | "list">("form");
@@ -191,6 +196,12 @@ const Equipamentos: React.FC = () => {
     if (filtroMarca !== "Todos - Marca" && eq.marca !== filtroMarca)
       match = false;
     if (filtroModelo !== "Todos - Modelo" && eq.modelo !== filtroModelo)
+      match = false;
+
+    if (
+      filtroUnidade !== "Todas - Unidade" &&
+      eq.unidade?.nome !== filtroUnidade
+    )
       match = false;
 
     if (busca.trim() !== "") {
@@ -367,6 +378,33 @@ const Equipamentos: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              <div className="relative group cursor-pointer">
+                <div className="bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] hover:border-gray-400 dark:hover:border-gray-500 rounded-lg px-4 py-2 text-sm text-gray-700 dark:text-gray-300 flex items-center justify-between gap-3 min-w-[160px] transition-colors">
+                  <span>{filtroUnidade}</span>
+                  <ChevronDown
+                    size={14}
+                    className="text-gray-400 dark:text-gray-500"
+                  />
+                </div>
+                <div className="absolute top-full mt-1 w-full right-0 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#374151] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 py-1 max-h-60 overflow-y-auto">
+                  <div
+                    className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer"
+                    onClick={() => setFiltroUnidade("Todas - Unidade")}
+                  >
+                    Todas - Unidade
+                  </div>
+                  {unidades.map((u) => (
+                    <div
+                      key={u.id}
+                      className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer"
+                      onClick={() => setFiltroUnidade(u.nome)}
+                    >
+                      {u.nome}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -392,6 +430,9 @@ const Equipamentos: React.FC = () => {
                   </th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">
                     Status
+                  </th>
+                  <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">
+                    Unidade
                   </th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">
                     Ações
@@ -427,6 +468,9 @@ const Equipamentos: React.FC = () => {
                           ? "Operacional"
                           : eq.status}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-bold text-primary uppercase">
+                      {eq.unidade?.nome || "DITEL"}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
@@ -495,7 +539,7 @@ const Equipamentos: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Número de Patrimônio
+                  Patrimônio (Opcional)
                 </label>
                 <input
                   type="text"
