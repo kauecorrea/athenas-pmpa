@@ -228,21 +228,13 @@ const Unidades: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">COINT (Comando Intermediário)</label>
-                <select 
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
+                <input 
+                  type="text" 
+                  placeholder="EX: QCG, CPA, CPC I"
                   value={formData.coint}
-                  onChange={(e) => setFormData({...formData, coint: e.target.value})}
-                >
-                  <option value="">Selecione o Comando</option>
-                  <option value="QCG">QCG</option>
-                  <option value="CPA">CPA</option>
-                  <option value="CPC I">CPC I</option>
-                  <option value="CPC II">CPC II</option>
-                  <option value="CPRM">CPRM</option>
-                  <option value="CPR">CPR</option>
-                  <option value="CME">CME</option>
-                  <option value="CPE">CPE</option>
-                </select>
+                  onChange={(e) => setFormData({...formData, coint: e.target.value.toUpperCase()})}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
+                />
               </div>
 
               <div>
