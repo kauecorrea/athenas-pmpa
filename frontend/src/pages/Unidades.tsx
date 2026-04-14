@@ -14,6 +14,7 @@ import ModalConfirmacao from '../components/ModalConfirmacao';
 interface Unidade {
   id: string;
   nome: string;
+  coint: string;
   localizacao: string;
   contato: string;
 }
@@ -28,6 +29,7 @@ const Unidades: React.FC = () => {
   const [formData, setFormData] = useState({
     id: '',
     nome: '',
+    coint: '',
     localizacao: '',
     contato: ''
   });
@@ -72,7 +74,7 @@ const Unidades: React.FC = () => {
 
   const resetForm = () => {
     setIsEditing(false);
-    setFormData({ id: '', nome: '', localizacao: '', contato: '' });
+    setFormData({ id: '', nome: '', coint: '', localizacao: '', contato: '' });
   };
 
   const openEdit = (u: Unidade) => {
@@ -145,10 +147,13 @@ const Unidades: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex-1 overflow-y-auto">
+
           <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nome da Unidade</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">COINT</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Localização</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Contato</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
@@ -165,6 +170,7 @@ const Unidades: React.FC = () => {
                       <span className="font-bold text-gray-900 dark:text-white uppercase">{u.nome}</span>
                     </div>
                   </td>
+                  <td className="px-6 py-4 text-xs font-bold text-gray-500">{u.coint || 'N/A'}</td>
                   <td className="px-6 py-4 text-xs">
                     <div className="flex items-center gap-1">
                       <MapPin size={12} className="text-gray-400" />
@@ -195,6 +201,7 @@ const Unidades: React.FC = () => {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       ) : (
         <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors shadow-sm">
@@ -217,6 +224,25 @@ const Unidades: React.FC = () => {
                   onChange={(e) => setFormData({...formData, nome: e.target.value.toUpperCase()})}
                   className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">COINT (Comando Intermediário)</label>
+                <select 
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
+                  value={formData.coint}
+                  onChange={(e) => setFormData({...formData, coint: e.target.value})}
+                >
+                  <option value="">Selecione o Comando</option>
+                  <option value="QCG">QCG</option>
+                  <option value="CPA">CPA</option>
+                  <option value="CPC I">CPC I</option>
+                  <option value="CPC II">CPC II</option>
+                  <option value="CPRM">CPRM</option>
+                  <option value="CPR">CPR</option>
+                  <option value="CME">CME</option>
+                  <option value="CPE">CPE</option>
+                </select>
               </div>
 
               <div>
