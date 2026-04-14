@@ -4,10 +4,7 @@ import {
   Plus, 
   Search, 
   FileText, 
-  Calendar, 
-  CheckCircle2, 
-  X, 
-  Trash2,
+  Calendar,
   Trash2,
   Car,
   List
@@ -64,15 +61,12 @@ const Vtr: React.FC = () => {
   const [filtro, setFiltro] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Todos');
   
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
 
-  // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState<string | null>(null);
   
-  // Form State
   const [formData, setFormData] = useState({
     paeNumero: '',
     unidadeId: '',
@@ -95,7 +89,6 @@ const Vtr: React.FC = () => {
     fetchData();
   }, []);
 
-  // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filtro]);
@@ -122,7 +115,6 @@ const Vtr: React.FC = () => {
       await axios.post('/api/vtr', formData);
       alert('Manutenção VTR registrada com sucesso!');
       fetchData();
-      // Reset form
       setFormData({
         paeNumero: '',
         unidadeId: '',
@@ -195,7 +187,6 @@ const Vtr: React.FC = () => {
       doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
     } catch (e) { console.error('Sem brasao_pmpa.png'); }
 
-    // Cabeçalho
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: "center" });
@@ -207,7 +198,6 @@ const Vtr: React.FC = () => {
     doc.setFontSize(12);
     doc.text("LAUDO DE ATENDIMENTO TÉCNICO VTR", 105, 50, { align: "center" });
 
-    // Informações Básicas
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     
@@ -243,7 +233,6 @@ const Vtr: React.FC = () => {
     doc.setFontSize(8);
     doc.text(`TÉCNICO: ${m.tecnico}`, 14, finalYInfo + 8);
 
-    // Checklist de Serviços
     const servicosRows = LISTA_SERVICOS.map(s => [
       m.servicos.includes(s) ? "[X]" : "[ ]",
       s
@@ -267,7 +256,6 @@ const Vtr: React.FC = () => {
     const splitSolucao = doc.splitTextToSize(m.solucao || '-', 180);
     doc.text(splitSolucao, 14, finalYServ + 6);
 
-    // Rodapé Assinatura
     const pageHeight = doc.internal.pageSize.height;
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
@@ -290,7 +278,6 @@ const Vtr: React.FC = () => {
     return matchString && matchStatus;
   });
 
-  // Pagination Logic
   const totalPages = Math.ceil(manutencoesFiltradas.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const manutencoesPaginadas = manutencoesFiltradas.slice(startIndex, startIndex + itemsPerPage);
@@ -298,7 +285,6 @@ const Vtr: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white pb-10">
       
-      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-surface p-6 rounded-2xl border border-gray-100 dark:border-[#1f2937] shadow-sm">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
@@ -330,390 +316,356 @@ const Vtr: React.FC = () => {
 
       {viewMode === 'list' ? (
         <div className="space-y-6">
-          {/* FILTROS E BUSCA */}
-      <div className="bg-white dark:bg-surface p-4 rounded-xl border border-gray-100 dark:border-[#1f2937] shadow-sm flex flex-col md:flex-row items-center gap-4">
-        <div className="flex-1 relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Buscar por placa, prefixo, unidade ou OS..." 
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#1f2937] rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-          />
-        </div>
-        <div className="w-full md:w-auto">
-          <select
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white"
-          >
-            <option value="Todos">Todos os Status</option>
-            <option value="Pronto">Pronto</option>
-            <option value="Pendente">Pendente</option>
-            <option value="Assistência Técnica">Assistência Técnica</option>
-          </select>
-        </div>
-      </div>
+          <div className="bg-white dark:bg-surface p-4 rounded-xl border border-gray-100 dark:border-[#1f2937] shadow-sm flex flex-col md:flex-row items-center gap-4">
+            <div className="flex-1 relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Buscar por placa, prefixo, unidade ou OS..." 
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#1f2937] rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              />
+            </div>
+            <div className="w-full md:w-auto">
+              <select
+                value={filtroStatus}
+                onChange={(e) => setFiltroStatus(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white"
+              >
+                <option value="Todos">Todos os Status</option>
+                <option value="Pronto">Pronto</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Assistência Técnica">Assistência Técnica</option>
+              </select>
+            </div>
+          </div>
 
-      {/* TABELA DE REGISTROS */}
-      <div className="bg-white dark:bg-surface rounded-2xl border border-gray-100 dark:border-[#1f2937] shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-gray-50 dark:bg-[#0a0f1d] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">OS nº</th>
-                <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">VTR / Prefixo</th>
-                <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Unidade</th>
-                <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Data</th>
-                <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Status</th>
-                <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937] text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-[#1f2937]">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-gray-400 italic">Carregando manutenções...</td>
-                </tr>
-              ) : manutencoesFiltradas.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-gray-400 italic">Nenhum registro encontrado.</td>
-                </tr>
-              ) : (
-                manutencoesPaginadas.map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
-                    <td className="px-6 py-4 font-bold text-primary">#{m.osNumero.toString().padStart(3, '0')}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-bold">{m.placaVrt}</span>
-                        <span className="text-xs text-gray-500 uppercase">Prefixo: {m.prefixo}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{m.unidade?.nome}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                        <Calendar size={14} />
-                        {new Date(m.dataServico).toLocaleDateString('pt-BR')}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                      <span className={`px-2.5 py-1 text-[11px] font-bold tracking-wide rounded-full border ${
-                        m.status === 'Pronto' ? 'text-success bg-success/10 border-success/20' :
-                        m.status === 'Assistência Técnica' ? 'text-danger bg-danger/10 border-danger/20' :
-                        'text-warning bg-warning/10 border-warning/20'
-                      }`}>
-                        {m.status || 'Pendente'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => gerarLaudoPDF(m)}
-                          title="Gerar Laudo PDF"
-                          className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
-                        >
-                          <FileText size={18} />
-                        </button>
-                        <button 
-                          onClick={() => deleteManutencao(m.id)}
-                          title="Excluir"
-                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
+          <div className="bg-white dark:bg-surface rounded-2xl border border-gray-100 dark:border-[#1f2937] shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-gray-50 dark:bg-[#0a0f1d] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">OS nº</th>
+                    <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">VTR / Prefixo</th>
+                    <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Unidade</th>
+                    <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Data</th>
+                    <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937]">Status</th>
+                    <th className="px-6 py-4 border-b border-gray-100 dark:border-[#1f2937] text-center">Ações</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* PAGINATION CONTROLS */}
-        {totalPages > 1 && (
-          <div className="px-6 py-4 bg-gray-50 dark:bg-[#0a0f1d] border-t border-gray-100 dark:border-[#1f2937] flex items-center justify-between">
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              Mostrando <span className="text-gray-900 dark:text-white">{startIndex + 1}</span> a <span className="text-gray-900 dark:text-white">{Math.min(startIndex + itemsPerPage, manutencoesFiltradas.length)}</span> de <span className="text-gray-900 dark:text-white">{manutencoesFiltradas.length}</span> registros
-            </p>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-[#1f2937] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
-              >
-                Anterior
-              </button>
-              
-              <div className="flex items-center gap-1">
-                {[...Array(totalPages)].map((_, i) => {
-                  const pageNumber = i + 1;
-                  // Show current page, first, last, and pages around current
-                  if (
-                    pageNumber === 1 || 
-                    pageNumber === totalPages || 
-                    (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                  ) {
-                    return (
-                      <button
-                        key={pageNumber}
-                        onClick={() => setCurrentPage(pageNumber)}
-                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                          currentPage === pageNumber 
-                            ? 'bg-primary text-white shadow-md' 
-                            : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5'
-                        }`}
-                      >
-                        {pageNumber}
-                      </button>
-                    );
-                  } else if (
-                    pageNumber === currentPage - 2 || 
-                    pageNumber === currentPage + 2
-                  ) {
-                    return <span key={pageNumber} className="text-gray-400">...</span>;
-                  }
-                  return null;
-                })}
-              </div>
-
-              <button 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-[#1f2937] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
-              >
-                Próximo
-              </button>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-[#1f2937]">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-gray-400 italic">Carregando manutenções...</td>
+                    </tr>
+                  ) : manutencoesFiltradas.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-gray-400 italic">Nenhum registro encontrado.</td>
+                    </tr>
+                  ) : (
+                    manutencoesPaginadas.map((m) => (
+                      <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+                        <td className="px-6 py-4 font-bold text-primary">#{m.osNumero.toString().padStart(3, '0')}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-bold">{m.placaVrt}</span>
+                            <span className="text-xs text-gray-500 uppercase">Prefixo: {m.prefixo}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{m.unidade?.nome}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                            <Calendar size={14} />
+                            {new Date(m.dataServico).toLocaleDateString('pt-BR')}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                          <span className={`px-2.5 py-1 text-[11px] font-bold tracking-wide rounded-full border ${
+                            m.status === 'Pronto' ? 'text-success bg-success/10 border-success/20' :
+                            m.status === 'Assistência Técnica' ? 'text-danger bg-danger/10 border-danger/20' :
+                            'text-warning bg-warning/10 border-warning/20'
+                          }`}>
+                            {m.status || 'Pendente'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => gerarLaudoPDF(m)}
+                              title="Gerar Laudo PDF"
+                              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                            >
+                              <FileText size={18} />
+                            </button>
+                            <button 
+                              onClick={() => deleteManutencao(m.id)}
+                              title="Excluir"
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </div>
-        )}
-      </div>
-      </div>
-      ) : (
 
-      {/* MAIN FORM DE CADASTRO */}
-      <div className="bg-white dark:bg-surface rounded-3xl shadow-sm border border-gray-100 dark:border-[#1f2937] overflow-hidden flex flex-col">
-        {/* Form Header */}
-        <div className="px-8 py-6 bg-gray-50 dark:bg-[#0a0f1d] border-b border-gray-100 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-xl">
-              <Car className="text-primary" size={24} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nova Manutenção VTR</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Emitir Laudo de Atendimento</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleCreate} className="flex-1 overflow-y-auto p-8 space-y-8">
-              
-              {/* Seção 1: Identificação */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-primary">
-                  <div className="w-1.5 h-6 bg-primary rounded-full" />
-                  <h3 className="font-bold uppercase tracking-wider text-sm">Identificação do Atendimento</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Unidade VRT</label>
-                    <select 
-                      value={formData.unidadeId}
-                      onChange={(e) => setFormData({...formData, unidadeId: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white"
-                    >
-                      <option value="">Selecione a Unidade</option>
-                      {unidades.map(u => (
-                        <option key={u.id} value={u.id}>{u.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Nº/PAE</label>
-                    <input 
-                      type="text" 
-                      value={formData.paeNumero}
-                      onChange={(e) => setFormData({...formData, paeNumero: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Data do Serviço</label>
-                    <input 
-                      type="date" 
-                      value={formData.dataInicio}
-                      onChange={(e) => setFormData({...formData, dataInicio: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Solicitante</label>
-                    <input 
-                      type="text" 
-                      value={formData.solicitante}
-                      onChange={(e) => setFormData({...formData, solicitante: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Técnico Responsável</label>
-                    <input 
-                      type="text" 
-                      value={formData.tecnico}
-                      onChange={(e) => setFormData({...formData, tecnico: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Seção 2: Dados da Viatura */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 opacity-70">
-                  <div className="w-1.5 h-6 bg-gray-400 rounded-full" />
-                  <h3 className="font-bold uppercase tracking-wider text-sm">Dados da Viatura e Equipamento</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Placa VRT</label>
-                    <input 
-                      type="text" 
-                      placeholder="ABC-1234"
-                      value={formData.placaVrt}
-                      onChange={(e) => setFormData({...formData, placaVrt: e.target.value.toUpperCase()})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Prefixo</label>
-                    <input 
-                      type="text" 
-                      value={formData.prefixo}
-                      onChange={(e) => setFormData({...formData, prefixo: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Km VRT</label>
-                    <input 
-                      type="number" 
-                      value={formData.kmVrt}
-                      onChange={(e) => setFormData({...formData, kmVrt: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Modelo do Rádio</label>
-                    <input 
-                      type="text" 
-                      value={formData.modeloRadio}
-                      onChange={(e) => setFormData({...formData, modeloRadio: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Nº de Série / Rádio</label>
-                    <input 
-                      type="text" 
-                      value={formData.numSerieRadio}
-                      onChange={(e) => setFormData({...formData, numSerieRadio: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Seção 3: Checklist de Serviços */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-primary">
-                  <div className="w-1.5 h-6 bg-primary rounded-full" />
-                  <h3 className="font-bold uppercase tracking-wider text-sm">Serviços Realizados</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 dark:bg-[#0a0f1d] p-6 rounded-2xl border border-gray-100 dark:border-[#1f2937]">
-                  {LISTA_SERVICOS.map(servico => (
-                    <label key={servico} className="flex items-center gap-3 cursor-pointer group">
-                      <div className="relative">
-                        <input 
-                          type="checkbox"
-                          checked={formData.servicos.includes(servico)}
-                          onChange={() => toggleService(servico)}
-                          className="peer appearance-none w-5 h-5 rounded-md border-2 border-gray-300 dark:border-[#374151] checked:bg-primary checked:border-primary transition-all"
-                        />
-                        <CheckCircle2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" size={14} />
-                      </div>
-                      <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">{servico}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Seção 4: Diagnóstico e Solução */}
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Defeito Reclamado</label>
-                  <textarea 
-                    value={formData.defeitoReclamado}
-                    onChange={(e) => setFormData({...formData, defeitoReclamado: e.target.value})}
-                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[80px]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Defeito Constatado</label>
-                  <textarea 
-                    value={formData.defeitoConstatado}
-                    onChange={(e) => setFormData({...formData, defeitoConstatado: e.target.value})}
-                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[80px]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Solução Técnica</label>
-                  <textarea 
-                    value={formData.solucao}
-                    onChange={(e) => setFormData({...formData, solucao: e.target.value})}
-                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[120px]"
-                    placeholder="Descreva detalhadamente o serviço executado..."
-                  />
-                </div>
-              </div>
-
-              {/* Seção 5: Status */}
-              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-[#1f2937]">
-                <div className="flex items-center gap-2 text-primary">
-                  <div className="w-1.5 h-6 bg-primary rounded-full" />
-                  <h3 className="font-bold uppercase tracking-wider text-sm">Status Final da Manutenção</h3>
-                </div>
-                <div>
-                  <select 
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white font-bold"
+            {totalPages > 1 && (
+              <div className="px-6 py-4 bg-gray-50 dark:bg-[#0a0f1d] border-t border-gray-100 dark:border-[#1f2937] flex items-center justify-between">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Mostrando <span className="text-gray-900 dark:text-white">{startIndex + 1}</span> a <span className="text-gray-900 dark:text-white">{Math.min(startIndex + itemsPerPage, manutencoesFiltradas.length)}</span> de <span className="text-gray-900 dark:text-white">{manutencoesFiltradas.length}</span> registros
+                </p>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-[#1f2937] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
                   >
-                    <option value="Pronto">Pronto</option>
-                    <option value="Pendente">Pendente</option>
-                    <option value="Assistência Técnica">Assistência Técnica</option>
+                    Anterior
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {[...Array(totalPages)].map((_, i) => {
+                      const pageNumber = i + 1;
+                      if (pageNumber === 1 || pageNumber === totalPages || (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)) {
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => setCurrentPage(pageNumber)}
+                            className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === pageNumber ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                          >
+                            {pageNumber}
+                          </button>
+                        );
+                      } else if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
+                        return <span key={pageNumber} className="text-gray-400">...</span>;
+                      }
+                      return null;
+                    })}
+                  </div>
+                  <button 
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-[#1f2937] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+                  >
+                    Próximo
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-surface rounded-3xl shadow-sm border border-gray-100 dark:border-[#1f2937] overflow-hidden flex flex-col">
+          <div className="px-8 py-6 bg-gray-50 dark:bg-[#0a0f1d] border-b border-gray-100 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-primary/10 rounded-xl">
+                <Car className="text-primary" size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nova Manutenção VTR</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Emitir Laudo de Atendimento</p>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleCreate} className="flex-1 overflow-y-auto p-8 space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <div className="w-1.5 h-6 bg-primary rounded-full" />
+                <h3 className="font-bold uppercase tracking-wider text-sm">Identificação do Atendimento</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Unidade VRT</label>
+                  <select 
+                    value={formData.unidadeId}
+                    onChange={(e) => setFormData({...formData, unidadeId: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white"
+                  >
+                    <option value="">Selecione a Unidade</option>
+                    {unidades.map(u => (
+                      <option key={u.id} value={u.id}>{u.nome}</option>
+                    ))}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Nº/PAE</label>
+                  <input 
+                    type="text" 
+                    value={formData.paeNumero}
+                    onChange={(e) => setFormData({...formData, paeNumero: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Data do Serviço</label>
+                  <input 
+                    type="date" 
+                    value={formData.dataInicio}
+                    onChange={(e) => setFormData({...formData, dataInicio: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Solicitante</label>
+                  <input 
+                    type="text" 
+                    value={formData.solicitante}
+                    onChange={(e) => setFormData({...formData, solicitante: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Técnico Responsável</label>
+                  <input 
+                    type="text" 
+                    value={formData.tecnico}
+                    onChange={(e) => setFormData({...formData, tecnico: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+              </div>
+            </div>
 
-          {/* Form Footer */}
-          <div className="bg-gray-50 dark:bg-[#0a0f1d] px-8 py-6 border-t border-gray-100 dark:border-[#1f2937] flex justify-end gap-3 flex-shrink-0">
-            <button 
-              type="submit"
-              className="bg-primary hover:bg-primary-hover text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Salvar e Gerar OS
-            </button>
-          </div>
-        </form>
-      </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 opacity-70">
+                <div className="w-1.5 h-6 bg-gray-400 rounded-full" />
+                <h3 className="font-bold uppercase tracking-wider text-sm">Dados da Viatura e Equipamento</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Placa VRT</label>
+                  <input 
+                    type="text" 
+                    placeholder="ABC-1234"
+                    value={formData.placaVrt}
+                    onChange={(e) => setFormData({...formData, placaVrt: e.target.value.toUpperCase()})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Prefixo</label>
+                  <input 
+                    type="text" 
+                    value={formData.prefixo}
+                    onChange={(e) => setFormData({...formData, prefixo: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Km VRT</label>
+                  <input 
+                    type="number" 
+                    value={formData.kmVrt}
+                    onChange={(e) => setFormData({...formData, kmVrt: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Modelo do Rádio</label>
+                  <input 
+                    type="text" 
+                    value={formData.modeloRadio}
+                    onChange={(e) => setFormData({...formData, modeloRadio: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Nº de Série / Rádio</label>
+                  <input 
+                    type="text" 
+                    value={formData.numSerieRadio}
+                    onChange={(e) => setFormData({...formData, numSerieRadio: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <div className="w-1.5 h-6 bg-primary rounded-full" />
+                <h3 className="font-bold uppercase tracking-wider text-sm">Serviços Realizados</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 dark:bg-[#0a0f1d] p-6 rounded-2xl border border-gray-100 dark:border-[#1f2937]">
+                {LISTA_SERVICOS.map(servico => (
+                  <label key={servico} className="flex items-center gap-3 cursor-pointer group">
+                    <input 
+                      type="checkbox"
+                      checked={formData.servicos.includes(servico)}
+                      onChange={() => toggleService(servico)}
+                      className="peer appearance-none w-5 h-5 rounded-md border-2 border-gray-300 dark:border-[#374151] checked:bg-primary checked:border-primary transition-all"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">{servico}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Defeito Reclamado</label>
+                <textarea 
+                  value={formData.defeitoReclamado}
+                  onChange={(e) => setFormData({...formData, defeitoReclamado: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[80px]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Defeito Constatado</label>
+                <textarea 
+                  value={formData.defeitoConstatado}
+                  onChange={(e) => setFormData({...formData, defeitoConstatado: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[80px]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Solução Técnica</label>
+                <textarea 
+                  value={formData.solucao}
+                  onChange={(e) => setFormData({...formData, solucao: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[120px]"
+                  placeholder="Descreva detalhadamente o serviço executado..."
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-[#1f2937]">
+              <div className="flex items-center gap-2 text-primary">
+                <div className="w-1.5 h-6 bg-primary rounded-full" />
+                <h3 className="font-bold uppercase tracking-wider text-sm">Status Final da Manutenção</h3>
+              </div>
+              <select 
+                value={formData.status}
+                onChange={(e) => setFormData({...formData, status: e.target.value})}
+                className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white font-bold"
+              >
+                <option value="Pronto">Pronto</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Assistência Técnica">Assistência Técnica</option>
+              </select>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-[#0a0f1d] px-8 py-6 border-t border-gray-100 dark:border-[#1f2937] flex justify-end gap-3 flex-shrink-0">
+              <button 
+                type="submit"
+                className="bg-primary hover:bg-primary-hover text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Salvar e Gerar OS
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
-      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-surface w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -722,16 +674,11 @@ const Vtr: React.FC = () => {
                 <Trash2 className="text-red-500" size={40} />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Excluir Registro?</h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Esta ação não pode ser desfeita. O laudo de manutenção será removido permanentemente do sistema.
-              </p>
+              <p className="text-gray-500 dark:text-gray-400">Esta ação não pode ser desfeita. O laudo de manutenção será removido permanentemente do sistema.</p>
             </div>
             <div className="px-8 py-6 bg-gray-50 dark:bg-[#0a0f1d] border-t border-gray-100 dark:border-[#1f2937] flex gap-3">
               <button 
-                onClick={() => {
-                  setIsDeleteModalOpen(false);
-                  setIdToDelete(null);
-                }}
+                onClick={() => { setIsDeleteModalOpen(false); setIdToDelete(null); }}
                 className="flex-1 px-6 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
               >
                 Cancelar

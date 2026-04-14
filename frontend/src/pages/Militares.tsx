@@ -1,196 +1,134 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, Edit2, Trash2, ChevronDown, List } from 'lucide-react';
+import { 
+  Plus, 
+  Search, 
+  Trash2, 
+  Edit2, 
+  List,
+  Shield
+} from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
-
-interface Unidade {
-  id: string;
-  nome: string;
-  sigla: string;
-}
 
 interface Militar {
   id: string;
-  nome: string;
   rg: string;
+  nome: string;
+  cpf: string;
+  graduacao: string;
   contato: string;
-  posto: string; // Patente
-  unidadeId: string;
-  unidade?: Unidade;
 }
 
 const Militares: React.FC = () => {
   const [militares, setMilitares] = useState<Militar[]>([]);
-  const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
+  const [busca, setBusca] = useState('');
+  
   const [isEditing, setIsEditing] = useState(false);
-  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [militarDeleteId, setMilitarDeleteId] = useState<string | null>(null);
-  const [militarDeleteNome, setMilitarDeleteNome] = useState('');
-  const [filtroUnidade, setFiltroUnidade] = useState('Todos - Unidade');
-  const [filtroPatente, setFiltroPatente] = useState('Todos - Patente');
-  const [buscaTratada, setBuscaTratada] = useState('');
-
-  const [novoMilitar, setNovoMilitar] = useState<Partial<Militar>>({
-    nome: '',
+  const [formData, setFormData] = useState({
+    id: '',
     rg: '',
-    contato: '',
-    posto: '',
-    unidadeId: undefined
+    nome: '',
+    cpf: '',
+    graduacao: 'SD PM',
+    contato: ''
   });
 
-  const patentes = [
-    'Soldado', 'Cabo', '3° Sargento', '2° Sargento', '1° Sargento', 
-    'Sub Tenente', '2° Tenente', '1° Tenente', 'Capitão', 'Major',
-    'Tenente-Coronel', 'Coronel'
-  ];
+  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [militarToDelete, setMilitarToDelete] = useState<Militar | null>(null);
 
   useEffect(() => {
     fetchMilitares();
-    fetchUnidades();
   }, []);
 
   const fetchMilitares = async () => {
     try {
+      setLoading(true);
       const res = await axios.get('/api/militares');
       setMilitares(res.data);
-    } catch (error) {
-      console.error("Erro ao carregar militares", error);
-      // Fallback em caso de falha temporária
-      setMilitares([
-        {
-          id: '1',
-          nome: 'Mario',
-          rg: '56848',
-          contato: '65564.56432',
-          posto: '2° Tenente',
-          unidadeId: '1',
-          unidade: { id: '1', nome: 'CIEPAS', sigla: 'CIEPAS' }
-        }
-      ]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchUnidades = async () => {
-    try {
-      const res = await axios.get('/api/unidades');
-      setUnidades(res.data);
-    } catch {
-      // Fallback 
-      setUnidades([
-        { id: '1', nome: 'CIEPAS', sigla: 'CIEPAS' },
-        { id: '2', nome: '1° BME', sigla: '1BME' },
-        { id: '3', nome: '1° BPM', sigla: '1BPM' }
-      ]);
-    }
-  };
-
-  const switchToFormNovo = () => {
-    setIsEditing(false);
-    setNovoMilitar({ nome: '', rg: '', contato: '', posto: '', unidadeId: undefined });
-    setViewMode('form');
-  };
-
-  const openEditModal = (militar: Militar) => {
-    setIsEditing(true);
-    setNovoMilitar({ ...militar });
-    setViewMode('form');
-  };
-
-  const handleSalvar = async () => {
-    if (!novoMilitar.nome || !novoMilitar.rg || !novoMilitar.posto || !novoMilitar.unidadeId) {
-      alert("Preencha todos os campos obrigatórios (Nome, RG, Patente e Unidade)!");
-      return;
-    }
-
+  const handleSalvar = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       if (isEditing) {
-        await axios.put(`/api/militares/${novoMilitar.id}`, novoMilitar);
-        setViewMode('list');
+        await axios.put(`/api/militares/${formData.id}`, formData);
+        alert("Dados do militar atualizados!");
       } else {
-        await axios.post('/api/militares', novoMilitar);
+        await axios.post('/api/militares', formData);
         alert("Militar cadastrado com sucesso!");
-        setNovoMilitar({ nome: '', rg: '', contato: '', posto: '', unidadeId: undefined });
       }
-      fetchMilitares(); // Atualiza a lista
-    } catch (error) {
-      console.error("Erro ao salvar militar", error);
-      alert("Ocorreu um erro ao salvar o militar. Verifique se o RG já não está cadastrado.");
+      resetForm();
+      fetchMilitares();
+      setViewMode('list');
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao salvar militar. Verifique se o RG ou CPF já existem.");
     }
   };
 
-  const openDeleteModal = (id: string, nome: string) => {
-    setMilitarDeleteId(id);
-    setMilitarDeleteNome(nome);
-    setIsModalDeleteOpen(true);
+  const resetForm = () => {
+    setIsEditing(false);
+    setFormData({ id: '', rg: '', nome: '', cpf: '', graduacao: 'SD PM', contato: '' });
+  };
+
+  const openEdit = (m: Militar) => {
+    setIsEditing(true);
+    setFormData(m);
+    setViewMode('form');
   };
 
   const confirmExcluir = async () => {
-    if (!militarDeleteId) return;
+    if (!militarToDelete) return;
     try {
-      await axios.delete(`/api/militares/${militarDeleteId}`);
-      fetchMilitares();
-    } catch (error) {
-      console.error("Erro ao excluir", error);
-      alert("Erro ao excluir. Este militar pode estar vinculado a cautelas ativas.");
-    } finally {
+      await axios.delete(`/api/militares/${militarToDelete.id}`);
       setIsModalDeleteOpen(false);
-      setMilitarDeleteId(null);
+      setMilitarToDelete(null);
+      fetchMilitares();
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao excluir militar. Ele pode estar vinculado a cautelas.");
     }
   };
 
-  // Lógica de Filtros
-  const militaresFiltrados = militares.filter(m => {
-    const nomeUnidade = m.unidade?.sigla || m.unidade?.nome || '';
-    
-    // Check de Patente
-    if (filtroPatente !== 'Todos - Patente' && m.posto !== filtroPatente) {
-      return false;
-    }
-
-    // Check de Unidade
-    if (filtroUnidade !== 'Todos - Unidade' && nomeUnidade !== filtroUnidade) {
-      return false;
-    }
-
-    // Check de Busca Textual
-    if (buscaTratada) {
-      const searchStr = buscaTratada.toLowerCase();
-      return (
-        m.nome.toLowerCase().includes(searchStr) ||
-        (m.rg && m.rg.toLowerCase().includes(searchStr)) ||
-        (m.contato && m.contato.toLowerCase().includes(searchStr))
-      );
-    }
-    
-    return true;
-  });
+  const militaresFiltrados = militares.filter(m => 
+    m.nome.toLowerCase().includes(busca.toLowerCase()) || 
+    m.rg.includes(busca) || 
+    m.cpf.includes(busca)
+  );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
+    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col relative transition-colors duration-200">
       
       {/* HEADER */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center bg-white dark:bg-surface p-6 rounded-2xl border border-gray-100 dark:border-[#1f2937] shadow-sm transition-colors">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
-             Militares
+            <Shield className="text-primary" size={32} />
+            Efetivo de Militares
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Gerenciamento de militares</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Cadastro de policiais para cautelas e Transferências</p>
         </div>
         {viewMode === 'list' ? (
           <button 
-            onClick={switchToFormNovo}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
+            onClick={() => { resetForm(); setViewMode('form'); }}
+            className="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Plus size={18} />
-            Novo Militar
+            <Plus size={20} />
+            Cadastrar Militar
           </button>
         ) : (
           <button 
             onClick={() => setViewMode('list')}
-            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-5 py-3 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            <List size={18} />
+            <List size={20} />
             Consultar Registros
           </button>
         )}
@@ -198,207 +136,166 @@ const Militares: React.FC = () => {
 
       {viewMode === 'list' ? (
         <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
-        <div className="p-4 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between gap-4 flex-wrap">
-          
-          <div className="relative flex-1 min-w-[300px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar por nome, RG, contato..." 
-              value={buscaTratada}
-              onChange={(e) => setBuscaTratada(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg pl-10 pr-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Filtro de Unidade */}
-            <div className="relative group cursor-pointer z-50">
-              <div className="bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] hover:border-gray-400 dark:hover:border-gray-500 rounded-lg px-4 py-2 text-sm text-gray-700 dark:text-gray-300 flex items-center justify-between gap-3 min-w-[160px] transition-colors">
-                <span>{filtroUnidade}</span>
-                <ChevronDown size={14} className="text-gray-400 dark:text-gray-500" />
-              </div>
-              <div className="absolute top-full mt-1 w-full right-0 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#374151] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-1 max-h-60 overflow-y-auto">
-                <div className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer" onClick={() => setFiltroUnidade('Todos - Unidade')}>Todos - Unidade</div>
-                {unidades.map(u => (
-                  <div key={u.id} className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer" onClick={() => setFiltroUnidade(u.sigla || u.nome)}>
-                    {u.sigla || u.nome}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Filtro de Patente */}
-            <div className="relative group cursor-pointer z-40">
-              <div className="bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] hover:border-gray-400 dark:hover:border-gray-500 rounded-lg px-4 py-2 text-sm text-gray-700 dark:text-gray-300 flex items-center justify-between gap-3 min-w-[170px] transition-colors">
-                <span>{filtroPatente}</span>
-                <ChevronDown size={14} className="text-gray-400 dark:text-gray-500" />
-              </div>
-              <div className="absolute top-full mt-1 w-full right-0 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#374151] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-1 max-h-60 overflow-y-auto">
-                <div className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer flex items-center gap-2" onClick={() => setFiltroPatente('Todos - Patente')}>
-                  Todos - Patente
-                </div>
-                {patentes.map(patente => (
-                  <div key={patente} className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer" onClick={() => setFiltroPatente(patente)}>
-                    {patente}
-                  </div>
-                ))}
-              </div>
+          <div className="p-4 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Buscar por nome, RG ou CPF..." 
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg pl-10 pr-4 py-2.5 text-sm"
+              />
             </div>
           </div>
-        </div>
-        
-        {/* TABELA - Responsiva */}
-        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[800px]">
-            <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
+
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+            <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nome de Guerra</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Patente</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Posto/Grad</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">RG</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nome Completo</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Contato</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
-              {militaresFiltrados.length === 0 ? (
-                <tr>
-                   <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
-                     Nenhum militar encontrado.
-                   </td>
+              {loading ? (
+                <tr><td colSpan={5} className="px-6 py-8 text-center animate-pulse">Carregando efetivo...</td></tr>
+              ) : militaresFiltrados.map(m => (
+                <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors group">
+                  <td className="px-6 py-4 font-bold text-primary">{m.graduacao}</td>
+                  <td className="px-6 py-4 font-mono text-xs">{m.rg}</td>
+                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white uppercase">{m.nome}</td>
+                  <td className="px-6 py-4 text-xs">{m.contato || 'N/A'}</td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => openEdit(m)}
+                        className="hover:text-primary p-1.5 rounded-lg transition-colors hover:bg-primary/10"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => { setMilitarToDelete(m); setIsModalDeleteOpen(true); }}
+                        className="hover:text-danger p-1.5 rounded-lg transition-colors hover:bg-danger/10"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              ) : (
-                militaresFiltrados.map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{m.nome}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{m.posto}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{m.rg || '-'}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{m.contato || '-'}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{m.unidade?.sigla || m.unidade?.nome || '-'}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
-                        <button 
-                          onClick={() => openEditModal(m)}
-                          className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button 
-                          onClick={() => openDeleteModal(m.id, m.nome)}
-                          className="hover:text-danger p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-danger/10"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+              ))}
+              {militaresFiltrados.length === 0 && !loading && (
+                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-500 italic">Nenhum militar encontrado.</td></tr>
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
         </div>
       ) : (
         <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors shadow-sm">
           <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {isEditing ? 'Editar Militar' : 'Novo Militar'}
+              {isEditing ? 'Editar Militar' : 'Cadastrar Novo Militar'}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {isEditing ? 'Atualize as informações do militar.' : 'Preencha as informações abaixo para cadastrar um novo militar no sistema.'}
-            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Preencha os dados de identificação do policial.</p>
           </div>
           
-          <div className="p-6 overflow-y-auto flex-1">
+          <form onSubmit={handleSalvar} className="p-6 overflow-y-auto flex-1 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome de Guerra</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">RG PM</label>
                 <input 
                   type="text" 
-                  value={novoMilitar.nome}
-                  onChange={e => setNovoMilitar({...novoMilitar, nome: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  required
+                  value={formData.rg}
+                  onChange={(e) => setFormData({...formData, rg: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">RG</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CPF</label>
                 <input 
                   type="text" 
-                  value={novoMilitar.rg}
-                  onChange={e => setNovoMilitar({...novoMilitar, rg: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  required
+                  value={formData.cpf}
+                  onChange={(e) => setFormData({...formData, cpf: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome Completo</label>
+                <input 
+                  type="text" 
+                  required
+                  value={formData.nome}
+                  onChange={(e) => setFormData({...formData, nome: e.target.value.toUpperCase()})}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Número de Contato</label>
-                <input 
-                  type="text" 
-                  value={novoMilitar.contato}
-                  onChange={e => setNovoMilitar({...novoMilitar, contato: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Patente</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Posto / Graduação</label>
                 <select 
-                  value={novoMilitar.posto || ''}
-                  onChange={e => setNovoMilitar({...novoMilitar, posto: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
+                  value={formData.graduacao}
+                  onChange={(e) => setFormData({...formData, graduacao: e.target.value})}
                 >
-                  <option value="" disabled>Selecione uma patente</option>
-                  {patentes.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
+                  <option value="SD PM">SD PM</option>
+                  <option value="CB PM">CB PM</option>
+                  <option value="3º SGT PM">3º SGT PM</option>
+                  <option value="2º SGT PM">2º SGT PM</option>
+                  <option value="1º SGT PM">1º SGT PM</option>
+                  <option value="SUB TEN PM">SUB TEN PM</option>
+                  <option value="2º TEN PM">2º TEN PM</option>
+                  <option value="1º TEN PM">1º TEN PM</option>
+                  <option value="CAP PM">CAP PM</option>
+                  <option value="MAJ PM">MAJ PM</option>
+                  <option value="TEN CEL PM">TEN CEL PM</option>
+                  <option value="CEL PM">CEL PM</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unidade</label>
-                <select 
-                  value={novoMilitar.unidadeId || ''}
-                  onChange={e => setNovoMilitar({...novoMilitar, unidadeId: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                >
-                  <option value="" disabled>Selecione uma unidade</option>
-                  {unidades.map(u => (
-                    <option key={u.id} value={u.id}>{u.nome}</option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Contato (Telefone/WhatsApp)</label>
+                <input 
+                  type="text" 
+                  value={formData.contato}
+                  onChange={(e) => setFormData({...formData, contato: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
+                />
               </div>
             </div>
-          </div>
 
-          <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
-            {isEditing && (
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-[#1f2937]">
+              {isEditing && (
+                <button 
+                  type="button"
+                  onClick={resetForm}
+                  className="px-6 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+              )}
               <button 
-                onClick={() => setViewMode('list')}
-                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
+                type="submit"
+                className="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
               >
-                Cancelar Edição
+                {isEditing ? 'Salvar Alterações' : 'Cadastrar Militar'}
               </button>
-            )}
-            <button 
-              onClick={handleSalvar}
-              className="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
-            >
-              {isEditing ? 'Salvar Alterações' : 'Criar Registro'}
-            </button>
-          </div>
+            </div>
+          </form>
         </div>
       )}
 
       <ModalConfirmacao 
         isOpen={isModalDeleteOpen}
-        title="Excluir Fornecimento Militar"
-        message={`Tem certeza que deseja excluir a conta de armaria do militar ${militarDeleteNome}?`}
+        title="Excluir Militar"
+        message={`Você tem certeza que deseja remover ${militarToDelete?.nome} do sistema? Esta ação é irreversível.`}
         onConfirm={confirmExcluir}
-        onCancel={() => { setIsModalDeleteOpen(false); setMilitarDeleteId(null); }}
+        onCancel={() => { setIsModalDeleteOpen(false); setMilitarToDelete(null); }}
       />
     </div>
   );
