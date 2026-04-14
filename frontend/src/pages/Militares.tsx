@@ -15,12 +15,23 @@ interface Militar {
   rg: string;
   nome: string;
   cpf: string;
-  graduacao: string;
+  posto: string;
   contato: string;
+  unidadeId?: string;
+  unidade?: {
+    id: string;
+    nome: string;
+  };
+}
+
+interface Unidade {
+  id: string;
+  nome: string;
 }
 
 const Militares: React.FC = () => {
   const [militares, setMilitares] = useState<Militar[]>([]);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [busca, setBusca] = useState('');
@@ -31,8 +42,9 @@ const Militares: React.FC = () => {
     rg: '',
     nome: '',
     cpf: '',
-    graduacao: 'SD PM',
-    contato: ''
+    posto: 'SD PM',
+    contato: '',
+    unidadeId: ''
   });
 
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
@@ -40,7 +52,17 @@ const Militares: React.FC = () => {
 
   useEffect(() => {
     fetchMilitares();
+    fetchUnidades();
   }, []);
+
+  const fetchUnidades = async () => {
+    try {
+      const res = await axios.get('/api/unidades');
+      setUnidades(res.data);
+    } catch (e) {
+      console.error("Erro ao buscar unidades", e);
+    }
+  };
 
   const fetchMilitares = async () => {
     try {
@@ -75,12 +97,28 @@ const Militares: React.FC = () => {
 
   const resetForm = () => {
     setIsEditing(false);
-    setFormData({ id: '', rg: '', nome: '', cpf: '', graduacao: 'SD PM', contato: '' });
+    setFormData({ 
+      id: '', 
+      rg: '', 
+      nome: '', 
+      cpf: '', 
+      posto: 'SD PM', 
+      contato: '',
+      unidadeId: '' 
+    });
   };
 
   const openEdit = (m: Militar) => {
     setIsEditing(true);
-    setFormData(m);
+    setFormData({
+      id: m.id,
+      rg: m.rg,
+      nome: m.nome,
+      cpf: m.cpf,
+      posto: m.posto,
+      contato: m.contato,
+      unidadeId: m.unidadeId || ''
+    });
     setViewMode('form');
   };
 
@@ -155,6 +193,7 @@ const Militares: React.FC = () => {
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Posto/Grad</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">RG</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nome Completo</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Contato</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
               </tr>
@@ -164,9 +203,10 @@ const Militares: React.FC = () => {
                 <tr><td colSpan={5} className="px-6 py-8 text-center animate-pulse">Carregando efetivo...</td></tr>
               ) : militaresFiltrados.map(m => (
                 <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors group">
-                  <td className="px-6 py-4 font-bold text-primary">{m.graduacao}</td>
+                  <td className="px-6 py-4 font-bold text-primary">{m.posto}</td>
                   <td className="px-6 py-4 font-mono text-xs">{m.rg}</td>
                   <td className="px-6 py-4 font-medium text-gray-900 dark:text-white uppercase">{m.nome}</td>
+                  <td className="px-6 py-4 text-xs font-bold text-gray-500">{m.unidade?.nome || 'N/A'}</td>
                   <td className="px-6 py-4 text-xs">{m.contato || 'N/A'}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -240,8 +280,8 @@ const Militares: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Posto / Graduação</label>
                 <select 
                   className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
-                  value={formData.graduacao}
-                  onChange={(e) => setFormData({...formData, graduacao: e.target.value})}
+                  value={formData.posto}
+                  onChange={(e) => setFormData({...formData, posto: e.target.value})}
                 >
                   <option value="SD PM">SD PM</option>
                   <option value="CB PM">CB PM</option>
@@ -255,6 +295,21 @@ const Militares: React.FC = () => {
                   <option value="MAJ PM">MAJ PM</option>
                   <option value="TEN CEL PM">TEN CEL PM</option>
                   <option value="CEL PM">CEL PM</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unidade</label>
+                <select 
+                  required
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm"
+                  value={formData.unidadeId}
+                  onChange={(e) => setFormData({...formData, unidadeId: e.target.value})}
+                >
+                  <option value="">Selecione a Unidade</option>
+                  {unidades.map(u => (
+                    <option key={u.id} value={u.id}>{u.nome}</option>
+                  ))}
                 </select>
               </div>
 
