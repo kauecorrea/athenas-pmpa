@@ -8,7 +8,9 @@ import {
   CheckCircle2, 
   X, 
   Trash2,
-  Car
+  Trash2,
+  Car,
+  List
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -58,7 +60,7 @@ const Vtr: React.FC = () => {
   const [manutencoes, setManutencoes] = useState<ManutencaoVTR[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [filtro, setFiltro] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Todos');
   
@@ -118,7 +120,7 @@ const Vtr: React.FC = () => {
     e.preventDefault();
     try {
       await axios.post('/api/vtr', formData);
-      setIsModalOpen(false);
+      alert('Manutenção VTR registrada com sucesso!');
       fetchData();
       // Reset form
       setFormData({
@@ -213,18 +215,24 @@ const Vtr: React.FC = () => {
     
     autoTable(doc, {
       startY: 60,
-      head: [['Os nº', m.osNumero?.toString().padStart(3, '0')]],
+      head: [[
+        { content: 'Os nº', styles: { fontStyle: 'bold', cellWidth: 35 } },
+        { content: m.osNumero?.toString().padStart(3, '0') || '', colSpan: 3, styles: { fontStyle: 'bold' } }
+      ]],
       body: [
         ['UnidadeVrt', m.unidade?.nome || '-', 'Data_Serviço', dataFormatada],
-        ['Solicitante', m.solicitante || '-', '', ''],
-        ['PlacaVRT', m.placaVrt || '-', 'Pre_fixo', m.prefixo || '0'],
-        ['Defeito Reclamado', m.defeitoReclamado || '-', '', ''],
-        ['Defeito Constatado', m.defeitoConstatado || '-', '', ''],
+        ['Solicitante', { content: m.solicitante || '-', colSpan: 3 }],
+        ['PlacaVRT', m.placaVrt || '-', 'Pre_fixo', m.prefixo || ''],
+        ['Defeito Reclamado', { content: m.defeitoReclamado || '-', colSpan: 3 }],
+        ['Defeito Constatado', { content: m.defeitoConstatado || '-', colSpan: 3 }],
       ],
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 35 }, 2: { fontStyle: 'bold', cellWidth: 35 } }
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0] },
+      columnStyles: { 
+        0: { fontStyle: 'bold', cellWidth: 35 }, 
+        2: { fontStyle: 'bold', cellWidth: 35 } 
+      }
     });
 
     const finalYInfo = (doc as any).lastAutoTable.finalY + 10;
@@ -261,14 +269,13 @@ const Vtr: React.FC = () => {
 
     // Rodapé Assinatura
     const pageHeight = doc.internal.pageSize.height;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("1º TEN QOPM MADAKE", 105, pageHeight - 30, { align: "center" });
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text("Chefe da Seção de Manutenção - DITEL", 105, pageHeight - 25, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 105, pageHeight - 30, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.text("Chefe das Seções de Telecomunicações e Suporte ao Usuário.", 105, pageHeight - 25, { align: "center" });
 
-    doc.save(`Laudo_VTR_OS_${m.osNumero}.pdf`);
+    window.open(doc.output('bloburl'), '_blank');
   };
 
   const manutencoesFiltradas = manutencoes.filter(m => {
@@ -302,16 +309,28 @@ const Vtr: React.FC = () => {
             Registro de laudos e vistorias técnicas em viaturas da corporação
           </p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <Plus size={20} />
-          Nova Manutençao VTR
-        </button>
+        {viewMode === 'list' ? (
+          <button 
+            onClick={() => setViewMode('form')}
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus size={20} />
+            Nova Manutenção VTR
+          </button>
+        ) : (
+          <button 
+            onClick={() => setViewMode('list')}
+            className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-5 py-3 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <List size={20} />
+            Consultar Registros
+          </button>
+        )}
       </div>
 
-      {/* FILTROS E BUSCA */}
+      {viewMode === 'list' ? (
+        <div className="space-y-6">
+          {/* FILTROS E BUSCA */}
       <div className="bg-white dark:bg-surface p-4 rounded-xl border border-gray-100 dark:border-[#1f2937] shadow-sm flex flex-col md:flex-row items-center gap-4">
         <div className="flex-1 relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -469,32 +488,26 @@ const Vtr: React.FC = () => {
           </div>
         )}
       </div>
+      </div>
+      ) : (
 
-      {/* MODAL DE CADASTRO */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-surface w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="px-8 py-6 bg-gray-50 dark:bg-[#0a0f1d] border-b border-gray-100 dark:border-[#1f2937] flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-primary/10 rounded-xl">
-                  <Car className="text-primary" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nova Manutenção VTR</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Emitir Laudo de Atendimento</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 rounded-full transition-all"
-              >
-                <X size={24} />
-              </button>
+      {/* MAIN FORM DE CADASTRO */}
+      <div className="bg-white dark:bg-surface rounded-3xl shadow-sm border border-gray-100 dark:border-[#1f2937] overflow-hidden flex flex-col">
+        {/* Form Header */}
+        <div className="px-8 py-6 bg-gray-50 dark:bg-[#0a0f1d] border-b border-gray-100 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-xl">
+              <Car className="text-primary" size={24} />
             </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nova Manutenção VTR</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Emitir Laudo de Atendimento</p>
+            </div>
+          </div>
+        </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleCreate} className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+        {/* Form Body */}
+        <form onSubmit={handleCreate} className="flex-1 overflow-y-auto p-8 space-y-8">
               
               {/* Seção 1: Identificação */}
               <div className="space-y-4">
@@ -687,25 +700,17 @@ const Vtr: React.FC = () => {
                 </div>
               </div>
 
-              {/* Modal Footer (Inner) */}
-              <div className="pt-6 border-t border-gray-100 dark:border-[#1f2937] flex justify-end gap-3">
-                <button 
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit"
-                  className="bg-primary hover:bg-primary-hover text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Salvar e Gerar OS
-                </button>
-              </div>
-            </form>
+          {/* Form Footer */}
+          <div className="bg-gray-50 dark:bg-[#0a0f1d] px-8 py-6 border-t border-gray-100 dark:border-[#1f2937] flex justify-end gap-3 flex-shrink-0">
+            <button 
+              type="submit"
+              className="bg-primary hover:bg-primary-hover text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Salvar e Gerar OS
+            </button>
           </div>
-        </div>
+        </form>
+      </div>
       )}
 
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}

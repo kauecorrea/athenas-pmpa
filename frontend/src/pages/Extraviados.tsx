@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, FileText, ChevronDown, AlertTriangle, Trash2, Search } from 'lucide-react';
+import { Plus, FileText, ChevronDown, AlertTriangle, Trash2, Search, List } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 
@@ -28,7 +28,7 @@ interface Militar {
 }
 
 const Extraviados: React.FC = () => {
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
   const [militares, setMilitares] = useState<Militar[]>([]);
   const [extravios, setExtravios] = useState<ExtravioRecord[]>([]);
@@ -52,12 +52,12 @@ const Extraviados: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isFormOpen) {
+    if (viewMode === 'form') {
       setBuscaRadioModal('');
       fetchEquipamentosParaExtravio();
       fetchMilitares();
     }
-  }, [isFormOpen]);
+  }, [viewMode]);
 
   const fetchExtravios = async () => {
     try {
@@ -101,8 +101,7 @@ const Extraviados: React.FC = () => {
         dataExtravio: dataExtravio ? new Date(dataExtravio).toISOString() : new Date().toISOString(),
         local,
         descricao
-      });
-      setIsFormOpen(false);
+      alert("Extravio registrado com sucesso!");
       setEquipamentoId('');
       setMilitarId('');
       setDataExtravio('');
@@ -286,21 +285,29 @@ const Extraviados: React.FC = () => {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Acervo oficial de Furtos, Perdas e Danos Irrecuperáveis</p>
         </div>
-        {!isFormOpen && (
+        {viewMode === 'list' ? (
           <button 
-            onClick={() => setIsFormOpen(true)}
+            onClick={() => setViewMode('form')}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20 whitespace-nowrap"
           >
             <Plus size={18} />
             Registrar B.O de Extravio
           </button>
+        ) : (
+          <button 
+            onClick={() => setViewMode('list')}
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap"
+          >
+            <List size={18} />
+             Consultar B.O
+          </button>
         )}
       </div>
 
       {/* INLINE FORM: REGISTRAR EXTRAVIO */}
-      {isFormOpen && (
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-shrink-0 transition-colors">
-          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937]">
+      {viewMode === 'form' ? (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col transition-colors">
+          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Perda / Extravio</h2>
             <p className="text-sm text-gray-500 mt-1">Ao registrar o rádio sai definitivamente do controle de "Operacionais".</p>
           </div>
@@ -409,24 +416,17 @@ const Extraviados: React.FC = () => {
 
           </div>
 
-          <div className="p-6 pt-2 flex items-center gap-3">
+          <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
             <button 
               onClick={handleCreateExtravio}
-              className="px-6 py-2.5 text-sm font-medium text-white bg-danger hover:bg-red-700 rounded-lg transition-colors shadow-lg shadow-red-600/20"
+              className="px-8 py-2.5 text-sm font-medium text-white bg-danger hover:bg-red-700 rounded-lg transition-colors shadow-lg shadow-red-600/20"
             >
               Registrar Perda
             </button>
-            <button 
-              onClick={() => setIsFormOpen(false)}
-              className="px-6 py-2.5 text-sm font-medium text-gray-400 border border-[#374151] hover:text-white dark:hover:bg-[#1f2937] hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Cancelar
-            </button>
           </div>
         </div>
-      )}
+      ) : (
 
-      {/* TABELA DE EQUIPAMENTOS EXTRAVIADOS */}
       <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
         
         <div className="p-5 border-b border-gray-200 dark:border-[#1f2937] flex items-center gap-2">
@@ -514,6 +514,7 @@ const Extraviados: React.FC = () => {
           </table>
         </div>
       </div>
+      )}
 
       {/* MODAIS DE AÇÃO */}
       <ModalConfirmacao 

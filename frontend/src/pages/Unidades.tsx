@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, Edit2, Trash2, ChevronDown } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, ChevronDown, List } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Unidade {
@@ -16,7 +16,7 @@ interface Unidade {
 
 const Unidades: React.FC = () => {
   const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [isEditing, setIsEditing] = useState(false);
 
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
@@ -51,16 +51,16 @@ const Unidades: React.FC = () => {
     }
   };
 
-  const openNovoModal = () => {
+  const switchToFormNovo = () => {
     setIsEditing(false);
     setNovaUnidade({ nome: '', sigla: '', coint: '', localizacao: '' });
-    setIsModalOpen(true);
+    setViewMode('form');
   };
 
   const openEditModal = (unidade: Unidade) => {
     setIsEditing(true);
     setNovaUnidade({ ...unidade });
-    setIsModalOpen(true);
+    setViewMode('form');
   };
 
   const handleSalvar = async () => {
@@ -77,10 +77,12 @@ const Unidades: React.FC = () => {
     try {
       if (isEditing) {
         await axios.put(`/api/unidades/${novaUnidade.id}`, novaUnidade);
+        setViewMode('list');
       } else {
         await axios.post('/api/unidades', novaUnidade);
+        alert("Unidade cadastrada com sucesso!");
+        setNovaUnidade({ nome: '', sigla: '', coint: '', localizacao: '' });
       }
-      setIsModalOpen(false);
       fetchUnidades();
     } catch (error) {
       console.error("Erro ao salvar unidade", error);
@@ -146,16 +148,27 @@ const Unidades: React.FC = () => {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gerenciamento de unidades militares</p>
         </div>
-        <button 
-          onClick={openNovoModal}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
-        >
-          <Plus size={18} />
-          Nova Unidade
-        </button>
+        {viewMode === 'list' ? (
+          <button 
+            onClick={switchToFormNovo}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
+          >
+            <Plus size={18} />
+            Nova Unidade
+          </button>
+        ) : (
+          <button 
+            onClick={() => setViewMode('list')}
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <List size={18} />
+            Consultar Registros
+          </button>
+        )}
       </div>
 
-      <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
+      {viewMode === 'list' ? (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
         <div className="p-4 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between gap-4 flex-wrap">
           
           <div className="relative flex-1 min-w-[300px] max-w-md">
@@ -243,17 +256,20 @@ const Unidades: React.FC = () => {
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl flex flex-col my-auto max-h-[95vh]">
-            <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {isEditing ? 'Editar Unidade' : 'Nova Unidade'}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Preencha as informações da unidade</p>
-            </div>
-            
-            <div className="p-6 overflow-y-auto space-y-4">
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {isEditing ? 'Editar Unidade' : 'Nova Unidade'}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {isEditing ? 'Atualize as informações da unidade.' : 'Preencha as informações abaixo para cadastrar uma nova unidade militar.'}
+            </p>
+          </div>
+          
+          <div className="p-6 overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unidade</label>
                 <input 
@@ -284,21 +300,23 @@ const Unidades: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
 
-            <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0">
+          <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
+            {isEditing && (
               <button 
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
+                onClick={() => setViewMode('list')}
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
               >
-                Cancelar
+                Cancelar Edição
               </button>
-              <button 
-                onClick={handleSalvar}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors"
-              >
-                Salvar
-              </button>
-            </div>
+            )}
+            <button 
+              onClick={handleSalvar}
+              className="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
+            >
+              {isEditing ? 'Salvar Alterações' : 'Criar Registro'}
+            </button>
           </div>
         </div>
       )}

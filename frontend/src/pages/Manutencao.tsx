@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Wrench, FileText, CheckCircle, Search } from 'lucide-react';
+import { Plus, Wrench, FileText, CheckCircle, Search, List } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 
@@ -28,7 +28,7 @@ interface EquipamentoDisponivel {
 }
 
 const Manutencao: React.FC = () => {
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
   const [manutencoes, setManutencoes] = useState<ManutencaoRecord[]>([]);
 
@@ -48,11 +48,11 @@ const Manutencao: React.FC = () => {
 
   useEffect(() => {
     // Buscar equipamentos quando o formulário for aberto
-    if (isFormOpen) {
+    if (viewMode === 'form') {
       setBuscaRadioModal('');
       fetchEquipamentosParaManutencao();
     }
-  }, [isFormOpen]);
+  }, [viewMode]);
 
   const fetchManutencoes = async () => {
     try {
@@ -87,7 +87,7 @@ const Manutencao: React.FC = () => {
         dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : new Date().toISOString(),
         previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
       });
-      setIsFormOpen(false);
+      alert("Registro de manutenção incluído!");
       setEquipamentoId('');
       setProblema('');
       setDataEntrada('');
@@ -240,21 +240,29 @@ const Manutencao: React.FC = () => {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gerenciamento de consertos ou reparos preventivos</p>
         </div>
-        {!isFormOpen && (
+        {viewMode === 'list' ? (
           <button 
-            onClick={() => setIsFormOpen(true)}
+            onClick={() => setViewMode('form')}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20 whitespace-nowrap"
           >
             <Plus size={18} />
             Nova Manutenção
           </button>
+        ) : (
+          <button 
+            onClick={() => setViewMode('list')}
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap"
+          >
+            <List size={18} />
+            Consultar Registros
+          </button>
         )}
       </div>
 
       {/* INLINE FORM: REGISTRAR MANUTENÇÃO */}
-      {isFormOpen && (
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-shrink-0 transition-colors">
-          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937]">
+      {viewMode === 'form' ? (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col transition-colors">
+          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Manutenção</h2>
           </div>
           
@@ -338,24 +346,17 @@ const Manutencao: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-6 pt-2 flex items-center gap-3">
+          <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
             <button 
               onClick={handleCreateManutencao}
-              className="px-6 py-2.5 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
+              className="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
             >
-              Registrar
-            </button>
-            <button 
-              onClick={() => setIsFormOpen(false)}
-              className="px-6 py-2.5 text-sm font-medium text-gray-400 border border-[#374151] hover:text-white dark:hover:bg-[#1f2937] hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Cancelar
+              Registrar Manutenção
             </button>
           </div>
         </div>
-      )}
+      ) : (
 
-      {/* TABELA DE EQUIPAMENTOS EM MANUTENÇÃO */}
       <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
         
         <div className="p-5 border-b border-gray-200 dark:border-[#1f2937] flex items-center gap-2">
@@ -433,6 +434,7 @@ const Manutencao: React.FC = () => {
           </table>
         </div>
       </div>
+      )}
 
       <ModalConfirmacao 
         isOpen={isModalConcluirOpen}

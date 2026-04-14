@@ -1,7 +1,7 @@
 // Atualização de Cautelas - v1.0.1
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, FileText, Download, ChevronDown, CheckCircle, Edit2, Trash2 } from 'lucide-react';
+import { Search, Plus, FileText, Download, ChevronDown, CheckCircle, Edit2, Trash2, List } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -34,7 +34,7 @@ interface Cautela {
 }
 
 const Cautelas: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [buscaTratada, setBuscaTratada] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Todos - Status');
   
@@ -69,7 +69,7 @@ const Cautelas: React.FC = () => {
 
   // Fetch Available Radios when Modal Opens
   useEffect(() => {
-    if (isModalOpen) {
+    if (viewMode === 'form') {
       fetchEquipamentosOperacionais();
       
       // Só resetamos se NÃO for uma edição
@@ -82,7 +82,7 @@ const Cautelas: React.FC = () => {
         setMissao('');
       }
     }
-  }, [isModalOpen]);
+  }, [viewMode, editingCautelaId]);
 
   const fetchCautelas = async () => {
     try {
@@ -136,6 +136,7 @@ const Cautelas: React.FC = () => {
           dataInicio: dataInicio ? new Date(dataInicio).toISOString() : undefined,
           dataPrevista: dataPrevista ? new Date(dataPrevista).toISOString() : null
         });
+        setViewMode('list');
       } else {
         await axios.post('/api/cautelas', {
           equipamentosIds: radiosSelecionados,
@@ -144,8 +145,14 @@ const Cautelas: React.FC = () => {
           dataInicio: dataInicio ? new Date(dataInicio).toISOString() : undefined,
           dataPrevista: dataPrevista ? new Date(dataPrevista).toISOString() : null
         });
+        alert("Cautela criada com sucesso!");
+        setRadiosSelecionados([]);
+        setBuscaRadioModal('');
+        setMilitarId('');
+        setDataInicio('');
+        setDataPrevista('');
+        setMissao('');
       }
-      setIsModalOpen(false);
       fetchCautelas(); // Refresh table
     } catch (error) {
       console.error("Erro ao salvar cautela:", error);
@@ -161,7 +168,7 @@ const Cautelas: React.FC = () => {
     setDataPrevista(c.dataPrevista ? new Date(c.dataPrevista).toISOString().split('T')[0] : '');
     setRadiosSelecionados(c.equipamentos.map(e => e.id));
     // Forçamos abrir a tela pra edição (apenas dados de missão e data podem ser mudados por padrao de segurança, ou injetar todos. Dependerá da visão do usuario, aqui forçaremos visual base).
-    setIsModalOpen(true);
+    setViewMode('form');
   };
 
   const openDeleteModal = (id: string) => {
@@ -423,21 +430,34 @@ const Cautelas: React.FC = () => {
             <Download size={16} />
             Gerar Relatório
           </button>
-          <button 
-            onClick={() => {
-              setEditingCautelaId(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
-          >
-            <Plus size={18} />
-            Nova Cautela
-          </button>
+          {viewMode === 'list' ? (
+            <button 
+              onClick={() => {
+                setEditingCautelaId(null);
+                setViewMode('form');
+              }}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
+            >
+              <Plus size={18} />
+              Nova Cautela
+            </button>
+          ) : (
+            <button 
+              onClick={() => {
+                setEditingCautelaId(null);
+                setViewMode('list');
+              }}
+              className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              <List size={18} />
+              Consultar Registros
+            </button>
+          )}
         </div>
       </div>
 
-      {/* FILTROS E TABELA */}
-      <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
+      {viewMode === 'list' ? (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
         
         {/* FILTER BAR */}
         <div className="p-4 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between gap-4 flex-wrap">
@@ -529,7 +549,7 @@ const Cautelas: React.FC = () => {
                       <button onClick={() => handleEdit(c)} className="hover:text-primary dark:hover:text-primary p-1.5 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-500/10" title="Editar Informações da Cautela">
                         <Edit2 size={16} />
                       </button>
-                      {(c.status === 'ATIVA' || c.status === 'VENCIDA') && (
+                      {c.status !== 'DEVOLVIDA' && (
                         <button 
                           onClick={() => openDevolverModal(c.id)}
                           className="hover:text-success dark:hover:text-success p-1.5 rounded-lg transition-colors hover:bg-success/10" 
@@ -556,24 +576,20 @@ const Cautelas: React.FC = () => {
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[600px] shadow-2xl flex flex-col my-auto max-h-[95vh]">
-            <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {editingCautelaId ? 'Editar Cautela' : 'Nova Cautela'}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {editingCautelaId ? 'Atualize as informações do empréstimo' : 'Selecione o militar e os equipamentos'}
-                </p>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto space-y-4">
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {editingCautelaId ? 'Editar Cautela' : 'Nova Cautela'}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {editingCautelaId ? 'Atualize as informações do empréstimo.' : 'Selecione o militar e os equipamentos para registrar a cautela.'}
+            </p>
+          </div>
+          
+          <div className="p-6 overflow-y-auto flex-1">
+            <div className="max-w-4xl space-y-6">
               
               {/* Militar Responsável */}
               <div>
@@ -594,7 +610,7 @@ const Cautelas: React.FC = () => {
               </div>
 
               {/* Datas */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data de Início</label>
                   <div className="relative">
@@ -602,7 +618,7 @@ const Cautelas: React.FC = () => {
                       type="date"
                       value={dataInicio}
                       onChange={(e) => setDataInicio(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                     />
                   </div>
                 </div>
@@ -613,7 +629,7 @@ const Cautelas: React.FC = () => {
                       type="date"
                       value={dataPrevista}
                       onChange={(e) => setDataPrevista(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                     />
                   </div>
                 </div>
@@ -636,36 +652,36 @@ const Cautelas: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex justify-between items-center">
                   <span>Rádios Disponíveis para Empréstimo</span>
                 </label>
-                <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
+                <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col max-h-80 shadow-sm">
                   {/* Search bar inside block */}
-                  <div className="p-2 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
+                  <div className="p-3 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                       <input 
                         type="text"
                         placeholder="Buscar rádio (Série, RP, ID)..."
                         value={buscaRadioModal}
                         onChange={e => setBuscaRadioModal(e.target.value)}
-                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-1.5 focus:outline-none placeholder-gray-400"
+                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-10 pr-3 py-1 focus:outline-none placeholder-gray-400"
                       />
                     </div>
                   </div>
                   {/* List of checkboxes */}
-                  <div className="max-h-48 overflow-y-auto p-4 space-y-3">
+                  <div className="overflow-y-auto p-4 space-y-3">
                     {radiosDisponiveisFiltrados.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic text-center py-2">Nenhum rádio encontrado.</p>
+                      <p className="text-sm text-gray-500 italic text-center py-4">Nenhum rádio encontrado.</p>
                     ) : (
                       radiosDisponiveisFiltrados.map((radio) => (
-                        <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
-                          <div className="relative flex items-center justify-center w-4 h-4 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-surface group-hover:border-primary transition-colors">
+                        <label key={radio.id} className="flex items-center gap-4 cursor-pointer group p-2 hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-md transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
+                          <div className="relative flex items-center justify-center w-5 h-5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-surface group-hover:border-primary transition-colors">
                             <input 
                               type="checkbox" 
                               className="peer w-full h-full opacity-0 cursor-pointer absolute" 
                               checked={radiosSelecionados.includes(radio.id)}
                               onChange={() => toggleRadioSelection(radio.id)}
                             />
-                            <div className="hidden peer-checked:block pointer-events-none text-white absolute left-[-1px] top-[-1px] bg-primary rounded w-[18px] h-[18px] flex items-center justify-center">
-                              <svg className="w-3 h-3 mx-auto mt-[2.5px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <div className="hidden peer-checked:block pointer-events-none text-white absolute left-[-1px] top-[-1px] bg-primary rounded w-[22px] h-[22px] flex items-center justify-center">
+                              <svg className="w-3.5 h-3.5 mx-auto mt-[3px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
@@ -679,29 +695,31 @@ const Cautelas: React.FC = () => {
                   </div>
                 </div>
                 {/* Selection Count Label */}
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-medium ml-1">
-                  {radiosSelecionados.length} rádio(s) selecionado(s)
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium ml-1">
+                  <span className="text-primary font-bold">{radiosSelecionados.length}</span> rádio(s) selecionado(s)
                 </p>
               </div>
 
             </div>
+          </div>
 
-            {/* MODAL FOOTER */}
-            <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0">
+          {/* FOOTER */}
+          <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
+            {editingCautelaId && (
               <button 
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-lg transition-colors border border-transparent dark:border-[#374151]"
+                onClick={() => setViewMode('list')}
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-[#1f2937] rounded-lg transition-colors border border-transparent dark:border-[#374151]"
               >
-                Cancelar
+                Cancelar Edição
               </button>
-              <button 
-                onClick={handleCriarCautela}
-                disabled={radiosSelecionados.length === 0 || !militarId}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {editingCautelaId ? 'Salvar Edições' : 'Criar Cautela'}
-              </button>
-            </div>
+            )}
+            <button 
+              onClick={handleCriarCautela}
+              disabled={radiosSelecionados.length === 0 || !militarId}
+              className="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {editingCautelaId ? 'Salvar Edições' : 'Criar Cautela'}
+            </button>
           </div>
         </div>
       )}

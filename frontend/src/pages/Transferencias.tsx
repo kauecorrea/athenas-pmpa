@@ -29,9 +29,9 @@ interface Militar {
 }
 
 const Transferencias: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [isModalEditOpen, setIsModalEditOpen] = useState(false);
+
   const [transferenciaAlvo, setTransferenciaAlvo] = useState<TransferenciaRecord | null>(null);
 
   const [buscaTratada, setBuscaTratada] = useState('');
@@ -54,11 +54,11 @@ const Transferencias: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isModalOpen) {
+    if (viewMode === 'form') {
       fetchEquipamentosCautelados();
       fetchMilitares();
     }
-  }, [isModalOpen]);
+  }, [viewMode]);
 
   const fetchTransferencias = async () => {
     try {
@@ -200,7 +200,10 @@ const Transferencias: React.FC = () => {
     setTransferenciaAlvo(t);
     setDestino(t.destino);
     setObservacoes(t.observacoes || '');
-    setIsModalEditOpen(true);
+    setMilitarId(t.militar?.id || '');
+    setRadiosSelecionados(t.equipamentos.map(eq => eq.id));
+    setDataTransferencia(new Date(t.dataTransferencia).toISOString().slice(0, 16));
+    setViewMode('form');
   };
 
   // -----------------------------------------------------------------------------------------------------
@@ -221,7 +224,7 @@ const Transferencias: React.FC = () => {
         observacoes,
       });
 
-      setIsModalOpen(false);
+      alert("Transferência criada com sucesso!");
       setRadiosSelecionados([]);
       setMilitarId('');
       setDestino('');
@@ -247,19 +250,23 @@ const Transferencias: React.FC = () => {
     }
   };
 
-  const handleEditTransferencia = async () => {
-    if (!transferenciaAlvo) return;
-    try {
-      await axios.put(`/api/transferencias/${transferenciaAlvo.id}`, {
-        destino,
-        observacoes
-      });
-      setIsModalEditOpen(false);
-      setTransferenciaAlvo(null);
-      fetchTransferencias();
-    } catch (e) {
-      console.error(e);
-      alert('Erro ao editar a transferência.');
+  const handleSaveForm = async () => {
+    if (transferenciaAlvo) {
+      if (!transferenciaAlvo) return;
+      try {
+        await axios.put(`/api/transferencias/${transferenciaAlvo.id}`, {
+          destino,
+          observacoes
+        });
+        setViewMode('list');
+        setTransferenciaAlvo(null);
+        fetchTransferencias();
+      } catch (e) {
+        console.error(e);
+        alert('Erro ao editar a transferência.');
+      }
+    } else {
+      handleCreateTransferencia();
     }
   };
 
@@ -295,24 +302,38 @@ const Transferencias: React.FC = () => {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Repasse direto de Cautelas Operacionais (Guarnição p/ Guarnição)</p>
         </div>
-        <button 
-          onClick={() => {
-            setMilitarId('');
-            setDestino('');
-            setObservacoes('');
-            setRadiosSelecionados([]);
-            setBuscaRadioModal('');
-            setIsModalOpen(true);
-          }}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
-        >
-          <Plus size={18} />
-          Nova Transferência
-        </button>
+        {viewMode === 'list' ? (
+          <button 
+            onClick={() => {
+              setTransferenciaAlvo(null);
+              setMilitarId('');
+              setDestino('');
+              setObservacoes('');
+              setRadiosSelecionados([]);
+              setBuscaRadioModal('');
+              setViewMode('form');
+            }}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
+          >
+            <Plus size={18} />
+            Nova Transferência
+          </button>
+        ) : (
+          <button 
+            onClick={() => {
+              setTransferenciaAlvo(null);
+              setViewMode('list');
+            }}
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <Edit2 size={18} />
+            Consultar Registros
+          </button>
+        )}
       </div>
 
-      {/* FILTROS E TABELA */}
-      <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
+      {viewMode === 'list' ? (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
         
         {/* FILTER BAR */}
         <div className="p-4 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between gap-4 flex-wrap">
@@ -413,29 +434,29 @@ const Transferencias: React.FC = () => {
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[600px] shadow-2xl flex flex-col my-auto max-h-[95vh]">
-            <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Repasse Tático de Material</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Ao registrar, a cautela original do rádio selecionado é encerrada e transferida para a matrícula do PM selecionado abaixo.</p>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto space-y-4">
-              
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {transferenciaAlvo ? 'Editar Transferência' : 'Repasse Tático de Material'}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {transferenciaAlvo ? 'Modifique os dados básicos da transferência (destino e observações).' : 'Ao registrar, a cautela original do rádio selecionado é encerrada e transferida para a matrícula do PM selecionado abaixo.'}
+            </p>
+          </div>
+          
+          <div className="p-6 overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
               {/* Militar Responsável */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Policial Substituto (Quem vai assumir) *</label>
                 <div className="relative">
                   <select 
-                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none disabled:opacity-50"
                     value={militarId}
                     onChange={(e) => setMilitarId(e.target.value)}
+                    disabled={!!transferenciaAlvo}
                   >
                     <option value="" disabled>Selecione o militar</option>
                     {militares.map(m => (
@@ -465,67 +486,16 @@ const Transferencias: React.FC = () => {
                   type="datetime-local"
                   value={dataTransferencia}
                   onChange={(e) => setDataTransferencia(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                  disabled={!!transferenciaAlvo}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
                 />
-              </div>
-
-              {/* Rádios Cautelados Disponíveis Component */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Rádios Atualmente na Rua *</label>
-                <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
-                  {/* Search bar inside block */}
-                  <div className="p-2 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                      <input 
-                        type="text"
-                        placeholder="Buscar rádio cautelado..."
-                        value={buscaRadioModal}
-                        onChange={e => setBuscaRadioModal(e.target.value)}
-                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-1.5 focus:outline-none placeholder-gray-400"
-                      />
-                    </div>
-                  </div>
-                  {/* List of checkboxes */}
-                  <div className="max-h-48 overflow-y-auto p-4 space-y-3">
-                    {radiosDisponiveisFiltrados.length === 0 ? (
-                      <p className="text-sm text-gray-500 italic text-center py-4">Nenhum rádio encontrado.</p>
-                    ) : (
-                      radiosDisponiveisFiltrados.map((radio) => (
-                         <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
-                          <div className="relative flex items-center justify-center w-4 h-4 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-surface group-hover:border-primary transition-colors">
-                            <input 
-                              type="checkbox" 
-                              className="peer w-full h-full opacity-0 cursor-pointer absolute" 
-                              checked={radiosSelecionados.includes(radio.id)}
-                              onChange={() => toggleRadioSelection(radio.id)}
-                            />
-                            <div className="hidden peer-checked:block pointer-events-none text-white absolute left-[-1px] top-[-1px] bg-primary rounded w-[18px] h-[18px] flex items-center justify-center">
-                              <svg className="w-3 h-3 mx-auto mt-[2.5px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                          </div>
-                          <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium text-left">
-                            {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''} 
-                            {radio.idRadio && ` - [${radio.idRadio}]`} 
-                          </span>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                </div>
-                {/* Selection Count Label */}
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
-                  Selecionados para repasse: <strong className="text-primary">{radiosSelecionados.length}</strong>
-                </p>
               </div>
 
               {/* Observações */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Observações Visuais (Avarias)</label>
                 <textarea 
-                  rows={3}
+                  rows={2}
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
                   placeholder="Ex: Rádio recebido com a ponta da antena mastigada."
@@ -533,23 +503,90 @@ const Transferencias: React.FC = () => {
                 />
               </div>
 
-            </div>
+              {/* Rádios Cautelados Disponíveis Component */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  {transferenciaAlvo ? 'Rádios Repassados' : 'Rádios Atualmente na Rua *'}
+                </label>
+                <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col max-h-64 shadow-sm">
+                  {/* Search bar inside block */}
+                  <div className="p-3 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input 
+                        type="text"
+                        placeholder="Buscar rádio cautelado..."
+                        value={buscaRadioModal}
+                        onChange={e => setBuscaRadioModal(e.target.value)}
+                        disabled={!!transferenciaAlvo}
+                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-10 pr-3 py-1 focus:outline-none placeholder-gray-400 disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                  {/* List of checkboxes */}
+                  <div className="overflow-y-auto p-4 space-y-3">
+                    {transferenciaAlvo ? (
+                      transferenciaAlvo.equipamentos.map((radio) => (
+                        <label key={radio.id} className="flex items-center gap-4 cursor-pointer group p-2 bg-gray-100 dark:bg-[#1f2937] rounded-md transition-colors border border-transparent opacity-70">
+                          <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium text-left">
+                            {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''} 
+                          </span>
+                        </label>
+                      ))
+                    ) : radiosDisponiveisFiltrados.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic text-center py-4">Nenhum rádio encontrado.</p>
+                    ) : (
+                      radiosDisponiveisFiltrados.map((radio) => (
+                         <label key={radio.id} className="flex items-center gap-4 cursor-pointer group p-2 hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-md transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
+                          <div className="relative flex items-center justify-center w-5 h-5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-surface group-hover:border-primary transition-colors">
+                            <input 
+                              type="checkbox" 
+                              className="peer w-full h-full opacity-0 cursor-pointer absolute" 
+                              checked={radiosSelecionados.includes(radio.id)}
+                              onChange={() => toggleRadioSelection(radio.id)}
+                            />
+                            <div className="hidden peer-checked:block pointer-events-none text-white absolute left-[-1px] top-[-1px] bg-primary rounded w-[22px] h-[22px] flex items-center justify-center">
+                              <svg className="w-3.5 h-3.5 mx-auto mt-[3px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium text-left">
+                            {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''} 
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+                {/* Selection Count Label */}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium ml-1">
+                  Selecionados para repasse: <strong className="text-primary">{transferenciaAlvo ? transferenciaAlvo.equipamentos.length : radiosSelecionados.length}</strong>
+                </p>
+              </div>
 
-            {/* MODAL FOOTER */}
-            <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0">
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleCreateTransferencia}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
-              >
-                Transferir Instintivamente
-              </button>
             </div>
+          </div>
+
+          {/* FOOTER */}
+          <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
+            {transferenciaAlvo && (
+              <button 
+                onClick={() => {
+                  setViewMode('list');
+                  setTransferenciaAlvo(null);
+                }}
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-[#1f2937] rounded-lg transition-colors border border-transparent dark:border-[#374151]"
+              >
+                Cancelar Edição
+              </button>
+            )}
+            <button 
+              onClick={handleSaveForm}
+              className="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
+            >
+              {transferenciaAlvo ? 'Salvar Edições' : 'Transferir Instintivamente'}
+            </button>
           </div>
         </div>
       )}
@@ -580,49 +617,7 @@ const Transferencias: React.FC = () => {
         </div>
       )}
 
-      {isModalEditOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/80 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl p-6 my-auto max-h-[95vh]">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Editar Transferência</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Missão / Destino</label>
-                <input 
-                  type="text" 
-                  value={destino}
-                  onChange={(e) => setDestino(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Observações (Avarias ou Alerta)</label>
-                <textarea 
-                  rows={3}
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all resize-none"
-                />
-              </div>
-            </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button 
-                onClick={() => setIsModalEditOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleEditTransferencia}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
-                Salvar Alterações
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, ShieldOff, Shield, Trash2 } from 'lucide-react';
+import { Plus, ShieldOff, Shield, Trash2, List } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Usuario {
@@ -14,7 +14,7 @@ interface Usuario {
 
 const Usuarios: React.FC = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   
   // Create Form States
   const [novoUsuario, setNovoUsuario] = useState({
@@ -50,7 +50,7 @@ const Usuarios: React.FC = () => {
     }
     try {
       await axios.post('/api/usuarios', novoUsuario);
-      setIsModalOpen(false);
+      alert("Usuário registrado com sucesso!");
       setNovoUsuario({ nomeCompleto: '', nomeGuerra: '', email: '', senha: '', permissao: 'Administrador' });
       fetchUsuarios();
     } catch (error: any) {
@@ -101,14 +101,26 @@ const Usuarios: React.FC = () => {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gerencie permissões e acesso dos usuários</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
-        >
-          <Plus size={18} />
-          Novo Usuário
-        </button>
+        {viewMode === 'list' ? (
+          <button 
+            onClick={() => setViewMode('form')}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20"
+          >
+            <Plus size={18} />
+            Novo Usuário
+          </button>
+        ) : (
+          <button 
+            onClick={() => setViewMode('list')}
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap"
+          >
+            <List size={18} />
+             Consultar Registros
+          </button>
+        )}
       </div>
+
+      {viewMode === 'list' ? (
 
       {/* TABELA DE USUÁRIOS */}
       <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
@@ -175,20 +187,16 @@ const Usuarios: React.FC = () => {
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-[500px] shadow-2xl flex flex-col my-auto max-h-[95vh]">
-            <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between flex-shrink-0">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Criar Novo Usuário</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Adicione um novo usuário ao sistema. Apenas administradores podem criar contas.</p>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto space-y-4">
+      </div>
+      ) : (
+
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col transition-colors">
+          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Criar Novo Usuário</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Adicione um novo usuário ao sistema. Apenas administradores podem criar contas.</p>
+          </div>
+          
+          <div className="p-6 overflow-y-auto space-y-4">
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome Completo</label>
@@ -247,21 +255,14 @@ const Usuarios: React.FC = () => {
 
             </div>
 
-            <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0">
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
+            <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
               <button 
                 onClick={handleCreate}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
+                className="px-8 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
               >
                 Criar Usuário
               </button>
             </div>
-          </div>
         </div>
       )}
 

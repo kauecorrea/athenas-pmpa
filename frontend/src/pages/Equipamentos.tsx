@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Search, Trash2, Edit2, ChevronDown } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, ChevronDown, List } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 
 interface Equipamento {
@@ -31,7 +31,7 @@ const Equipamentos: React.FC = () => {
   const [filtroModelo, setFiltroModelo] = useState('Todos - Modelo');
   const [busca, setBusca] = useState('');
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [equipamentoDeleteId, setEquipamentoDeleteId] = useState<string | null>(null);
   const [equipamentoDeleteRp, setEquipamentoDeleteRp] = useState('');
@@ -72,10 +72,10 @@ const Equipamentos: React.FC = () => {
     }
   };
 
-  const openNovoModal = () => {
+  const switchToFormNovo = () => {
     setIsEditing(false);
     setNovoEquip({ id: '', numSerie: '', idRadio: '', rp: '', marca: 'Motorola', modelo: 'APX 900', status: 'OPERACIONAL', garantia: 'Não', unidadeId: '' });
-    setIsModalOpen(true);
+    setViewMode('form');
   };
 
   const openEditModal = (eq: Equipamento) => {
@@ -91,7 +91,7 @@ const Equipamentos: React.FC = () => {
       garantia: eq.garantia || 'Não',
       unidadeId: eq.unidadeId || ''
     });
-    setIsModalOpen(true);
+    setViewMode('form');
   };
 
   const handleSalvar = async () => {
@@ -99,11 +99,13 @@ const Equipamentos: React.FC = () => {
       if (isEditing) {
         const res = await axios.put(`/api/equipamentos/${novoEquip.id}`, novoEquip);
         setEquipamentos(equipamentos.map(e => e.id === novoEquip.id ? res.data : e));
+        setViewMode('list');
       } else {
         const res = await axios.post('/api/equipamentos', novoEquip);
         setEquipamentos([...equipamentos, res.data]);
+        alert("Equipamento cadastrado com sucesso!");
+        setNovoEquip({ id: '', numSerie: '', idRadio: '', rp: '', marca: 'Motorola', modelo: 'APX 900', status: 'OPERACIONAL', garantia: 'Não', unidadeId: '' });
       }
-      setIsModalOpen(false);
     } catch (e) {
       console.error("Erro ao salvar rádio", e);
       alert("Erro ao salvar. Verifique se o Rádio ou Patrimônio já existem.");
@@ -166,16 +168,27 @@ const Equipamentos: React.FC = () => {
           <h1 className="text-3xl font-extrabold tracking-tight">Equipamentos</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gerenciamento de rádios</p>
         </div>
-        <button 
-          onClick={openNovoModal}
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-primary/20"
-        >
-          <Plus size={18} />
-          Novo Equipamento
-        </button>
+        {viewMode === 'list' ? (
+          <button 
+            onClick={switchToFormNovo}
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-primary/20"
+          >
+            <Plus size={18} />
+            Novo Equipamento
+          </button>
+        ) : (
+          <button 
+            onClick={() => setViewMode('list')}
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <List size={18} />
+            Consultar Registros
+          </button>
+        )}
       </div>
 
-      <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
+      {viewMode === 'list' ? (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
         <div className="p-4 border-b border-gray-200 dark:border-[#1f2937] flex items-center justify-between gap-4 flex-wrap">
           <div className="relative flex-1 min-w-[250px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
@@ -280,19 +293,19 @@ const Equipamentos: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl w-full max-w-lg shadow-2xl flex flex-col my-auto max-h-[95vh]">
-            <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {isEditing ? 'Editar Equipamento' : 'Novo Equipamento'}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Preencha as informações do rádio</p>
-            </div>
-            
-            <div className="p-6 overflow-y-auto space-y-4">
+      ) : (
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {isEditing ? 'Editar Equipamento' : 'Novo Equipamento'}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+               {isEditing ? 'Atualize as informações do rádio.' : 'Preencha as informações abaixo para cadastrar um novo rádio no sistema.'}
+            </p>
+          </div>
+          
+          <div className="p-6 overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nº</label>
                 <input 
@@ -389,21 +402,23 @@ const Equipamentos: React.FC = () => {
                 </select>
               </div>
             </div>
+          </div>
 
-            <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0">
+          <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
+            {isEditing && (
               <button 
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
+                onClick={() => setViewMode('list')}
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
               >
-                Cancelar
+                Cancelar Edição
               </button>
-              <button 
-                onClick={handleSalvar}
-                className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors shadow-lg shadow-primary/20"
-              >
-                Salvar
-              </button>
-            </div>
+            )}
+            <button 
+              onClick={handleSalvar}
+              className="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors shadow-lg shadow-primary/20"
+            >
+              {isEditing ? 'Salvar Alterações' : 'Criar Registro'}
+            </button>
           </div>
         </div>
       )}
