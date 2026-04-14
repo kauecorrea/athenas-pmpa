@@ -147,8 +147,8 @@ const Cautelas: React.FC = () => {
   );
 
   const cautelasFiltradas = cautelas.filter(c => {
-    const matchesBusca = c.militar.nome.toLowerCase().includes(busca.toLowerCase()) || 
-                         c.militar.rg.includes(busca);
+    const matchesBusca = (c.militar?.nome || '').toLowerCase().includes(busca.toLowerCase()) || 
+                         (c.militar?.rg || '').includes(busca);
     const matchesStatus = filtroStatus === 'Todos' || c.status === filtroStatus;
     return matchesBusca && matchesStatus;
   });
@@ -229,10 +229,16 @@ const Cautelas: React.FC = () => {
                 <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">{c.militar.nome.charAt(0)}</div>
+                      <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                        {(c.militar?.nome || 'U').charAt(0)}
+                      </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 dark:text-white uppercase">{c.militar.nome}</span>
-                        <span className="text-xs text-gray-500">RG: {c.militar.rg}</span>
+                        <span className="font-bold text-gray-900 dark:text-white uppercase">
+                          {c.militar?.nome || 'RESERVADO PARA UNIDADE'}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {c.militar?.rg ? `RG: ${c.militar.rg}` : 'Cautela Geral'}
+                        </span>
                       </div>
                     </div>
                   </td>
