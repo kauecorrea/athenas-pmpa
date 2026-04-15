@@ -140,13 +140,13 @@ const Cautelas: React.FC = () => {
     );
   };
 
-  const radiosFiltrados = equipamentosDisponiveis.filter(eq => 
-    eq.rp.toLowerCase().includes(buscaRadio.toLowerCase()) ||
-    eq.numSerie.toLowerCase().includes(buscaRadio.toLowerCase()) ||
-    eq.modelo.toLowerCase().includes(buscaRadio.toLowerCase())
+  const radiosFiltrados = (equipamentosDisponiveis || []).filter(eq => 
+    (eq.rp || '').toLowerCase().includes(buscaRadio.toLowerCase()) ||
+    (eq.numSerie || '').toLowerCase().includes(buscaRadio.toLowerCase()) ||
+    (eq.modelo || '').toLowerCase().includes(buscaRadio.toLowerCase())
   );
 
-  const cautelasFiltradas = cautelas.filter(c => {
+  const cautelasFiltradas = (cautelas || []).filter(c => {
     const matchesBusca = (c.militar?.nome || '').toLowerCase().includes(busca.toLowerCase()) || 
                          (c.militar?.rg || '').includes(busca);
     const matchesStatus = filtroStatus === 'Todos' || c.status === filtroStatus;
@@ -355,8 +355,12 @@ const Cautelas: React.FC = () => {
                       }`}
                     >
                       <div className="flex flex-col min-w-0">
-                        <span className={`font-bold text-xs truncate ${radiosSelecionados.includes(eq.id) ? 'text-primary' : 'text-gray-900 dark:text-white'}`}>{eq.rp}</span>
-                        <span className="text-[9px] text-gray-500 truncate">{eq.modelo}</span>
+                        <span className={`font-bold text-xs truncate ${radiosSelecionados.includes(eq.id) ? 'text-primary' : 'text-gray-900 dark:text-white'}`}>
+                          {eq.rp || 'SEM PATRIMÔNIO'}
+                        </span>
+                        <span className="text-[9px] text-gray-500 truncate">
+                          {eq.modelo || eq.numSerie || 'MODELO N/A'}
+                        </span>
                       </div>
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${
                         radiosSelecionados.includes(eq.id) ? 'bg-primary border-primary' : 'bg-white dark:bg-black/20 border-gray-300 dark:border-gray-600'
