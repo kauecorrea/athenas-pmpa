@@ -7,7 +7,8 @@ import {
   Calendar,
   Trash2,
   Car,
-  List
+  List,
+  Edit3
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -65,7 +66,9 @@ const Vtr: React.FC = () => {
   const itemsPerPage = 25;
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState<string | null>(null);
+  const [editingManutencao, setEditingManutencao] = useState<ManutencaoVTR | null>(null);
   
   const [formData, setFormData] = useState({
     paeNumero: '',
@@ -160,6 +163,17 @@ const Vtr: React.FC = () => {
       fetchData();
     } catch (error) {
       alert('Erro ao excluir');
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
+    try {
+      await axios.put(`/api/vtr/${id}`, { status: newStatus });
+      setIsEditModalOpen(false);
+      setEditingManutencao(null);
+      fetchData();
+    } catch (error) {
+      alert('Erro ao atualizar status');
     }
   };
 
@@ -391,6 +405,16 @@ const Vtr: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => {
+                                setEditingManutencao(m);
+                                setIsEditModalOpen(true);
+                              }}
+                              title="Editar Status"
+                              className="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-colors"
+                            >
+                              <Edit3 size={18} />
+                            </button>
                             <button 
                               onClick={() => gerarLaudoPDF(m)}
                               title="Gerar Laudo PDF"
@@ -663,6 +687,65 @@ const Vtr: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {isEditModalOpen && editingManutencao && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-surface w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-2xl">
+                  <Edit3 className="text-amber-500" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Editar Status</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">OS nº {editingManutencao.osNumero.toString().padStart(3, '0')}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 tracking-wider">Selecione o Novo Status</label>
+                  <select 
+                    value={editingManutencao.status}
+                    onChange={(e) => setEditingManutencao({...editingManutencao, status: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-white font-bold"
+                  >
+                    <option value="Pronto">Pronto</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Assistência Técnica">Assistência Técnica</option>
+                  </select>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-[#0a0f1d] p-4 rounded-2xl border border-gray-100 dark:border-[#1f2937] space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 font-bold uppercase">VTR:</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{editingManutencao.placaVrt}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 font-bold uppercase">Unidade:</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{editingManutencao.unidade?.nome}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="px-8 py-6 bg-gray-50 dark:bg-[#0a0f1d] border-t border-gray-100 dark:border-[#1f2937] flex gap-3">
+              <button 
+                onClick={() => { setIsEditModalOpen(false); setEditingManutencao(null); }}
+                className="flex-1 px-6 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => handleUpdateStatus(editingManutencao.id, editingManutencao.status)}
+                className="flex-1 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Salvar Alteração
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
