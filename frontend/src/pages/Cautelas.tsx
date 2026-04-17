@@ -341,21 +341,25 @@ const Cautelas: React.FC = () => {
         const snA = (a.numSerie || '').toLowerCase();
         const snB = (b.numSerie || '').toLowerCase();
 
+        // Prioridade 0: Match EXATO no RP (Ex: usuário digita 70 e rádio é exatamente 70)
+        if (rpA === termo && rpB !== termo) return -1;
+        if (rpA !== termo && rpB === termo) return 1;
+
         const aHasRpMatch = rpA.includes(termo);
         const bHasRpMatch = rpB.includes(termo);
 
-        // Prioridade Absoluta: Qualquer rádio que combina pelo RP vem antes de rádio que combina apenas pelo SN
+        // Prioridade 1: Qualquer match no RP vem antes de match apenas no SN
         if (aHasRpMatch && !bHasRpMatch) return -1;
         if (!aHasRpMatch && bHasRpMatch) return 1;
 
-        // Se ambos combinam pelo RP, prioriza quem começa com o termo
+        // Se ambos têm match no RP, prioriza quem começa com o termo
         if (aHasRpMatch && bHasRpMatch) {
           if (rpA.startsWith(termo) && !rpB.startsWith(termo)) return -1;
           if (!rpA.startsWith(termo) && rpB.startsWith(termo)) return 1;
-          return rpA.localeCompare(rpB);
+          return rpA.length - rpB.length || rpA.localeCompare(rpB);
         }
 
-        // Se nenhum combina pelo RP, mas combinam pelo SN, prioriza quem começa com o termo
+        // Prioridade 2: Match no SN
         const aHasSnMatch = snA.includes(termo);
         const bHasSnMatch = snB.includes(termo);
         if (aHasSnMatch && !bHasSnMatch) return -1;
