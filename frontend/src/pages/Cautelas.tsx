@@ -341,23 +341,31 @@ const Cautelas: React.FC = () => {
         const snA = (a.numSerie || '').toLowerCase();
         const snB = (b.numSerie || '').toLowerCase();
 
-        // Prioridade 1: RP começa com o termo
-        const rpAStarts = rpA.startsWith(termo);
-        const rpBStarts = rpB.startsWith(termo);
-        if (rpAStarts && !rpBStarts) return -1;
-        if (!rpAStarts && rpBStarts) return 1;
+        const aHasRpMatch = rpA.includes(termo);
+        const bHasRpMatch = rpB.includes(termo);
 
-        // Prioridade 2: SN começa com o termo
-        const snAStarts = snA.startsWith(termo);
-        const snBStarts = snB.startsWith(termo);
-        if (snAStarts && !snBStarts) return -1;
-        if (!snAStarts && snBStarts) return 1;
+        // Prioridade Absoluta: Qualquer rádio que combina pelo RP vem antes de rádio que combina apenas pelo SN
+        if (aHasRpMatch && !bHasRpMatch) return -1;
+        if (!aHasRpMatch && bHasRpMatch) return 1;
 
-        // Prioridade 3: RP contém o termo
-        const rpAIndex = rpA.indexOf(termo);
-        const rpBIndex = rpB.indexOf(termo);
-        if (rpAIndex !== -1 && rpBIndex === -1) return -1;
-        if (rpAIndex === -1 && rpBIndex !== -1) return 1;
+        // Se ambos combinam pelo RP, prioriza quem começa com o termo
+        if (aHasRpMatch && bHasRpMatch) {
+          if (rpA.startsWith(termo) && !rpB.startsWith(termo)) return -1;
+          if (!rpA.startsWith(termo) && rpB.startsWith(termo)) return 1;
+          return rpA.localeCompare(rpB);
+        }
+
+        // Se nenhum combina pelo RP, mas combinam pelo SN, prioriza quem começa com o termo
+        const aHasSnMatch = snA.includes(termo);
+        const bHasSnMatch = snB.includes(termo);
+        if (aHasSnMatch && !bHasSnMatch) return -1;
+        if (!aHasSnMatch && bHasSnMatch) return 1;
+        
+        if (aHasSnMatch && bHasSnMatch) {
+          if (snA.startsWith(termo) && !snB.startsWith(termo)) return -1;
+          if (!snA.startsWith(termo) && snB.startsWith(termo)) return 1;
+          return snA.localeCompare(snB);
+        }
 
         return 0;
       });
