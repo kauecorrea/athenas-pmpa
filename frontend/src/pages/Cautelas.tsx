@@ -259,16 +259,7 @@ const Cautelas: React.FC = () => {
     doc.text(`- ${c.equipamentos.length} RÁDIOS HT`, 20, yAcc);
     yAcc += 7;
 
-    // Se houver mais linhas na missão (ex: OBS), coloca aqui
-    if (missaoLinhas.length > 1) {
-      missaoLinhas.slice(1).forEach(linha => {
-        if (linha.trim()) {
-          const splitLinha = doc.splitTextToSize(`- ${linha.trim()}`, 180);
-          doc.text(splitLinha, 20, yAcc);
-          yAcc += (splitLinha.length * 5);
-        }
-      });
-    }
+    // Removidas linhas extras da missão conforme solicitação do usuário
     
     const obsPadrao = "- TODOS OS RÁDIOS ESTÃO COM PRESILHA PARA CINTO, PROTETOR LATERAL, BATERIA E ANTENA.";
     const splitObs = doc.splitTextToSize(obsPadrao, 180);
