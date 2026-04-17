@@ -95,6 +95,17 @@ const Cautelas: React.FC = () => {
     }
   };
 
+  const getBase64ImageFromUrl = async (imageUrl: string) => {
+    const res = await fetch(imageUrl);
+    const blob = await res.blob();
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => resolve(reader.result as string), false);
+      reader.onerror = () => reject();
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleCriarCautela = async () => {
     try {
       if (editingCautelaId) {
@@ -173,65 +184,115 @@ const Cautelas: React.FC = () => {
     setViewMode('form');
   };
 
-  const gerarComprovantePDF = (c: Cautela) => {
+  const gerarComprovantePDF = async (c: Cautela) => {
     const doc = new jsPDF();
     const nomeMilitar = c.militar?.nome || 'RESERVADO PARA UNIDADE';
     const unidadeNome = c.militar?.unidade?.nome || c.unidade?.nome || 'DITEL';
     
-    // Header
-    doc.setFontSize(16);
-    doc.text('COMPROVANTE DE CAUTELA - PMPA/DITEL', 105, 20, { align: 'center' });
+    // Brasões
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+    } catch (e) { console.error('Sem brasao_para.png'); }
     
+    try {
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+    } catch (e) { console.error('Sem brasao_pmpa.png'); }
+
+    // Timbre Institucional
     doc.setFontSize(10);
-    doc.text(`Data de Emissão: ${new Date().toLocaleString('pt-BR')}`, 20, 30);
-    doc.text(`ID da Cautela: ${c.id}`, 20, 35);
+    doc.setFont("helvetica", "bold");
+    doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: "center" });
+    doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 20, { align: "center" });
+    doc.text("POLÍCIA MILITAR DO PARÁ", 105, 25, { align: "center" });
+    doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: "center" });
+    doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.text('COMPROVANTE DE CAUTELA - PMPA/DITEL', 105, 50, { align: 'center' });
+    
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Data de Emissão: ${new Date().toLocaleString('pt-BR')}`, 14, 60);
 
     // Info
-    doc.setFontSize(12);
-    doc.text('Informações do Responsável:', 20, 45);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text('1. DADOS DO RESPONSÁVEL', 14, 67);
     doc.setFontSize(10);
-    doc.text(`Nome: ${nomeMilitar}`, 25, 52);
-    doc.text(`RG: ${c.militar?.rg || 'N/A'}`, 25, 57);
-    doc.text(`Unidade: ${unidadeNome}`, 25, 62);
-    doc.text(`Missão: ${c.missao || 'Não informada'}`, 25, 67);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Nome Completo: ${nomeMilitar}`, 14, 73);
+    doc.text(`RG: ${c.militar?.rg || 'N/A'}`, 14, 78);
+    doc.text(`Unidade: ${unidadeNome}`, 105, 78);
+    doc.text(`Missão: ${c.missao || 'Não informada'}`, 14, 83);
 
     // Equipamentos
-    doc.setFontSize(12);
-    doc.text('Equipamentos Cautelados:', 20, 80);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text('2. EQUIPAMENTOS CAUTELADOS', 14, 93);
     
     autoTable(doc, {
-      startY: 85,
+      startY: 96,
       head: [['Patrimônio (RP)', 'Série', 'Modelo']],
       body: c.equipamentos.map(eq => [eq.rp || 'S/P', eq.numSerie, eq.modelo]),
       theme: 'grid',
-      headStyles: { fillColor: [0, 51, 102] }
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
+      styles: { fontSize: 8 }
     });
 
-    // Datas
     const finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.text(`Data de Retirada: ${new Date(c.dataRetirada).toLocaleString('pt-BR')}`, 20, finalY);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text('3. PRAZO E OBSERVAÇÕES', 14, finalY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Data de Retirada: ${new Date(c.dataRetirada).toLocaleString('pt-BR')}`, 14, finalY + 7);
     if (c.dataPrevista) {
-      doc.text(`Previsão de Retorno: ${new Date(c.dataPrevista).toLocaleString('pt-BR')}`, 20, finalY + 5);
+      doc.text(`Previsão de Retorno: ${new Date(c.dataPrevista).toLocaleString('pt-BR')}`, 14, finalY + 12);
     }
 
-    // Assinaturas
-    const signatureY = finalY + 40;
-    doc.line(20, signatureY, 90, signatureY);
-    doc.text('Assinatura do Responsável', 35, signatureY + 5);
+    // Rodapé de Assinaturas
+    const pageHeight = doc.internal.pageSize.height;
     
-    doc.line(120, signatureY, 190, signatureY);
-    doc.text('Assinatura Plantão DITEL', 135, signatureY + 5);
+    doc.line(20, pageHeight - 50, 90, pageHeight - 50);
+    doc.text('Assinatura do Militar', 55, pageHeight - 45, { align: 'center' });
+    
+    doc.line(120, pageHeight - 50, 190, pageHeight - 50);
+    doc.text('Assinatura Plantão DITEL', 155, pageHeight - 45, { align: 'center' });
+
+    // Assinatura oficial fixa (Chefe)
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 105, pageHeight - 25, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.text("Chefe das Seções de Telecomunicações e Suporte ao Usuário.", 105, pageHeight - 20, { align: "center" });
 
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  const gerarRelatorioGeral = () => {
+  const gerarRelatorioGeral = async () => {
     const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text('RELATÓRIO GERAL DE CAUTELAS - ATHENAS PMPA', 105, 15, { align: 'center' });
+    
+    // Brasões
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 15, 17);
+    } catch (e) { }
+    
+    try {
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 181, 10, 15, 17);
+    } catch (e) { }
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("POLÍCIA MILITAR DO PARÁ - DIRETORIA DE TELEMÁTICA", 105, 18, { align: "center" });
+    doc.setFontSize(12);
+    doc.text('RELATÓRIO GERAL DE CAUTELAS - ATHENAS SYSTEM', 105, 30, { align: 'center' });
 
     autoTable(doc, {
-      startY: 25,
+      startY: 40,
       head: [['Militar', 'Unidade', 'Qtd', 'Retirada', 'Previsão', 'Status']],
       body: cautelasFiltradas.map(c => [
         c.militar?.nome || 'Unidade',
