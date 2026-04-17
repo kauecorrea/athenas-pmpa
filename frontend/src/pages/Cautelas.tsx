@@ -222,7 +222,7 @@ const Cautelas: React.FC = () => {
     doc.line(120, signatureY, 190, signatureY);
     doc.text('Assinatura Plantão DITEL', 135, signatureY + 5);
 
-    doc.save(`cautela_${nomeMilitar.replace(/\s+/g, '_')}.pdf`);
+    window.open(doc.output('bloburl'), '_blank');
   };
 
   const gerarRelatorioGeral = () => {
@@ -246,7 +246,7 @@ const Cautelas: React.FC = () => {
       styles: { fontSize: 8 }
     });
 
-    doc.save('relatorio_cautelas.pdf');
+    window.open(doc.output('bloburl'), '_blank');
   };
 
 

@@ -216,7 +216,7 @@ const Manutencao: React.FC = () => {
     doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, 280, { align: "center" });
     doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: citel@pm.pa.gov.br", 105, 285, { align: "center" });
 
-    doc.save(`OSM_${m.equipamento.rp}_${m.id}.pdf`);
+    window.open(doc.output('bloburl'), '_blank');
   };
 
   const radiosDisponiveisFiltrados = radiosDisponiveis.filter(radio => {
