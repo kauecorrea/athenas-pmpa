@@ -18,6 +18,7 @@ import autoTable from 'jspdf-autotable';
 
 interface Equipamento {
   id: string;
+  idRadio?: string;
   rp: string;
   numSerie: string;
   marca: string;
@@ -331,46 +332,47 @@ const Cautelas: React.FC = () => {
 
     return (equipamentosDisponiveis || [])
       .filter(eq => 
+        (eq.idRadio || '').toLowerCase().includes(termo) ||
         (eq.rp || '').toLowerCase().includes(termo) ||
         (eq.numSerie || '').toLowerCase().includes(termo) ||
         (eq.modelo || '').toLowerCase().includes(termo)
       )
       .sort((a, b) => {
+        const idA = (a.idRadio || '').toLowerCase();
+        const idB = (b.idRadio || '').toLowerCase();
         const rpA = (a.rp || '').toLowerCase();
         const rpB = (b.rp || '').toLowerCase();
         const snA = (a.numSerie || '').toLowerCase();
         const snB = (b.numSerie || '').toLowerCase();
 
-        // Prioridade 0: Match EXATO no RP (Ex: usuário digita 70 e rádio é exatamente 70)
+        // Prioridade 0: Match EXATO no idRadio (O "Nº" que o usuário quer)
+        if (idA === termo && idB !== termo) return -1;
+        if (idA !== termo && idB === termo) return 1;
+
+        // Prioridade 1: Match EXATO no RP
         if (rpA === termo && rpB !== termo) return -1;
         if (rpA !== termo && rpB === termo) return 1;
+
+        const aHasIdMatch = idA.includes(termo);
+        const bHasIdMatch = idB.includes(termo);
+
+        // Prioridade 2: Qualquer match no idRadio vem antes de outros
+        if (aHasIdMatch && !bHasIdMatch) return -1;
+        if (!aHasIdMatch && bHasIdMatch) return 1;
 
         const aHasRpMatch = rpA.includes(termo);
         const bHasRpMatch = rpB.includes(termo);
 
-        // Prioridade 1: Qualquer match no RP vem antes de match apenas no SN
+        // Prioridade 3: Match no RP
         if (aHasRpMatch && !bHasRpMatch) return -1;
         if (!aHasRpMatch && bHasRpMatch) return 1;
 
-        // Se ambos têm match no RP, prioriza quem começa com o termo
-        if (aHasRpMatch && bHasRpMatch) {
-          if (rpA.startsWith(termo) && !rpB.startsWith(termo)) return -1;
-          if (!rpA.startsWith(termo) && rpB.startsWith(termo)) return 1;
-          return rpA.length - rpB.length || rpA.localeCompare(rpB);
-        }
-
-        // Prioridade 2: Match no SN
+        // Prioridade 4: Match no SN
         const aHasSnMatch = snA.includes(termo);
         const bHasSnMatch = snB.includes(termo);
         if (aHasSnMatch && !bHasSnMatch) return -1;
         if (!aHasSnMatch && bHasSnMatch) return 1;
         
-        if (aHasSnMatch && bHasSnMatch) {
-          if (snA.startsWith(termo) && !snB.startsWith(termo)) return -1;
-          if (!snA.startsWith(termo) && snB.startsWith(termo)) return 1;
-          return snA.localeCompare(snB);
-        }
-
         return 0;
       });
   }, [equipamentosDisponiveis, buscaRadio]);
@@ -650,8 +652,8 @@ const Cautelas: React.FC = () => {
                         >
                           <div className="flex justify-between items-center">
                             <div>
-                              <span className="font-bold text-sm text-primary">{eq.rp || eq.numSerie}</span>
-                              <span className="ml-2 text-xs text-gray-500">{eq.modelo}{eq.rp ? ` - SN: ${eq.numSerie}` : ''}</span>
+                              <span className="font-bold text-sm text-primary">Nº {eq.idRadio || '-'} {eq.rp ? `| RP: ${eq.rp}` : ''}</span>
+                              <span className="ml-2 text-xs text-gray-500">{eq.modelo} - SN: {eq.numSerie}</span>
                             </div>
                             <Plus size={14} className="text-gray-400" />
                           </div>
