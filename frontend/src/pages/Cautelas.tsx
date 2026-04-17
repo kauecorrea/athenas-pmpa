@@ -227,7 +227,7 @@ const Cautelas: React.FC = () => {
       startY: 60,
       head: [['Nº', 'Nº DE SÉRIE / RP', 'RESPONSÁVEL', 'RG', 'CONTATO', 'ASSINATURA']],
       body: c.equipamentos.map((eq, i) => [
-        i + 1,
+        eq.idRadio || '-',
         eq.rp || eq.numSerie,
         nomeMilitar,
         rgMilitar,
@@ -238,7 +238,7 @@ const Cautelas: React.FC = () => {
       styles: { fontSize: 9, textColor: [0, 0, 0], lineWidth: 0, cellPadding: 2 },
       headStyles: { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] },
       columnStyles: {
-        0: { cellWidth: 10 },
+        0: { cellWidth: 15 },
         1: { cellWidth: 35 },
         2: { cellWidth: 45 },
         3: { cellWidth: 20 },
@@ -332,10 +332,12 @@ const Cautelas: React.FC = () => {
 
     return (equipamentosDisponiveis || [])
       .filter(eq => 
-        (eq.idRadio || '').toLowerCase().includes(termo) ||
-        (eq.rp || '').toLowerCase().includes(termo) ||
-        (eq.numSerie || '').toLowerCase().includes(termo) ||
-        (eq.modelo || '').toLowerCase().includes(termo)
+        eq.status === 'OPERACIONAL' && (
+          (eq.idRadio || '').toLowerCase().includes(termo) ||
+          (eq.rp || '').toLowerCase().includes(termo) ||
+          (eq.numSerie || '').toLowerCase().includes(termo) ||
+          (eq.modelo || '').toLowerCase().includes(termo)
+        )
       )
       .sort((a, b) => {
         const idA = (a.idRadio || '').toLowerCase();
