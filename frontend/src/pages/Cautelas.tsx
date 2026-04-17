@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { 
   Plus, 
@@ -218,7 +218,7 @@ const Cautelas: React.FC = () => {
     const missaoLinhas = (c.missao || '').split('\n');
     const missaoPrincipal = missaoLinhas[0].toUpperCase();
     const titulo = `CAUTELA - ${missaoPrincipal || 'GERAL'}`;
-    doc.setFontSize(12);
+    doc.setFontSize(14);
     doc.text(titulo, 105, 50, { align: 'center' });
     
     // Nova Tabela conforme modelo
@@ -231,18 +231,18 @@ const Cautelas: React.FC = () => {
         nomeMilitar,
         rgMilitar,
         contatoMilitar,
-        '____________________'
+        '________________________'
       ]),
       theme: 'plain',
-      styles: { fontSize: 7, textColor: [0, 0, 0], lineWidth: 0 },
+      styles: { fontSize: 9, textColor: [0, 0, 0], lineWidth: 0, cellPadding: 2 },
       headStyles: { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] },
       columnStyles: {
         0: { cellWidth: 10 },
         1: { cellWidth: 35 },
-        2: { cellWidth: 40 },
+        2: { cellWidth: 45 },
         3: { cellWidth: 20 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 40, halign: 'center' }
+        4: { cellWidth: 30 },
+        5: { cellWidth: 50, halign: 'center' }
       }
     });
 
@@ -325,11 +325,43 @@ const Cautelas: React.FC = () => {
   };
 
 
-  const radiosFiltrados = (equipamentosDisponiveis || []).filter(eq => 
-    (eq.rp || '').toLowerCase().includes(buscaRadio.toLowerCase()) ||
-    (eq.numSerie || '').toLowerCase().includes(buscaRadio.toLowerCase()) ||
-    (eq.modelo || '').toLowerCase().includes(buscaRadio.toLowerCase())
-  );
+  const radiosFiltrados = useMemo(() => {
+    const termo = buscaRadio.toLowerCase();
+    if (!termo) return [];
+
+    return (equipamentosDisponiveis || [])
+      .filter(eq => 
+        (eq.rp || '').toLowerCase().includes(termo) ||
+        (eq.numSerie || '').toLowerCase().includes(termo) ||
+        (eq.modelo || '').toLowerCase().includes(termo)
+      )
+      .sort((a, b) => {
+        const rpA = (a.rp || '').toLowerCase();
+        const rpB = (b.rp || '').toLowerCase();
+        const snA = (a.numSerie || '').toLowerCase();
+        const snB = (b.numSerie || '').toLowerCase();
+
+        // Prioridade 1: RP começa com o termo
+        const rpAStarts = rpA.startsWith(termo);
+        const rpBStarts = rpB.startsWith(termo);
+        if (rpAStarts && !rpBStarts) return -1;
+        if (!rpAStarts && rpBStarts) return 1;
+
+        // Prioridade 2: SN começa com o termo
+        const snAStarts = snA.startsWith(termo);
+        const snBStarts = snB.startsWith(termo);
+        if (snAStarts && !snBStarts) return -1;
+        if (!snAStarts && snBStarts) return 1;
+
+        // Prioridade 3: RP contém o termo
+        const rpAIndex = rpA.indexOf(termo);
+        const rpBIndex = rpB.indexOf(termo);
+        if (rpAIndex !== -1 && rpBIndex === -1) return -1;
+        if (rpAIndex === -1 && rpBIndex !== -1) return 1;
+
+        return 0;
+      });
+  }, [equipamentosDisponiveis, buscaRadio]);
 
   const cautelasFiltradas = (cautelas || []).filter(c => {
     const matchesBusca = (c.militar?.nome || '').toLowerCase().includes(busca.toLowerCase()) || 
@@ -606,8 +638,8 @@ const Cautelas: React.FC = () => {
                         >
                           <div className="flex justify-between items-center">
                             <div>
-                              <span className="font-bold text-sm text-primary">{eq.rp || 'S/P'}</span>
-                              <span className="ml-2 text-xs text-gray-500">{eq.modelo} - SN: {eq.numSerie}</span>
+                              <span className="font-bold text-sm text-primary">{eq.rp || eq.numSerie}</span>
+                              <span className="ml-2 text-xs text-gray-500">{eq.modelo}{eq.rp ? ` - SN: ${eq.numSerie}` : ''}</span>
                             </div>
                             <Plus size={14} className="text-gray-400" />
                           </div>
