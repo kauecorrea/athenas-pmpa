@@ -214,8 +214,10 @@ const Cautelas: React.FC = () => {
     doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: "center" });
     doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
 
-    // Título Centralizado conforme modelo
-    const titulo = `CAUTELA - ${c.missao ? c.missao.toUpperCase() : 'GERAL'}`;
+    // Título Centralizado conforme modelo (Apenas a primeira linha da missão)
+    const missaoLinhas = (c.missao || '').split('\n');
+    const missaoPrincipal = missaoLinhas[0].toUpperCase();
+    const titulo = `CAUTELA - ${missaoPrincipal || 'GERAL'}`;
     doc.setFontSize(12);
     doc.text(titulo, 105, 50, { align: 'center' });
     
@@ -246,17 +248,31 @@ const Cautelas: React.FC = () => {
 
     let currentY = (doc as any).lastAutoTable.finalY + 15;
     
-    // Seção Acompanha
+    // Seção ACOMPANHA
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text('ACOMPANHA:', 14, currentY);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text(`- ${c.equipamentos.length} RÁDIOS HT`, 20, currentY + 7);
     
-    const obsTexto = "- TODOS OS RÁDIOS ESTÃO COM PRESILHA PARA CINTO, PROTETOR LATERAL, BATERIA E ANTENA.";
-    const splitObs = doc.splitTextToSize(obsTexto, 180);
-    doc.text(splitObs, 20, currentY + 14);
+    let yAcc = currentY + 7;
+    doc.text(`- ${c.equipamentos.length} RÁDIOS HT`, 20, yAcc);
+    yAcc += 7;
+
+    // Se houver mais linhas na missão (ex: OBS), coloca aqui
+    if (missaoLinhas.length > 1) {
+      missaoLinhas.slice(1).forEach(linha => {
+        if (linha.trim()) {
+          const splitLinha = doc.splitTextToSize(`- ${linha.trim()}`, 180);
+          doc.text(splitLinha, 20, yAcc);
+          yAcc += (splitLinha.length * 5);
+        }
+      });
+    }
+    
+    const obsPadrao = "- TODOS OS RÁDIOS ESTÃO COM PRESILHA PARA CINTO, PROTETOR LATERAL, BATERIA E ANTENA.";
+    const splitObs = doc.splitTextToSize(obsPadrao, 180);
+    doc.text(splitObs, 20, yAcc);
 
     // Rodapé Lateralizado conforme modelo
     const pageHeight = doc.internal.pageSize.height;
