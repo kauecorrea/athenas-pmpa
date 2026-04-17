@@ -226,7 +226,7 @@ const Cautelas: React.FC = () => {
     autoTable(doc, {
       startY: 60,
       head: [['Nº', 'Nº DE SÉRIE / RP', 'RESPONSÁVEL', 'RG', 'CONTATO', 'ASSINATURA']],
-      body: c.equipamentos.map((eq, i) => [
+      body: c.equipamentos.map((eq) => [
         eq.idRadio || '-',
         eq.rp || eq.numSerie,
         nomeMilitar,
