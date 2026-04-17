@@ -217,23 +217,37 @@ const Cautelas: React.FC = () => {
     doc.text(`Data de Emissão: ${new Date().toLocaleString('pt-BR')}`, 14, 60);
 
     // Info
+    let y = 67;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text('1. DADOS DO RESPONSÁVEL', 14, 67);
+    doc.text('1. DADOS DO RESPONSÁVEL', 14, y);
+    
+    y += 7;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Nome Completo: ${nomeMilitar}`, 14, 73);
-    doc.text(`RG: ${c.militar?.rg || 'N/A'}`, 14, 78);
-    doc.text(`Unidade: ${unidadeNome}`, 105, 78);
-    doc.text(`Missão: ${c.missao || 'Não informada'}`, 14, 83);
+    doc.text(`Nome Completo: ${nomeMilitar}`, 14, y);
+    
+    y += 5;
+    doc.text(`RG: ${c.militar?.rg || 'N/A'}`, 14, y);
+    doc.text(`Unidade: ${unidadeNome}`, 105, y);
+    
+    y += 7;
+    doc.setFont("helvetica", "bold");
+    doc.text("Missão:", 14, y);
+    doc.setFont("helvetica", "normal");
+    const missaoTexto = c.missao || 'Não informada';
+    const splitMissao = doc.splitTextToSize(missaoTexto, 175);
+    doc.text(splitMissao, 28, y); // Alinhado após a label "Missão:"
+    
+    y += (splitMissao.length * 5) + 5;
 
     // Equipamentos
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text('2. EQUIPAMENTOS CAUTELADOS', 14, 93);
+    doc.text('2. EQUIPAMENTOS CAUTELADOS', 14, y);
     
     autoTable(doc, {
-      startY: 96,
+      startY: y + 3,
       head: [['Patrimônio (RP)', 'Série', 'Modelo']],
       body: c.equipamentos.map(eq => [eq.rp || 'S/P', eq.numSerie, eq.modelo]),
       theme: 'grid',
@@ -241,15 +255,15 @@ const Cautelas: React.FC = () => {
       styles: { fontSize: 8 }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    let currentY = (doc as any).lastAutoTable.finalY + 10;
     
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text('3. PRAZO E OBSERVAÇÕES', 14, finalY);
+    doc.text('3. PRAZO E OBSERVAÇÕES', 14, currentY);
     doc.setFont("helvetica", "normal");
-    doc.text(`Data de Retirada: ${new Date(c.dataRetirada).toLocaleString('pt-BR')}`, 14, finalY + 7);
+    doc.text(`Data de Retirada: ${new Date(c.dataRetirada).toLocaleString('pt-BR')}`, 14, currentY + 7);
     if (c.dataPrevista) {
-      doc.text(`Previsão de Retorno: ${new Date(c.dataPrevista).toLocaleString('pt-BR')}`, 14, finalY + 12);
+      doc.text(`Previsão de Retorno: ${new Date(c.dataPrevista).toLocaleString('pt-BR')}`, 14, currentY + 12);
     }
 
     // Rodapé de Assinaturas
