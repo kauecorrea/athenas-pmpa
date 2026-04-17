@@ -7,9 +7,14 @@ import {
   ChevronDown, 
   CheckCircle2, 
   List,
-  Radio
+  Radio,
+  FileText,
+  Edit3,
+  Download
 } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Equipamento {
   id: string;
@@ -24,6 +29,9 @@ interface Militar {
   id: string;
   nome: string;
   rg: string;
+  unidade?: {
+    nome: string;
+  };
 }
 
 
@@ -34,7 +42,8 @@ interface Cautela {
   dataPrevista: string | null;
   missao: string | null;
   status: string;
-  militar: Militar;
+  militar: Militar | null;
+  unidade: { nome: string } | null;
   equipamentos: Equipamento[];
 }
 
@@ -150,6 +159,96 @@ const Cautelas: React.FC = () => {
     }
   };
 
+  const handleEdit = (c: Cautela) => {
+    setEditingCautelaId(c.id);
+    setMilitarId(c.militar?.id || '');
+    setMissao(c.missao || '');
+    if (c.dataRetirada) {
+      setDataInicio(new Date(c.dataRetirada).toISOString().slice(0, 16));
+    }
+    if (c.dataPrevista) {
+      setDataPrevista(new Date(c.dataPrevista).toISOString().slice(0, 16));
+    }
+    setRadiosSelecionados(c.equipamentos.map(eq => eq.id));
+    setViewMode('form');
+  };
+
+  const gerarComprovantePDF = (c: Cautela) => {
+    const doc = new jsPDF();
+    const nomeMilitar = c.militar?.nome || 'RESERVADO PARA UNIDADE';
+    const unidadeNome = c.militar?.unidade?.nome || c.unidade?.nome || 'DITEL';
+    
+    // Header
+    doc.setFontSize(16);
+    doc.text('COMPROVANTE DE CAUTELA - PMPA/DITEL', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.text(`Data de Emissão: ${new Date().toLocaleString('pt-BR')}`, 20, 30);
+    doc.text(`ID da Cautela: ${c.id}`, 20, 35);
+
+    // Info
+    doc.setFontSize(12);
+    doc.text('Informações do Responsável:', 20, 45);
+    doc.setFontSize(10);
+    doc.text(`Nome: ${nomeMilitar}`, 25, 52);
+    doc.text(`RG: ${c.militar?.rg || 'N/A'}`, 25, 57);
+    doc.text(`Unidade: ${unidadeNome}`, 25, 62);
+    doc.text(`Missão: ${c.missao || 'Não informada'}`, 25, 67);
+
+    // Equipamentos
+    doc.setFontSize(12);
+    doc.text('Equipamentos Cautelados:', 20, 80);
+    
+    autoTable(doc, {
+      startY: 85,
+      head: [['Patrimônio (RP)', 'Série', 'Modelo']],
+      body: c.equipamentos.map(eq => [eq.rp || 'S/P', eq.numSerie, eq.modelo]),
+      theme: 'grid',
+      headStyles: { fillColor: [0, 51, 102] }
+    });
+
+    // Datas
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.text(`Data de Retirada: ${new Date(c.dataRetirada).toLocaleString('pt-BR')}`, 20, finalY);
+    if (c.dataPrevista) {
+      doc.text(`Previsão de Retorno: ${new Date(c.dataPrevista).toLocaleString('pt-BR')}`, 20, finalY + 5);
+    }
+
+    // Assinaturas
+    const signatureY = finalY + 40;
+    doc.line(20, signatureY, 90, signatureY);
+    doc.text('Assinatura do Responsável', 35, signatureY + 5);
+    
+    doc.line(120, signatureY, 190, signatureY);
+    doc.text('Assinatura Plantão DITEL', 135, signatureY + 5);
+
+    doc.save(`cautela_${nomeMilitar.replace(/\s+/g, '_')}.pdf`);
+  };
+
+  const gerarRelatorioGeral = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text('RELATÓRIO GERAL DE CAUTELAS - ATHENAS PMPA', 105, 15, { align: 'center' });
+
+    autoTable(doc, {
+      startY: 25,
+      head: [['Militar', 'Unidade', 'Qtd', 'Retirada', 'Previsão', 'Status']],
+      body: cautelasFiltradas.map(c => [
+        c.militar?.nome || 'Unidade',
+        c.militar?.unidade?.nome || c.unidade?.nome || 'DITEL',
+        c.equipamentos.length,
+        new Date(c.dataRetirada).toLocaleDateString('pt-BR'),
+        c.dataPrevista ? new Date(c.dataPrevista).toLocaleDateString('pt-BR') : '-',
+        c.status
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [0, 51, 102] },
+      styles: { fontSize: 8 }
+    });
+
+    doc.save('relatorio_cautelas.pdf');
+  };
+
 
   const radiosFiltrados = (equipamentosDisponiveis || []).filter(eq => 
     (eq.rp || '').toLowerCase().includes(buscaRadio.toLowerCase()) ||
@@ -159,7 +258,10 @@ const Cautelas: React.FC = () => {
 
   const cautelasFiltradas = (cautelas || []).filter(c => {
     const matchesBusca = (c.militar?.nome || '').toLowerCase().includes(busca.toLowerCase()) || 
-                         (c.militar?.rg || '').includes(busca);
+                         (c.militar?.rg || '').includes(busca) ||
+                         (c.militar?.unidade?.nome || '').toLowerCase().includes(busca.toLowerCase()) ||
+                         (c.unidade?.nome || '').toLowerCase().includes(busca.toLowerCase()) ||
+                         (c.missao || '').toLowerCase().includes(busca.toLowerCase());
     const matchesStatus = filtroStatus === 'Todos' || c.status === filtroStatus;
     return matchesBusca && matchesStatus;
   });
@@ -176,23 +278,33 @@ const Cautelas: React.FC = () => {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Controle de empréstimo e devolução de rádios HT</p>
         </div>
-        {viewMode === 'list' ? (
+        <div className="flex items-center gap-3">
           <button 
-            onClick={() => { resetForm(); setViewMode('form'); }}
-            className="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
+            onClick={gerarRelatorioGeral}
+            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-5 py-3 rounded-xl font-bold transition-all shadow-sm group"
           >
-            <Plus size={20} />
-            Nova Cautela
+            <Download size={18} className="text-gray-400 group-hover:text-primary" />
+            Gerar Relatório
           </button>
-        ) : (
-          <button 
-            onClick={() => setViewMode('list')}
-            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-5 py-3 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <List size={20} />
-            Consultar Registros
-          </button>
-        )}
+          
+          {viewMode === 'list' ? (
+            <button 
+              onClick={() => { resetForm(); setViewMode('form'); }}
+              className="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Plus size={20} />
+              Nova Cautela
+            </button>
+          ) : (
+            <button 
+              onClick={() => setViewMode('list')}
+              className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-5 py-3 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <List size={20} />
+              Consultar Registros
+            </button>
+          )}
+        </div>
       </div>
 
       {viewMode === 'list' ? (
@@ -227,9 +339,11 @@ const Cautelas: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Quantidade</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Início</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Retorno</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Missão</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Equipamentos</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Retirada / Previsão</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
               </tr>
@@ -239,63 +353,58 @@ const Cautelas: React.FC = () => {
                 <tr><td colSpan={5} className="px-6 py-8 text-center animate-pulse">Carregando histórico...</td></tr>
               ) : cautelasFiltradas.map(c => (
                 <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
-                        {(c.militar?.nome || 'U').charAt(0)}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 dark:text-white uppercase">
-                          {c.militar?.nome || 'RESERVADO PARA UNIDADE'}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {c.militar?.rg ? `RG: ${c.militar.rg}` : 'Cautela Geral'}
-                        </span>
-                      </div>
-                    </div>
+                  <td className="px-6 py-4 font-bold text-gray-900 dark:text-white uppercase truncate max-w-[150px]">
+                    {c.militar?.nome || 'Reserva'}
+                  </td>
+                  <td className="px-6 py-4 text-xs font-medium text-gray-500 uppercase">
+                    {c.militar?.unidade?.nome || c.unidade?.nome || 'DITEL'}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-[#374151] px-2.5 py-1 rounded-lg font-bold text-xs">
+                      {c.equipamentos.length}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-xs font-mono">
+                    {c.dataRetirada ? new Date(c.dataRetirada).toLocaleDateString('pt-BR') : '-'}
+                  </td>
+                  <td className="px-6 py-4 text-xs font-mono">
+                    {c.dataPrevista ? new Date(c.dataPrevista).toLocaleDateString('pt-BR') : '-'}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                      {c.missao || 'Não informada'}
+                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[120px] block">
+                      {c.missao || ''}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1 max-w-[200px]">
-                      {c.equipamentos?.map(eq => (
-                        <span key={eq.id} className="bg-primary/5 text-primary border border-primary/20 px-1.5 py-0.5 rounded text-[10px] font-mono">
-                          {eq.rp || eq.numSerie}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-mono text-gray-700 dark:text-gray-200">
-                        {c.dataRetirada ? new Date(c.dataRetirada).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
-                      </span>
-                      {c.dataPrevista && (
-                        <span className="text-[10px] text-orange-500 font-medium italic">
-                          Prev: {new Date(c.dataPrevista).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 text-[10px] font-bold tracking-wider rounded-full border ${
-                      c.status === 'ATIVA' ? 'bg-success/10 text-success border-success/20' : 
-                      c.status === 'VENCIDA' ? 'bg-danger/10 text-danger border-danger/20' : 
-                      'bg-gray-400/10 text-gray-400 border-gray-500/20'
+                    <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
+                      c.status === 'ATIVA' ? 'bg-primary/10 text-[#3b82f6] border-[#3b82f6]/20' : 
+                      c.status === 'DEVOLVIDA' ? 'bg-success/5 text-success border-success/20' : 
+                      'bg-danger/5 text-danger border-danger/20'
                     }`}>
-                      {c.status}
+                      {c.status.charAt(0) + c.status.slice(1).toLowerCase()}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 text-gray-400">
+                    <div className="flex items-center justify-end gap-3 text-gray-400">
+                      <button 
+                        onClick={() => gerarComprovantePDF(c)}
+                        title="Imprimir Comprovante"
+                        className="hover:text-primary transition-colors"
+                      >
+                        <FileText size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleEdit(c)}
+                        title="Editar Cautela"
+                        className="hover:text-primary transition-colors"
+                      >
+                        <Edit3 size={18} />
+                      </button>
                       {c.status !== 'DEVOLVIDA' && (
                         <button 
                           onClick={() => { setCautelaDevolverId(c.id); setIsModalDevolverOpen(true); }}
                           title="Marcar como Devolvida"
-                          className="hover:text-success p-1.5 rounded-lg transition-colors hover:bg-success/10"
+                          className="hover:text-success transition-colors"
                         >
                           <CheckCircle2 size={18} />
                         </button>
@@ -303,7 +412,7 @@ const Cautelas: React.FC = () => {
                       <button 
                         onClick={() => { setCautelaDeleteId(c.id); setIsModalDeleteOpen(true); }}
                         title="Excluir Cautela"
-                        className="hover:text-danger p-1.5 rounded-lg transition-colors hover:bg-danger/10"
+                        className="hover:text-danger transition-colors"
                       >
                         <Trash2 size={18} />
                       </button>
