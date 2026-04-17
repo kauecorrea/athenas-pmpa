@@ -32,6 +32,7 @@ interface Militar {
   unidade?: {
     nome: string;
   };
+  contato?: string;
 }
 
 
@@ -187,18 +188,22 @@ const Cautelas: React.FC = () => {
   const gerarComprovantePDF = async (c: Cautela) => {
     const doc = new jsPDF();
     const nomeMilitar = c.militar?.nome || 'RESERVADO PARA UNIDADE';
-    const unidadeNome = c.militar?.unidade?.nome || c.unidade?.nome || 'DITEL';
+    const rgMilitar = c.militar?.rg || 'N/A';
+    const contatoMilitar = c.militar?.contato || '-';
     
     // Brasões
     try {
       const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
       doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
-    } catch (e) { console.error('Sem brasao_para.png'); }
+      doc.setFontSize(6);
+      doc.text("GOVERNO DO ESTADO", 24, 34, { align: "center" });
+      doc.text("DO PARÁ", 24, 37, { align: "center" });
+    } catch (e) { }
     
     try {
       const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
-      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
-    } catch (e) { console.error('Sem brasao_pmpa.png'); }
+      doc.addImage(base64Pmpa, 'PNG', 170, 8, 25, 25);
+    } catch (e) { }
 
     // Timbre Institucional
     doc.setFontSize(10);
@@ -209,78 +214,66 @@ const Cautelas: React.FC = () => {
     doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: "center" });
     doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
 
+    // Título Centralizado conforme modelo
+    const titulo = `CAUTELA - ${c.missao ? c.missao.toUpperCase() : 'GERAL'}`;
     doc.setFontSize(12);
-    doc.text('COMPROVANTE DE CAUTELA - PMPA/DITEL', 105, 50, { align: 'center' });
+    doc.text(titulo, 105, 50, { align: 'center' });
     
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Data de Emissão: ${new Date().toLocaleString('pt-BR')}`, 14, 60);
-
-    // Info
-    let y = 67;
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text('1. DADOS DO RESPONSÁVEL', 14, y);
-    
-    y += 7;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Nome Completo: ${nomeMilitar}`, 14, y);
-    
-    y += 5;
-    doc.text(`RG: ${c.militar?.rg || 'N/A'}`, 14, y);
-    doc.text(`Unidade: ${unidadeNome}`, 105, y);
-    
-    y += 7;
-    doc.setFont("helvetica", "bold");
-    doc.text("Missão:", 14, y);
-    doc.setFont("helvetica", "normal");
-    const missaoTexto = c.missao || 'Não informada';
-    const splitMissao = doc.splitTextToSize(missaoTexto, 175);
-    doc.text(splitMissao, 28, y); // Alinhado após a label "Missão:"
-    
-    y += (splitMissao.length * 5) + 5;
-
-    // Equipamentos
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text('2. EQUIPAMENTOS CAUTELADOS', 14, y);
-    
+    // Nova Tabela conforme modelo
     autoTable(doc, {
-      startY: y + 3,
-      head: [['Patrimônio (RP)', 'Série', 'Modelo']],
-      body: c.equipamentos.map(eq => [eq.rp || 'S/P', eq.numSerie, eq.modelo]),
-      theme: 'grid',
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
-      styles: { fontSize: 8 }
+      startY: 60,
+      head: [['Nº', 'Nº DE SÉRIE / RP', 'RESPONSÁVEL', 'RG', 'CONTATO', 'ASSINATURA']],
+      body: c.equipamentos.map((eq, i) => [
+        i + 1,
+        eq.rp || eq.numSerie,
+        nomeMilitar,
+        rgMilitar,
+        contatoMilitar,
+        '____________________'
+      ]),
+      theme: 'plain',
+      styles: { fontSize: 7, textColor: [0, 0, 0], lineWidth: 0 },
+      headStyles: { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 40, halign: 'center' }
+      }
     });
 
-    let currentY = (doc as any).lastAutoTable.finalY + 10;
+    let currentY = (doc as any).lastAutoTable.finalY + 15;
     
+    // Seção Acompanha
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text('3. PRAZO E OBSERVAÇÕES', 14, currentY);
+    doc.text('ACOMPANHA:', 14, currentY);
     doc.setFont("helvetica", "normal");
-    doc.text(`Data de Retirada: ${new Date(c.dataRetirada).toLocaleString('pt-BR')}`, 14, currentY + 7);
-    if (c.dataPrevista) {
-      doc.text(`Previsão de Retorno: ${new Date(c.dataPrevista).toLocaleString('pt-BR')}`, 14, currentY + 12);
-    }
+    doc.setFontSize(9);
+    doc.text(`- ${c.equipamentos.length} RÁDIOS HT`, 20, currentY + 7);
+    
+    const obsTexto = "- TODOS OS RÁDIOS ESTÃO COM PRESILHA PARA CINTO, PROTETOR LATERAL, BATERIA E ANTENA.";
+    const splitObs = doc.splitTextToSize(obsTexto, 180);
+    doc.text(splitObs, 20, currentY + 14);
 
-    // Rodapé de Assinaturas
+    // Rodapé Lateralizado conforme modelo
     const pageHeight = doc.internal.pageSize.height;
     
-    doc.line(20, pageHeight - 50, 90, pageHeight - 50);
-    doc.text('Assinatura do Militar', 55, pageHeight - 45, { align: 'center' });
+    doc.setFontSize(10);
+    const dataLocal = `Belém PA, ${new Date(c.dataRetirada).toLocaleDateString('pt-BR')}`;
+    doc.text(dataLocal, 14, pageHeight - 45);
     
-    doc.line(120, pageHeight - 50, 190, pageHeight - 50);
-    doc.text('Assinatura Plantão DITEL', 155, pageHeight - 45, { align: 'center' });
-
-    // Assinatura oficial fixa (Chefe)
+    doc.line(125, pageHeight - 45, 195, pageHeight - 45);
     doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 105, pageHeight - 25, { align: "center" });
+    doc.text('ASSINATURA DO MILITAR RESPONSÁVEL', 160, pageHeight - 40, { align: 'center' });
+
+    // Endereço Institucional no extremo rodapé (Exatamente como o outro)
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text("Chefe das Seções de Telecomunicações e Suporte ao Usuário.", 105, pageHeight - 20, { align: "center" });
+    doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: citel@pm.pa.gov.br", 105, pageHeight - 10, { align: "center" });
 
     window.open(doc.output('bloburl'), '_blank');
   };
