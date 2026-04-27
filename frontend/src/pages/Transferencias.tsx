@@ -237,8 +237,6 @@ const Transferencias: React.FC = () => {
     });
 
     // 5. Rodapé (Apenas Endereço Institucional)
-    const pageHeight = doc.internal.pageSize.height;
-    
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.text("Rod. Augusto Montenegro, Km 9, n° 3401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
