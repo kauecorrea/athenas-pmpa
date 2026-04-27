@@ -205,12 +205,17 @@ const Transferencias: React.FC = () => {
                 ) : transferenciasFiltradas.map(t => (
                   <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors group">
                     <td className="px-6 py-4">
-                      {t.equipamentos.map(eq => (
-                        <div key={eq.id} className="flex flex-col mb-1 last:mb-0">
-                          <span className="font-bold text-gray-900 dark:text-white uppercase">{eq.rp || 'S/RP'}</span>
-                          <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Nº: {eq.idRadio || '-'} | {eq.marca} {eq.modelo}</span>
-                        </div>
-                      ))}
+                      {t.equipamentos.map(eq => {
+                        const primario = eq.idRadio ? `Nº ${eq.idRadio}` : `SN: ${eq.numSerie}`;
+                        return (
+                          <div key={eq.id} className="flex flex-col mb-1 last:mb-0">
+                            <span className="font-bold text-gray-900 dark:text-white uppercase">{primario}</span>
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
+                              {eq.rp ? `RP: ${eq.rp} | ` : ''}{eq.marca} {eq.modelo}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400 uppercase">{t.unidadeOrigem?.nome || '-'}</td>
                     <td className="px-6 py-4 font-bold text-primary uppercase">{t.unidadeDestino.nome}</td>
@@ -305,11 +310,14 @@ const Transferencias: React.FC = () => {
                     value={formData.equipamentoId}
                     onChange={(e) => setFormData({...formData, equipamentoId: e.target.value})}
                   >
-                    {radiosFiltrados.map(eq => (
-                      <option key={eq.id} value={eq.id} className="py-2 px-2 rounded-md hover:bg-primary/10 cursor-pointer">
-                        {eq.rp || 'S/RP'} {eq.idRadio ? `(Nº ${eq.idRadio})` : ''} - {eq.modelo} [{eq.unidade?.nome}]
-                      </option>
-                    ))}
+                    {radiosFiltrados.map(eq => {
+                      const identificador = eq.idRadio ? `Nº ${eq.idRadio}` : `SN: ${eq.numSerie}`;
+                      return (
+                        <option key={eq.id} value={eq.id} className="py-2 px-2 rounded-md hover:bg-primary/10 cursor-pointer">
+                          {identificador} - {eq.modelo} [{eq.unidade?.nome}]
+                        </option>
+                      );
+                    })}
                     {radiosFiltrados.length === 0 && <option disabled>Nenhum rádio operacional encontrado</option>}
                   </select>
                 </div>
