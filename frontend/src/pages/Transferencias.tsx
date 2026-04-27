@@ -114,9 +114,10 @@ const Transferencias: React.FC = () => {
       setBuscaRadio('');
       fetchData();
       setViewMode('list');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Erro ao registrar transferência.");
+      const msg = e.response?.data?.error || e.response?.data?.details || "Erro desconhecido";
+      alert(`Erro ao registrar transferência: ${msg}`);
     }
   };
 
