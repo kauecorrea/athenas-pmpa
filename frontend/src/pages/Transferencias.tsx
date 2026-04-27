@@ -54,7 +54,7 @@ const Transferencias: React.FC = () => {
   // Form state
   const [formData, setFormData] = useState({
     unidadeDestinoId: '',
-    equipamentoId: '',
+    equipamentosIds: [] as string[],
     observacoes: '',
     dataTransferencia: new Date().toISOString().split('T')[0]
   });
@@ -84,18 +84,29 @@ const Transferencias: React.FC = () => {
     }
   };
 
+  const handleToggleEquipamento = (id: string) => {
+    setFormData(prev => {
+      const exists = prev.equipamentosIds.includes(id);
+      if (exists) {
+        return { ...prev, equipamentosIds: prev.equipamentosIds.filter(i => i !== id) };
+      } else {
+        return { ...prev, equipamentosIds: [...prev.equipamentosIds, id] };
+      }
+    });
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.equipamentosIds.length === 0) {
+      alert("Selecione ao menos um equipamento.");
+      return;
+    }
     try {
-      // O backend espera equipamentosIds como array
-      await axios.post('/api/transferencias', {
-        ...formData,
-        equipamentosIds: [formData.equipamentoId]
-      });
-      alert("Transferência de carga realizada com sucesso!");
+      await axios.post('/api/transferencias', formData);
+      alert(`${formData.equipamentosIds.length} rádio(s) transferido(s) com sucesso!`);
       setFormData({
         unidadeDestinoId: '',
-        equipamentoId: '',
+        equipamentosIds: [],
         observacoes: '',
         dataTransferencia: new Date().toISOString().split('T')[0]
       });
@@ -248,7 +259,7 @@ const Transferencias: React.FC = () => {
               <Building2 className="text-primary" size={24} />
               Registrar Transferência de Carga
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Transfira a carga de um equipamento para outra unidade definitivamente.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Transfira a carga de um ou mais equipamentos para outra unidade definitivamente.</p>
           </div>
           
           <form onSubmit={handleCreate} className="p-8 overflow-y-auto flex-1 space-y-8">
@@ -271,27 +282,32 @@ const Transferencias: React.FC = () => {
                       onChange={(e) => setBuscaUnidade(e.target.value)}
                     />
                   </div>
-                  <select 
-                    required
-                    size={6}
-                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none scrollbar-thin scrollbar-thumb-primary/20"
-                    value={formData.unidadeDestinoId}
-                    onChange={(e) => setFormData({...formData, unidadeDestinoId: e.target.value})}
-                  >
+                  <div className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20">
                     {unidadesFiltradas.map(u => (
-                      <option key={u.id} value={u.id} className="py-2 px-2 rounded-md hover:bg-primary/10 cursor-pointer">{u.nome}</option>
+                      <div 
+                        key={u.id}
+                        onClick={() => setFormData({...formData, unidadeDestinoId: u.id})}
+                        className={`px-4 py-2.5 text-sm cursor-pointer transition-colors border-l-4 ${formData.unidadeDestinoId === u.id ? 'bg-primary/10 border-primary font-bold text-primary' : 'border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                      >
+                        {u.nome}
+                      </div>
                     ))}
-                    {unidadesFiltradas.length === 0 && <option disabled>Nenhuma unidade encontrada</option>}
-                  </select>
+                    {unidadesFiltradas.length === 0 && <div className="p-4 text-center text-gray-500 text-xs italic">Nenhuma unidade encontrada</div>}
+                  </div>
                 </div>
               </div>
 
-              {/* PESQUISA RÁDIO */}
+              {/* PESQUISA RÁDIO (MÚLTIPLO) */}
               <div className="space-y-4">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                  <Radio size={16} />
-                  2. Equipamento para Transferir
-                </label>
+                <div className="flex justify-between items-center">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    <Radio size={16} />
+                    2. Equipamento(s) para Transferir
+                  </label>
+                  <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                    {formData.equipamentosIds.length} selecionado(s)
+                  </span>
+                </div>
                 <div className="space-y-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -303,23 +319,31 @@ const Transferencias: React.FC = () => {
                       onChange={(e) => setBuscaRadio(e.target.value)}
                     />
                   </div>
-                  <select 
-                    required
-                    size={6}
-                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none scrollbar-thin scrollbar-thumb-primary/20"
-                    value={formData.equipamentoId}
-                    onChange={(e) => setFormData({...formData, equipamentoId: e.target.value})}
-                  >
+                  <div className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 p-1 space-y-1">
                     {radiosFiltrados.map(eq => {
+                      const selected = formData.equipamentosIds.includes(eq.id);
                       const identificador = eq.idRadio ? `Nº ${eq.idRadio}` : `SN: ${eq.numSerie}`;
                       return (
-                        <option key={eq.id} value={eq.id} className="py-2 px-2 rounded-md hover:bg-primary/10 cursor-pointer">
-                          {identificador} - {eq.modelo} [{eq.unidade?.nome}]
-                        </option>
+                        <div 
+                          key={eq.id}
+                          onClick={() => handleToggleEquipamento(eq.id)}
+                          className={`
+                            px-3 py-2 rounded-lg text-xs cursor-pointer transition-all border flex items-center justify-between
+                            ${selected 
+                              ? 'bg-primary/20 border-primary text-primary font-bold shadow-sm' 
+                              : 'bg-white dark:bg-surface border-gray-200 dark:border-[#1f2937] hover:border-primary/50 text-gray-700 dark:text-gray-300'}
+                          `}
+                        >
+                          <div className="flex flex-col">
+                            <span>{identificador}</span>
+                            <span className="text-[9px] opacity-60 font-normal">{eq.modelo} [{eq.unidade?.nome}]</span>
+                          </div>
+                          {selected && <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
+                        </div>
                       );
                     })}
-                    {radiosFiltrados.length === 0 && <option disabled>Nenhum rádio operacional encontrado</option>}
-                  </select>
+                    {radiosFiltrados.length === 0 && <div className="p-4 text-center text-gray-500 text-xs italic">Nenhum rádio operacional encontrado</div>}
+                  </div>
                 </div>
               </div>
 
@@ -352,7 +376,7 @@ const Transferencias: React.FC = () => {
                 className="px-10 py-3 text-base font-bold text-white bg-primary hover:bg-blue-600 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center gap-2"
               >
                 <ArrowRightLeft size={20} />
-                Confirmar Transferência de Carga
+                Confirmar Transferência de {formData.equipamentosIds.length > 1 ? `${formData.equipamentosIds.length} Cargas` : 'Carga'}
               </button>
             </div>
           </form>
