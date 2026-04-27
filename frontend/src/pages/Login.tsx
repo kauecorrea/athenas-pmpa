@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Radio } from 'lucide-react';
+import { Radio, Lock, Mail, ExternalLink } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -39,107 +39,159 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0f1d] flex items-center justify-center p-4 transition-colors">
+    <div className="min-h-screen w-full relative flex items-center justify-center p-4 overflow-hidden bg-[#050811]">
+      
+      {/* BACKGROUND ELEMENTS */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/20 blur-[120px] animate-pulse delay-700"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+      </div>
 
-      <div className="max-w-md w-full animate-fade-in relative">
+      <div className="max-w-md w-full animate-fade-in relative z-10">
+        
+        {/* LOGO AREA */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white mx-auto shadow-lg shadow-primary/30 mb-4">
-            <Radio size={32} />
+          <div className="relative inline-block group">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/40 transition-all duration-500"></div>
+            <img 
+              src="/brasao_pmpa.png" 
+              alt="PMPA" 
+              className="w-24 h-24 relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-2xl"
+            />
           </div>
-          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic">Athenas</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Polícia Militar do Estado do Pará</p>
+          <h1 className="text-5xl font-black text-white tracking-tighter mt-4 uppercase italic">
+            Athenas
+            <span className="block text-xs font-bold tracking-[0.5em] text-primary mt-1 not-italic opacity-80 uppercase">Patrimonial DITEL</span>
+          </h1>
+          <div className="w-12 h-1 bg-primary mx-auto mt-4 rounded-full"></div>
         </div>
 
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-8">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Acesso ao Sistema</h2>
+        {/* LOGIN CARD */}
+        <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl shadow-black/50 overflow-hidden">
+          <div className="p-8 md:p-10">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Acesso Restrito</h2>
+            </div>
 
             {showForgotAlert ? (
               <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                <div className="p-5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 text-blue-800 dark:text-blue-300 mb-6">
+                <div className="p-5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-200 mb-6">
                   <h3 className="font-bold mb-2 flex items-center gap-2">
-                    <Radio size={18} />
-                    Recuperação de Acesso
+                    <Radio size={18} className="text-primary" />
+                    Protocolo Institucional
                   </h3>
-                  <p className="text-sm leading-relaxed">
-                    Por motivos de segurança institucional, a recuperação de senha deve ser solicitada formalmente ao DITEL.
+                  <p className="text-sm leading-relaxed opacity-80">
+                    A recuperação de acesso à rede DITEL deve ser solicitada via protocolo interno ou e-mail oficial à Seção de Telemática.
                   </p>
-                  <p className="text-sm mt-4 font-semibold">
-                    Contato: citel@pm.pa.gov.br
+                  <p className="text-xs mt-4 font-mono">
+                    dtel@pm.pa.gov.br
                   </p>
                 </div>
                 <button
                   onClick={() => setShowForgotAlert(false)}
-                  className="w-full py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  className="w-full py-3 text-sm font-bold text-gray-400 hover:text-white transition-colors"
                 >
-                  Voltar para o Login
+                  Retornar ao Início
                 </button>
               </div>
             ) : (
               <>
                 {error && (
-                  <div className="mb-6 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm font-medium">
+                  <div className="mb-6 p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm font-bold flex items-center gap-3 animate-shake">
+                    <div className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse"></div>
                     {error}
                   </div>
                 )}
 
-                <form onSubmit={handleLogin} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="usuario@pmpa.pa.gov.br"
-                      required
-                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    />
+                <form onSubmit={handleLogin} className="space-y-6">
+                  <div className="relative group">
+                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2 ml-1 group-focus-within:text-primary transition-colors">E-mail Corporativo</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="nome.sobrenome@pmpa.pa.gov.br"
+                        required
+                        className="w-full bg-white/5 border border-white/5 group-focus-within:border-primary/50 group-focus-within:bg-white/10 rounded-[1.25rem] pl-12 pr-4 py-4 text-sm text-white placeholder-gray-600 outline-none transition-all"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Senha</label>
-                    <input
-                      type="password"
-                      value={senha}
-                      onChange={(e) => setSenha(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    />
+                  <div className="relative group">
+                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2 ml-1 group-focus-within:text-primary transition-colors">Chave de Acesso</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
+                      <input
+                        type="password"
+                        value={senha}
+                        onChange={(e) => setSenha(e.target.value)}
+                        placeholder="••••••••••••"
+                        required
+                        className="w-full bg-white/5 border border-white/5 group-focus-within:border-primary/50 group-focus-within:bg-white/10 rounded-[1.25rem] pl-12 pr-4 py-4 text-sm text-white placeholder-gray-600 outline-none transition-all"
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary bg-gray-50 dark:bg-[#111827] dark:border-[#374151]" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Lembrar-me</span>
+                  <div className="flex items-center justify-between mt-2 px-1">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className="w-5 h-5 rounded-md border border-white/10 flex items-center justify-center group-hover:border-primary/50 transition-colors">
+                        <input 
+                          type="checkbox" 
+                          className="w-3 h-3 appearance-none checked:bg-primary rounded-sm transition-all" 
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">Memorizar sessão</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => setShowForgotAlert(true)}
-                      className="text-sm font-medium text-primary hover:text-blue-500 transition-colors"
+                      className="text-xs font-bold text-primary hover:text-blue-400 transition-colors"
                     >
-                      Esqueceu a senha?
+                      Suporte Técnico
                     </button>
                   </div>
 
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3 px-4 flex items-center justify-center text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/30 mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full relative py-4 px-4 flex items-center justify-center text-base font-black text-white bg-gradient-to-r from-primary to-blue-700 hover:from-blue-600 hover:to-blue-800 rounded-[1.25rem] transition-all shadow-xl shadow-blue-600/20 active:scale-[0.98] disabled:opacity-50"
                   >
-                    {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
+                    {isLoading ? (
+                       <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      'VALIDAR ACESSO'
+                    )}
                   </button>
                 </form>
               </>
             )}
           </div>
-          <div className="px-8 py-4 bg-gray-50 dark:bg-[#111827] border-t border-gray-200 dark:border-[#1f2937] text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-500">
-              Sistema Restrito • PMPA {new Date().getFullYear()}
+          
+          <div className="px-8 py-5 bg-white/5 border-t border-white/5 text-center flex flex-col gap-1">
+            <p className="text-[10px] text-gray-600 font-bold tracking-widest uppercase">
+              Polícia Militar do Pará • DITEL
             </p>
           </div>
         </div>
+        
+        {/* FOOTER CREDIT */}
+        <div className="mt-8 flex items-center justify-center gap-4 text-gray-600 text-[10px] font-black uppercase tracking-[0.2em]">
+          <div className="w-8 h-[1px] bg-white/10"></div>
+          Desenvolvido por Kauê Corrêa
+          <div className="w-8 h-[1px] bg-white/10"></div>
+        </div>
       </div>
+
+      {/* VERSION BADGE */}
+      <div className="absolute bottom-10 right-10 flex flex-col items-end opacity-20 hover:opacity-100 transition-opacity">
+        <span className="text-[10px] font-black tracking-widest text-white uppercase">V2.4.0 (Stable)</span>
+        <span className="text-[8px] text-primary font-bold">ATHENAS OS</span>
+      </div>
+
     </div>
   );
 };
