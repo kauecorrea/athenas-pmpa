@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Radio, Lock, Mail, ExternalLink } from 'lucide-react';
+import { Radio, Lock, Mail } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
