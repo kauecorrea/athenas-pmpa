@@ -7,9 +7,13 @@ import {
   ArrowRightLeft, 
   List,
   Building2,
-  Radio
+  Radio,
+  Edit3,
+  FileText
 } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Equipamento {
   id: string;
@@ -46,7 +50,7 @@ const Transferencias: React.FC = () => {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('list');
   const [busca, setBusca] = useState('');
   const [buscaUnidade, setBuscaUnidade] = useState('');
   const [buscaRadio, setBuscaRadio] = useState('');
@@ -59,6 +63,7 @@ const Transferencias: React.FC = () => {
     dataTransferencia: new Date().toISOString().split('T')[0]
   });
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState<string | null>(null);
 
@@ -85,6 +90,7 @@ const Transferencias: React.FC = () => {
   };
 
   const handleToggleEquipamento = (id: string) => {
+    if (editingId) return; // Não permite trocar equipamentos na edição por enquanto
     setFormData(prev => {
       const exists = prev.equipamentosIds.includes(id);
       if (exists) {
@@ -97,28 +103,38 @@ const Transferencias: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.equipamentosIds.length === 0) {
+    if (!editingId && formData.equipamentosIds.length === 0) {
       alert("Selecione ao menos um equipamento.");
       return;
     }
     try {
-      await axios.post('/api/transferencias', formData);
-      alert(`${formData.equipamentosIds.length} rádio(s) transferido(s) com sucesso!`);
-      setFormData({
-        unidadeDestinoId: '',
-        equipamentosIds: [],
-        observacoes: '',
-        dataTransferencia: new Date().toISOString().split('T')[0]
-      });
-      setBuscaUnidade('');
-      setBuscaRadio('');
+      if (editingId) {
+        await axios.put(`/api/transferencias/${editingId}`, formData);
+        alert("Transferência atualizada!");
+      } else {
+        await axios.post('/api/transferencias', formData);
+        alert(`${formData.equipamentosIds.length} rádio(s) transferido(s) com sucesso!`);
+      }
+      resetForm();
       fetchData();
       setViewMode('list');
     } catch (e: any) {
       console.error(e);
       const msg = e.response?.data?.error || e.response?.data?.details || "Erro desconhecido";
-      alert(`Erro ao registrar transferência: ${msg}`);
+      alert(`Erro ao salvar: ${msg}`);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      unidadeDestinoId: '',
+      equipamentosIds: [],
+      observacoes: '',
+      dataTransferencia: new Date().toISOString().split('T')[0]
+    });
+    setEditingId(null);
+    setBuscaUnidade('');
+    setBuscaRadio('');
   };
 
   const confirmDelete = async () => {
@@ -133,12 +149,79 @@ const Transferencias: React.FC = () => {
     }
   };
 
+  const handleEdit = (t: Transferencia) => {
+    setFormData({
+      unidadeDestinoId: t.unidadeDestino.id,
+      equipamentosIds: t.equipamentos.map(e => e.id),
+      observacoes: t.observacoes || '',
+      dataTransferencia: t.dataTransferencia.split('T')[0]
+    });
+    setEditingId(t.id);
+    setViewMode('form');
+  };
+
+  const gerarPDF = (t: Transferencia) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Cabeçalho institucional simples
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("ESTADO DO PARÁ", pageWidth / 2, 15, { align: 'center' });
+    doc.text("POLÍCIA MILITAR DO PARÁ", pageWidth / 2, 20, { align: 'center' });
+    doc.text("DITEL - DIRETORIA DE TECNOLOGIA E INFORMÁTICA", pageWidth / 2, 25, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.text("TERMO DE TRANSFERÊNCIA DE CARGA DEFINITIVA", pageWidth / 2, 35, { align: 'center' });
+    
+    doc.setLineWidth(0.5);
+    doc.line(20, 40, pageWidth - 20, 40);
+
+    // Dados da Transferência
+    doc.setFontSize(11);
+    doc.text(`DATA: ${new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}`, 20, 50);
+    doc.text(`UNIDADE DE ORIGEM: ${t.unidadeOrigem?.nome || 'DITEL'}`, 20, 58);
+    doc.text(`UNIDADE DE DESTINO: ${t.unidadeDestino.nome}`, 20, 66);
+    
+    doc.setFont("helvetica", "normal");
+    const splitObs = doc.splitTextToSize(`OBSERVAÇÕES: ${t.observacoes || 'Sem observações'}`, pageWidth - 40);
+    doc.text(splitObs, 20, 74);
+
+    // Tabela de Equipamentos
+    const tableData = t.equipamentos.map(eq => [
+      eq.idRadio || '-',
+      eq.numSerie,
+      eq.marca,
+      eq.modelo,
+      'OPERACIONAL'
+    ]);
+
+    autoTable(doc, {
+      startY: 90,
+      head: [['Nº RÁDIO', 'Nº SÉRIE', 'MARCA', 'MODELO', 'STATUS']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillStyle: 'DF', fillColor: [41, 128, 185], textColor: 255 },
+      styles: { fontSize: 9 }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 30;
+
+    // Assinaturas
+    doc.line(20, finalY, 90, finalY);
+    doc.text("RESPONSÁVEL ORIGEM", 35, finalY + 5);
+    
+    doc.line(pageWidth - 90, finalY, pageWidth - 20, finalY);
+    doc.text("RESPONSÁVEL DESTINO", pageWidth - 75, finalY + 5);
+
+    doc.save(`Transferencia_${t.unidadeDestino.nome}_${t.id.slice(-5)}.pdf`);
+  };
+
   const transferenciasFiltradas = useMemo(() => {
     return transferencias.filter(t => {
       const termo = busca.toLowerCase();
       return t.unidadeDestino.nome.toLowerCase().includes(termo) || 
-             t.unidadeOrigem?.nome?.toLowerCase().includes(termo) ||
-             t.equipamentos.some(eq => eq.rp?.toLowerCase().includes(termo) || eq.idRadio?.toLowerCase().includes(termo));
+             t.unidadeOrigem?.nome?.toLowerCase().includes(termo);
     });
   }, [transferencias, busca]);
 
@@ -154,7 +237,7 @@ const Transferencias: React.FC = () => {
   }, [equipamentos, buscaRadio]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col relative transition-colors duration-200">
+    <div className="max-width-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col relative transition-colors duration-200">
       
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-surface p-6 rounded-2xl border border-gray-100 dark:border-[#1f2937] shadow-sm">
@@ -167,7 +250,7 @@ const Transferencias: React.FC = () => {
         </div>
         {viewMode === 'list' ? (
           <button 
-            onClick={() => setViewMode('form')}
+            onClick={() => { resetForm(); setViewMode('form'); }}
             className="flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus size={20} />
@@ -191,7 +274,7 @@ const Transferencias: React.FC = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
                 type="text" 
-                placeholder="Buscar por unidade, patrimônio ou Nº rádio..." 
+                placeholder="Buscar por Unidade (Origem ou Destino)..." 
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all"
@@ -217,17 +300,13 @@ const Transferencias: React.FC = () => {
                 ) : transferenciasFiltradas.map(t => (
                   <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors group">
                     <td className="px-6 py-4">
-                      {t.equipamentos.map(eq => {
-                        const primario = eq.idRadio ? `Nº ${eq.idRadio}` : `SN: ${eq.numSerie}`;
-                        return (
-                          <div key={eq.id} className="flex flex-col mb-1 last:mb-0">
-                            <span className="font-bold text-gray-900 dark:text-white uppercase">{primario}</span>
-                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
-                              {eq.rp ? `RP: ${eq.rp} | ` : ''}{eq.marca} {eq.modelo}
-                            </span>
-                          </div>
-                        );
-                      })}
+                      <div className="flex flex-col">
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          <Radio className="inline mr-2 text-primary" size={14} />
+                          {t.equipamentos.length} Equipamento(s)
+                        </span>
+                        <span className="text-[10px] text-gray-400 uppercase">Transferência em Lote</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400 uppercase">{t.unidadeOrigem?.nome || '-'}</td>
                     <td className="px-6 py-4 font-bold text-primary uppercase">{t.unidadeDestino.nome}</td>
@@ -236,13 +315,29 @@ const Transferencias: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-xs italic text-gray-500 max-w-[200px] truncate">{t.observacoes || 'Sem observações'}</td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => { setIdToDelete(t.id); setIsModalDeleteOpen(true); }}
-                        className="text-gray-400 hover:text-danger p-2 rounded-lg transition-colors hover:bg-danger/10 opacity-0 group-hover:opacity-100"
-                        title="Estornar Transferência"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => gerarPDF(t)}
+                          className="text-primary hover:text-blue-700 p-2 rounded-lg transition-colors hover:bg-primary/10"
+                          title="Emitir Documento"
+                        >
+                          <FileText size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleEdit(t)}
+                          className="text-gray-400 hover:text-primary p-2 rounded-lg transition-colors hover:bg-primary/10"
+                          title="Editar"
+                        >
+                          <Edit3 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => { setIdToDelete(t.id); setIsModalDeleteOpen(true); }}
+                          className="text-gray-400 hover:text-danger p-2 rounded-lg transition-colors hover:bg-danger/10"
+                          title="Estornar Transferência"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -258,9 +353,11 @@ const Transferencias: React.FC = () => {
           <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Building2 className="text-primary" size={24} />
-              Registrar Transferência de Carga
+              {editingId ? 'Editar Registro de Transferência' : 'Registrar Transferência de Carga'}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Transfira a carga de um ou mais equipamentos para outra unidade definitivamente.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {editingId ? 'Apenas observações e data podem ser alteradas após o registro.' : 'Transfira a carga de um ou mais equipamentos para outra unidade definitivamente.'}
+            </p>
           </div>
           
           <form onSubmit={handleCreate} className="p-8 overflow-y-auto flex-1 space-y-8">
@@ -272,7 +369,7 @@ const Transferencias: React.FC = () => {
                   <Building2 size={16} />
                   1. Unidade de Destino
                 </label>
-                <div className="space-y-3">
+                <div className={`space-y-3 ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input 
@@ -309,7 +406,7 @@ const Transferencias: React.FC = () => {
                     {formData.equipamentosIds.length} selecionado(s)
                   </span>
                 </div>
-                <div className="space-y-3">
+                <div className={`space-y-3 ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input 
@@ -343,7 +440,8 @@ const Transferencias: React.FC = () => {
                         </div>
                       );
                     })}
-                    {radiosFiltrados.length === 0 && <div className="p-4 text-center text-gray-500 text-xs italic">Nenhum rádio operacional encontrado</div>}
+                    {radiosFiltrados.length === 0 && !editingId && <div className="p-4 text-center text-gray-500 text-xs italic">Nenhum rádio operacional encontrado</div>}
+                    {editingId && <div className="p-4 text-center text-gray-400 text-[10px] italic">Edição de equipamentos não disponível para registros finalizados.</div>}
                   </div>
                 </div>
               </div>
@@ -377,7 +475,7 @@ const Transferencias: React.FC = () => {
                 className="px-10 py-3 text-base font-bold text-white bg-primary hover:bg-blue-600 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center gap-2"
               >
                 <ArrowRightLeft size={20} />
-                Confirmar Transferência de {formData.equipamentosIds.length > 1 ? `${formData.equipamentosIds.length} Cargas` : 'Carga'}
+                {editingId ? 'Salvar Alterações' : `Confirmar Transferência de ${formData.equipamentosIds.length > 1 ? `${formData.equipamentosIds.length} Cargas` : 'Carga'}`}
               </button>
             </div>
           </form>
