@@ -7,11 +7,14 @@ const prisma = new PrismaClient();
 
 // Listar relatórios de Transferências
 // @ts-ignore
+// Listar relatórios de Transferências
+// @ts-ignore
 router.get('/', async (req: Request, res: Response) => {
   try {
     const transferencias = await prisma.transferencia.findMany({
       include: {
-        militar: { include: { unidade: true } },
+        unidadeOrigem: true,
+        unidadeDestino: true,
         equipamentos: true
       },
       orderBy: { dataTransferencia: 'desc' }
@@ -22,60 +25,65 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Registrar Nova Transferência
+// Registrar Nova Transferência (Definitiva entre Unidades)
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentosIds, militarId, destino, dataTransferencia, observacoes } = req.body;
+  const { equipamentosIds, unidadeDestinoId, dataTransferencia, observacoes } = req.body;
   
   if (!equipamentosIds || !Array.isArray(equipamentosIds) || equipamentosIds.length === 0) {
     return res.status(400).json({ error: 'Nenhum equipamento fornecido para transferência.' });
   }
 
+  if (!unidadeDestinoId) {
+    return res.status(400).json({ error: 'Unidade de destino não informada.' });
+  }
+
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Desconectar das cautelas de ORIGEM
+      // Pegamos o primeiro rádio para saber a unidade de origem (assumindo que todos vêm da mesma, o que é o comum)
+      const primeiroEquip = await tx.equipamento.findUnique({
+        where: { id: equipamentosIds[0] },
+        select: { unidadeId: true }
+      });
+
+      const unidadeOrigemId = primeiroEquip?.unidadeId;
+
       for (const equipId of equipamentosIds) {
-        // Acha todas as cautelas ATIVAS que seguram ESSE rádio
+        // 1. Desconectar das cautelas de ORIGEM (se houver)
         const cautelasAtivas = await tx.cautela.findMany({
           where: { status: 'ATIVA', equipamentos: { some: { id: equipId } } },
           include: { equipamentos: true }
         });
 
         for (const c of cautelasAtivas) {
-          // Desconecta o rádio da Cautela Originária
           await tx.cautela.update({
             where: { id: c.id },
             data: { equipamentos: { disconnect: { id: equipId } } }
           });
 
-          // Se a cautela original agora esvaziou (tinha só esse rádio), nós a damos como devolvida
           if (c.equipamentos.length <= 1) {
             await tx.cautela.update({
               where: { id: c.id },
-              data: { status: 'DEVOLVIDA', dataDevolucao: new Date() }
+              data: { status: 'DEVOLVIDA', dataDevolucao: new Date(), missao: 'ENCERRADA POR TRANSFERÊNCIA DE CARGA' }
             });
           }
         }
+
+        // 2. Atualizar a Unidade do Rádio Definitivamente e voltar para OPERACIONAL na nova casa
+        await tx.equipamento.update({
+          where: { id: equipId },
+          data: { 
+            unidadeId: unidadeDestinoId,
+            status: 'OPERACIONAL' 
+          }
+        });
       }
 
-      // 2. Criar UMA única Nova Cautela em Lote para agrupar esses rádios que chegaram
-      const novaCautela = await tx.cautela.create({
-        data: {
-          militarId: militarId,
-          status: 'ATIVA',
-          dataRetirada: dataTransferencia ? new Date(dataTransferencia) : new Date(),
-          missao: `REPASSE TÁTICO: ${destino}`,
-          equipamentos: {
-            connect: equipamentosIds.map((id: string) => ({ id }))
-          }
-        }
-      });
-
-      // 3. Criar a Transferência Histórica no Banco com o Array de Equipamentos
+      // 3. Criar a Transferência Histórica
       const trans = await tx.transferencia.create({
         data: {
-          militarId: militarId,
-          destino,
+          unidadeOrigemId,
+          unidadeDestinoId,
           dataTransferencia: dataTransferencia ? new Date(dataTransferencia) : new Date(),
           observacoes,
           qtdRadios: equipamentosIds.length,
@@ -84,53 +92,27 @@ router.post('/', async (req: Request, res: Response) => {
             connect: equipamentosIds.map((id: string) => ({ id }))
           }
         },
+        include: { unidadeDestino: true }
       });
-
-      // 4. Garantir que o Rádio continue como CAUTELADO
-      for (const equipId of equipamentosIds) {
-        await tx.equipamento.update({
-          where: { id: equipId },
-          data: { status: 'CAUTELADO' }
-        });
-      }
 
       return trans;
     });
 
-    registrarAuditoria(req, 'Transferiu carga de Cautela de Rádios', `Transferiu IDs [${equipamentosIds.join(', ')}] para o PM Banco ID: ${militarId} com Destino: ${destino}`);
+    registrarAuditoria(req, 'Transferência de Carga Definitiva', `Transferiu IDs [${equipamentosIds.join(', ')}] para Unidade ID: ${unidadeDestinoId}`);
     res.status(201).json(result);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Erro ao processar transferência' });
+    res.status(500).json({ error: 'Erro ao processar transferência de carga' });
   }
 });
 
-// Editar dados de texto da Transferência
-// @ts-ignore
-router.put('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params as { id: string };
-  const { destino, observacoes } = req.body;
-
-  try {
-    const updated = await prisma.transferencia.update({
-      where: { id: id as string },
-      data: { destino, observacoes }
-    });
-    registrarAuditoria(req, 'Editou Destino de Transferência', `Transferência ID: ${id} editada para Destino: ${destino}`);
-    res.json(updated);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao editar transferência' });
-  }
-});
-
-// Excluir e Reverter Transferência (Radio para OPERACIONAL)
+// Excluir e Reverter Transferência (Rádio volta para Unidade de Origem)
 // @ts-ignore
 router.delete('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      // Pega a transferência antes de excluir pra saber quais eram os rádios e o destino
+    await prisma.$transaction(async (tx) => {
       const trans = await tx.transferencia.findUnique({
         where: { id: id as string },
         include: { equipamentos: true }
@@ -138,50 +120,29 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
       if (!trans) throw new Error('Transferência não encontrada');
 
-      // Pega a Cautela que foi gerada na hora do repasse (Mesmo PM, Rádios idênticos e mesma Data e Missão parecida)
-      // Como não salvamos o CautelaID na transferência (para manter solto), 
-      // achamos simplesmente devolvendo/liberando os rádios para a base.
-      
-      for (const equip of trans.equipamentos) {
-        // Deleta os rádios da cautela ATIVA do Militar Receptor
-        const cautelasReceptor = await tx.cautela.findMany({
-          where: { status: 'ATIVA', militarId: trans.militarId, equipamentos: { some: { id: equip.id } } },
-          include: { equipamentos: true }
-        });
-
-        for (const c of cautelasReceptor) {
-          await tx.cautela.update({
-            where: { id: c.id },
-            data: { equipamentos: { disconnect: { id: equip.id } } }
+      // Se havia uma unidade de origem, devolvemos os rádios pra lá
+      if (trans.unidadeOrigemId) {
+        for (const equip of trans.equipamentos) {
+          await tx.equipamento.update({
+            where: { id: equip.id },
+            data: { 
+              unidadeId: trans.unidadeOrigemId,
+              status: 'OPERACIONAL'
+            }
           });
-          if (c.equipamentos.length <= 1) {
-            await tx.cautela.update({
-              where: { id: c.id },
-              data: { status: 'DEVOLVIDA', dataDevolucao: new Date(), missao: 'CANCELADA VIA EXCLUSÃO' }
-            });
-          }
         }
-
-        // Volta os rádios para Status livre OPERACIONAL na corporação
-        await tx.equipamento.update({
-          where: { id: equip.id },
-          data: { status: 'OPERACIONAL' }
-        });
       }
 
-      // E finalmente exlcui a transferência do sistema
-      const deletedTrans = await tx.transferencia.delete({
+      await tx.transferencia.delete({
         where: { id: id as string }
       });
-
-      return deletedTrans;
     });
 
-    registrarAuditoria(req, 'Excluiu Transferência', `A Transferência ID ${id} foi revertida e ejetada do sistema.`);
-    res.json({ message: 'Transferência revertida e rádios marcados como operacionais.' });
+    registrarAuditoria(req, 'Estornou Transferência de Carga', `A Transferência ID ${id} foi revertida.`);
+    res.json({ message: 'Transferência estornada e carga devolvida à unidade de origem.' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Erro ao deletar e reverter transferência', details: error });
+    res.status(500).json({ error: 'Erro ao estornar transferência' });
   }
 });
 

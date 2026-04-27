@@ -18,6 +18,8 @@ model Unidade {
   // Rádios podem pertencer a uma unidade
   radios    Equipamento[]
   manutencoesVTR ManutencaoVTR[]
+  transferenciasEnviadas   Transferencia[] @relation("origem")
+  transferenciasRecebidas  Transferencia[] @relation("destino")
 }
 
 model Militar {
@@ -130,9 +132,13 @@ model Extravio {
 
 model Transferencia {
   id                String      @id @default(auto()) @map("_id") @db.ObjectId
-  militarId         String      @db.ObjectId
-  militar           Militar     @relation(fields: [militarId], references: [id])
-  destino           String
+  
+  unidadeOrigemId   String?     @db.ObjectId
+  unidadeOrigem     Unidade?    @relation("origem", fields: [unidadeOrigemId], references: [id])
+  
+  unidadeDestinoId  String      @db.ObjectId
+  unidadeDestino    Unidade     @relation("destino", fields: [unidadeDestinoId], references: [id])
+  
   dataTransferencia DateTime    @default(now())
   observacoes       String?
   qtdRadios         Int
@@ -141,6 +147,9 @@ model Transferencia {
   equipamentos      Equipamento[] @relation(fields: [equipamentoIds], references: [id])
   
   status            String      @default("FINALIZADA")
+  
+  militarId         String?     @db.ObjectId
+  militar           Militar?    @relation(fields: [militarId], references: [id])
 }
 
 model Auditoria {
