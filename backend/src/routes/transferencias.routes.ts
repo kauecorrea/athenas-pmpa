@@ -119,20 +119,22 @@ router.post('/', async (req: Request, res: Response) => {
 // Atualizar Transferência (Apenas observações e data)
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const { dataTransferencia, observacoes } = req.body;
 
   try {
+    const updateData: any = {};
+    if (dataTransferencia) updateData.dataTransferencia = new Date(dataTransferencia);
+    if (observacoes !== undefined) updateData.observacoes = observacoes;
+
     const updated = await prisma.transferencia.update({
       where: { id },
-      data: {
-        dataTransferencia: dataTransferencia ? new Date(dataTransferencia) : undefined,
-        observacoes
-      }
+      data: updateData
     });
     registrarAuditoria(req, 'Editou Transferência', `Transferência ID ${id} atualizada.`);
     res.json(updated);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Erro ao atualizar transferência' });
   }
 });
