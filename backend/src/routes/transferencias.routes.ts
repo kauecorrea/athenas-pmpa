@@ -116,26 +116,77 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// Atualizar Transferência (Apenas observações e data)
+// Atualizar Transferência (Permite mudar destino e equipamentos)
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { dataTransferencia, observacoes } = req.body;
+  const { dataTransferencia, observacoes, unidadeDestinoId, equipamentosIds } = req.body;
 
   try {
-    const updateData: any = {};
-    if (dataTransferencia) updateData.dataTransferencia = new Date(dataTransferencia);
-    if (observacoes !== undefined) updateData.observacoes = observacoes;
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.transferencia.findUnique({
+        where: { id },
+        include: { equipamentos: true }
+      });
 
-    const updated = await prisma.transferencia.update({
-      where: { id },
-      data: updateData
+      if (!existing) throw new Error('Transferência não encontrada');
+
+      // Se mudou equipamentos ou destino, precisamos reverter e reaplicar
+      if (unidadeDestinoId || equipamentosIds) {
+        // 1. Reverter estados atuais (Rádios voltam para origem)
+        const origemId = existing.unidadeOrigemId;
+        if (origemId) {
+          for (const eq of existing.equipamentos) {
+            await tx.equipamento.update({
+              where: { id: eq.id },
+              data: { unidadeId: origemId, status: 'OPERACIONAL' }
+            });
+          }
+        }
+
+        // 2. Aplicar novos estados
+        const finalDestinoId = unidadeDestinoId || existing.unidadeDestinoId;
+        const finalEquipIds = equipamentosIds || existing.equipamentoIds;
+
+        for (const eqId of finalEquipIds) {
+          await tx.equipamento.update({
+            where: { id: eqId },
+            data: { unidadeId: finalDestinoId, status: 'OPERACIONAL' }
+          });
+        }
+        
+        // 3. Atualizar o registro
+        const updateData: any = {
+          unidadeDestinoId: finalDestinoId,
+          equipamentoIds: finalEquipIds,
+          qtdRadios: finalEquipIds.length,
+          observacoes: observacoes !== undefined ? observacoes : undefined
+        };
+        if (dataTransferencia) updateData.dataTransferencia = new Date(dataTransferencia);
+
+        return await tx.transferencia.update({
+          where: { id },
+          data: updateData
+        });
+      } else {
+        // Apenas meta-dados
+        const updateData: any = {
+          observacoes: observacoes !== undefined ? observacoes : undefined
+        };
+        if (dataTransferencia) updateData.dataTransferencia = new Date(dataTransferencia);
+
+        return await tx.transferencia.update({
+          where: { id },
+          data: updateData
+        });
+      }
     });
+
     registrarAuditoria(req, 'Editou Transferência', `Transferência ID ${id} atualizada.`);
-    res.json(updated);
-  } catch (error) {
+    res.json(result);
+  } catch (error: any) {
     console.error(error);
-    res.status(500).json({ error: 'Erro ao atualizar transferência' });
+    res.status(500).json({ error: error.message || 'Erro ao atualizar transferência' });
   }
 });
 
