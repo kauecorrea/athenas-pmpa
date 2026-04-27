@@ -201,7 +201,7 @@ const Transferencias: React.FC = () => {
       head: [['Nº RÁDIO', 'Nº SÉRIE', 'MARCA', 'MODELO', 'STATUS']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillStyle: 'DF', fillColor: [41, 128, 185], textColor: 255 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
       styles: { fontSize: 9 }
     });
 
