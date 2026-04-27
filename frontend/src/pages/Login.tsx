@@ -178,12 +178,6 @@ const Login: React.FC = () => {
           </div>
         </div>
         
-        {/* FOOTER CREDIT */}
-        <div className="mt-8 flex items-center justify-center gap-4 text-gray-600 text-[10px] font-black uppercase tracking-[0.2em]">
-          <div className="w-8 h-[1px] bg-white/10"></div>
-          Desenvolvido por Kauê Corrêa
-          <div className="w-8 h-[1px] bg-white/10"></div>
-        </div>
       </div>
 
       {/* VERSION BADGE */}
