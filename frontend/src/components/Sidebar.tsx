@@ -104,9 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Logo/Header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200 dark:border-[#1f2937]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-              <Radio size={18} />
-            </div>
+            <img src="/brasao_pmpa.png" alt="PMPA Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
             <div>
               <h1 className="text-gray-900 dark:text-white font-bold tracking-wide text-lg leading-tight uppercase">Athenas</h1>
               <p className="text-primary text-[10px] font-medium tracking-widest uppercase">PMPA</p>
