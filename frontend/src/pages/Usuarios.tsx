@@ -306,13 +306,27 @@ const Usuarios: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 md:col-span-2">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Posto / Graduação</label>
-                  <input 
-                    type="text" 
+                  <select 
+                    required
                     value={formData.posto}
-                    onChange={(e) => setFormData({...formData, posto: e.target.value.toUpperCase()})}
-                    placeholder="Ex: CAP QOPM"
-                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-4 py-3 text-sm outline-none transition-all"
-                  />
+                    onChange={(e) => setFormData({...formData, posto: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="VC">VC (VOLUNTÁRIO CIVIL)</option>
+                    <option value="SD">SD (SOLDADO)</option>
+                    <option value="CB">CB (CABO)</option>
+                    <option value="3º SGT">3º SGT (SARGENTO)</option>
+                    <option value="2º SGT">2º SGT (SARGENTO)</option>
+                    <option value="1º SGT">1º SGT (SARGENTO)</option>
+                    <option value="SUB TEN">SUB TEN (SUBTENENTE)</option>
+                    <option value="2º TEN">2º TEN (TENENTE)</option>
+                    <option value="1º TEN">1º TEN (TENENTE)</option>
+                    <option value="CAP">CAP (CAPITÃO)</option>
+                    <option value="MAJ">MAJ (MAJOR)</option>
+                    <option value="TC">TC (TENENTE CORONEL)</option>
+                    <option value="COL">COL (CORONEL)</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nível de Acesso</label>
