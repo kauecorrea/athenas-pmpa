@@ -116,6 +116,27 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
+// Atualizar Transferência (Apenas observações e data)
+// @ts-ignore
+router.put('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { dataTransferencia, observacoes } = req.body;
+
+  try {
+    const updated = await prisma.transferencia.update({
+      where: { id },
+      data: {
+        dataTransferencia: dataTransferencia ? new Date(dataTransferencia) : undefined,
+        observacoes
+      }
+    });
+    registrarAuditoria(req, 'Editou Transferência', `Transferência ID ${id} atualizada.`);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao atualizar transferência' });
+  }
+});
+
 // Excluir e Reverter Transferência (Rádio volta para Unidade de Origem)
 // @ts-ignore
 router.delete('/:id', async (req: Request, res: Response) => {
