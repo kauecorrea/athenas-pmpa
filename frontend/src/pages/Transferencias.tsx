@@ -50,7 +50,7 @@ const Transferencias: React.FC = () => {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [viewMode, setViewMode] = useState<'form' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [busca, setBusca] = useState('');
   const [buscaUnidade, setBuscaUnidade] = useState('');
   const [buscaRadio, setBuscaRadio] = useState('');
@@ -90,7 +90,6 @@ const Transferencias: React.FC = () => {
   };
 
   const handleToggleEquipamento = (id: string) => {
-    if (editingId) return; // Não permite trocar equipamentos na edição por enquanto
     setFormData(prev => {
       const exists = prev.equipamentosIds.includes(id);
       if (exists) {
@@ -103,14 +102,14 @@ const Transferencias: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingId && formData.equipamentosIds.length === 0) {
+    if (formData.equipamentosIds.length === 0) {
       alert("Selecione ao menos um equipamento.");
       return;
     }
     try {
       if (editingId) {
         await axios.put(`/api/transferencias/${editingId}`, formData);
-        alert("Transferência atualizada!");
+        alert("Transferência atualizada com sucesso!");
       } else {
         await axios.post('/api/transferencias', formData);
         alert(`${formData.equipamentosIds.length} rádio(s) transferido(s) com sucesso!`);
@@ -160,61 +159,99 @@ const Transferencias: React.FC = () => {
     setViewMode('form');
   };
 
-  const gerarPDF = (t: Transferencia) => {
+  const getBase64ImageFromUrl = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject('Erro ao carregar imagem');
+      img.src = imageUrl;
+    });
+  };
+
+  const gerarPDF = async (t: Transferencia) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Cabeçalho institucional simples
+    // 1. Brasões Institucionais
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+    } catch (err) { console.error('Sem brasao_para.png'); }
+    
+    try {
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+    } catch (err) { console.error('Sem brasao_pmpa.png'); }
+
+    // 2. Cabeçalho Oficial
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("ESTADO DO PARÁ", pageWidth / 2, 15, { align: 'center' });
+    doc.text("GOVERNO DO ESTADO DO PARÁ", pageWidth / 2, 15, { align: 'center' });
     doc.text("POLÍCIA MILITAR DO PARÁ", pageWidth / 2, 20, { align: 'center' });
-    doc.text("DITEL - DIRETORIA DE TECNOLOGIA E INFORMÁTICA", pageWidth / 2, 25, { align: 'center' });
+    doc.text("DITEL - DIRETORIA DE TELEMÁTICA", pageWidth / 2, 25, { align: 'center' });
+    doc.text("DIVISÃO DE PATRIMÔNIO", pageWidth / 2, 30, { align: 'center' });
     
     doc.setFontSize(14);
-    doc.text("TERMO DE TRANSFERÊNCIA DE CARGA DEFINITIVA", pageWidth / 2, 35, { align: 'center' });
+    doc.text("TERMO DE TRANSFERÊNCIA DE CARGA DEFINITIVA", pageWidth / 2, 45, { align: 'center' });
     
     doc.setLineWidth(0.5);
-    doc.line(20, 40, pageWidth - 20, 40);
+    doc.line(20, 50, pageWidth - 20, 50);
 
-    // Dados da Transferência
+    // 3. Dados da Transferência
     doc.setFontSize(11);
-    doc.text(`DATA: ${new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}`, 20, 50);
-    doc.text(`UNIDADE DE ORIGEM: ${t.unidadeOrigem?.nome || 'DITEL'}`, 20, 58);
-    doc.text(`UNIDADE DE DESTINO: ${t.unidadeDestino.nome}`, 20, 66);
+    doc.text(`DATA: ${new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}`, 20, 60);
+    doc.text(`UNIDADE DE ORIGEM: ${t.unidadeOrigem?.nome || 'DITEL'}`, 20, 68);
+    doc.text(`UNIDADE DE DESTINO: ${t.unidadeDestino.nome}`, 20, 76);
     
     doc.setFont("helvetica", "normal");
     const splitObs = doc.splitTextToSize(`OBSERVAÇÕES: ${t.observacoes || 'Sem observações'}`, pageWidth - 40);
-    doc.text(splitObs, 20, 74);
+    doc.text(splitObs, 20, 84);
 
-    // Tabela de Equipamentos
+    // 4. Tabela de Equipamentos
     const tableData = t.equipamentos.map(eq => [
       eq.idRadio || '-',
       eq.numSerie,
-      eq.marca,
-      eq.modelo,
+      eq.marca || '-',
+      eq.modelo || '-',
       'OPERACIONAL'
     ]);
 
     autoTable(doc, {
-      startY: 90,
+      startY: 100,
       head: [['Nº RÁDIO', 'Nº SÉRIE', 'MARCA', 'MODELO', 'STATUS']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-      styles: { fontSize: 9 }
+      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3 }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 30;
+    const finalY = (doc as any).lastAutoTable.finalY + 40;
 
-    // Assinaturas
+    // 5. Rodapé de Assinaturas
+    doc.setFont("helvetica", "bold");
     doc.line(20, finalY, 90, finalY);
-    doc.text("RESPONSÁVEL ORIGEM", 35, finalY + 5);
+    doc.text("RESPONSÁVEL ORIGEM", 55, finalY + 5, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text("(Assinatura e Carimbo)", 55, finalY + 10, { align: 'center' });
     
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
     doc.line(pageWidth - 90, finalY, pageWidth - 20, finalY);
-    doc.text("RESPONSÁVEL DESTINO", pageWidth - 75, finalY + 5);
+    doc.text("RESPONSÁVEL DESTINO", pageWidth - 55, finalY + 5, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text("(Assinatura e Carimbo)", pageWidth - 55, finalY + 10, { align: 'center' });
 
-    doc.save(`Transferencia_${t.unidadeDestino.nome}_${t.id.slice(-5)}.pdf`);
+    doc.save(`Transferencia_${t.unidadeDestino.nome.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
   };
 
   const transferenciasFiltradas = useMemo(() => {
@@ -356,7 +393,7 @@ const Transferencias: React.FC = () => {
               {editingId ? 'Editar Registro de Transferência' : 'Registrar Transferência de Carga'}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {editingId ? 'Apenas observações e data podem ser alteradas após o registro.' : 'Transfira a carga de um ou mais equipamentos para outra unidade definitivamente.'}
+              Transfira a carga de um ou mais equipamentos para outra unidade definitivamente.
             </p>
           </div>
           
@@ -369,7 +406,7 @@ const Transferencias: React.FC = () => {
                   <Building2 size={16} />
                   1. Unidade de Destino
                 </label>
-                <div className={`space-y-3 ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="space-y-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input 
@@ -406,7 +443,7 @@ const Transferencias: React.FC = () => {
                     {formData.equipamentosIds.length} selecionado(s)
                   </span>
                 </div>
-                <div className={`space-y-3 ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="space-y-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input 
@@ -440,8 +477,7 @@ const Transferencias: React.FC = () => {
                         </div>
                       );
                     })}
-                    {radiosFiltrados.length === 0 && !editingId && <div className="p-4 text-center text-gray-500 text-xs italic">Nenhum rádio operacional encontrado</div>}
-                    {editingId && <div className="p-4 text-center text-gray-400 text-[10px] italic">Edição de equipamentos não disponível para registros finalizados.</div>}
+                    {radiosFiltrados.length === 0 && <div className="p-4 text-center text-gray-500 text-xs italic">Nenhum rádio operacional encontrado</div>}
                   </div>
                 </div>
               </div>
