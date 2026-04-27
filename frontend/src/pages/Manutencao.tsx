@@ -181,7 +181,6 @@ const Manutencao: React.FC = () => {
 
   const gerarOrdemServicoPdf = async (m: ManutencaoRecord) => {
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
     
     try {
       const base64Para = await getBase64ImageFromUrl('/brasao_para.png');

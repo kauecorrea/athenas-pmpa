@@ -104,13 +104,13 @@ router.put('/:id', async (req: Request, res: Response) => {
   const { problema, dataEntrada, previsaoRetorno } = req.body;
   
   try {
+    const updateData: any = { problema };
+    if (dataEntrada) updateData.dataEntrada = new Date(dataEntrada);
+    if (previsaoRetorno !== undefined) updateData.previsaoRetorno = previsaoRetorno ? new Date(previsaoRetorno) : null;
+
     const updated = await prisma.manutencao.update({
       where: { id: id as string },
-      data: {
-        problema,
-        dataEntrada: dataEntrada ? new Date(dataEntrada) : undefined,
-        previsaoRetorno: previsaoRetorno !== undefined ? (previsaoRetorno ? new Date(previsaoRetorno) : null) : undefined,
-      }
+      data: updateData
     });
     
     registrarAuditoria(req, 'Editou Manutenção', `Editou Ordem de Serviço ID Banco: ${id}`);
