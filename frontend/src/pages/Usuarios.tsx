@@ -320,12 +320,13 @@ const Usuarios: React.FC = () => {
                     <option value="2º SGT">2º SGT (SARGENTO)</option>
                     <option value="1º SGT">1º SGT (SARGENTO)</option>
                     <option value="SUB TEN">SUB TEN (SUBTENENTE)</option>
+                    <option value="ASP">ASP (ASPIRANTE A OFICIAL)</option>
                     <option value="2º TEN">2º TEN (TENENTE)</option>
                     <option value="1º TEN">1º TEN (TENENTE)</option>
                     <option value="CAP">CAP (CAPITÃO)</option>
                     <option value="MAJ">MAJ (MAJOR)</option>
-                    <option value="TC">TC (TENENTE CORONEL)</option>
-                    <option value="COL">COL (CORONEL)</option>
+                    <option value="TEN CEL">TEN CEL (TENENTE CORONEL)</option>
+                    <option value="CEL">CEL (CORONEL)</option>
                   </select>
                 </div>
                 <div>
