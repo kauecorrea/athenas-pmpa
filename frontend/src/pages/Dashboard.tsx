@@ -278,6 +278,15 @@ const Dashboard: React.FC = () => {
 
       </div>
 
+      {/* FOOTER SIGNATURE */}
+      <div className="pt-10 flex items-center justify-between border-t border-gray-100 dark:border-[#1f2937] text-gray-400">
+        <p className="text-[10px] font-black uppercase tracking-[0.3em]">Athenas Patrimonial • DITEL</p>
+        <div className="flex items-center gap-3">
+           <div className="w-8 h-[1px] bg-gray-200 dark:bg-gray-800"></div>
+           <p className="text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">Desenvolvido por Kauê Corrêa</p>
+        </div>
+      </div>
+
     </div>
   );
 };

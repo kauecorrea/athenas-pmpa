@@ -83,7 +83,7 @@ const Login: React.FC = () => {
                     Protocolo Institucional
                   </h3>
                   <p className="text-sm leading-relaxed opacity-80">
-                    A recuperação de acesso à rede DITEL deve ser solicitada via protocolo interno ou e-mail oficial à Seção de Telemática.
+                    A recuperação de acesso à rede DITEL deve ser solicitada via PAE ou e-mail oficial à Seção de Telemática.
                   </p>
                   <p className="text-xs mt-4 font-mono">
                     citel@pm.pa.gov.br
