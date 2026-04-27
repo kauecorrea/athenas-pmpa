@@ -236,7 +236,17 @@ const Transferencias: React.FC = () => {
       styles: { fontSize: 9, cellPadding: 3 }
     });
 
-    // 5. Rodapé (Apenas Endereço Institucional)
+    // 5. Rodapé (Assinaturas e Endereço)
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    const lineY = pageHeight - 45;
+    
+    doc.line(20, lineY, 95, lineY);
+    doc.text("RESPONSÁVEL ORIGEM", 58, lineY + 5, { align: 'center' });
+    
+    doc.line(pageWidth - 95, lineY, pageWidth - 20, lineY);
+    doc.text("RESPONSÁVEL DESTINO", pageWidth - 58, lineY + 5, { align: 'center' });
+
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.text("Rod. Augusto Montenegro, Km 9, n° 3401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
