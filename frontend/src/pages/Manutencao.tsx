@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Plus, Wrench, FileText, CheckCircle, Search, List } from 'lucide-react';
+import { Plus, Wrench, FileText, CheckCircle, Search, List, Edit3, Trash2 } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 
 interface ManutencaoRecord {
   id: string;
+  equipamentoId: string;
   equipamento: { 
+    id: string;
     rp: string; 
     numSerie: string; 
     idRadio: string;
@@ -28,17 +30,22 @@ interface EquipamentoDisponivel {
 }
 
 const Manutencao: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('list');
   const [radiosDisponiveis, setRadiosDisponiveis] = useState<EquipamentoDisponivel[]>([]);
   const [manutencoes, setManutencoes] = useState<ManutencaoRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [isModalConcluirOpen, setIsModalConcluirOpen] = useState(false);
   const [manutencaoConcluirId, setManutencaoConcluirId] = useState<string | null>(null);
 
+  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
+  const [idToDelete, setIdToDelete] = useState<string | null>(null);
+
   // Form states
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [equipamentoId, setEquipamentoId] = useState('');
   const [problema, setProblema] = useState('');
-  const [dataEntrada, setDataEntrada] = useState('');
+  const [dataEntrada, setDataEntrada] = useState(new Date().toISOString().split('T')[0]);
   const [previsaoRetorno, setPrevisaoRetorno] = useState('');
   const [buscaRadioModal, setBuscaRadioModal] = useState('');
 
@@ -47,26 +54,27 @@ const Manutencao: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Buscar equipamentos quando o formulário for aberto
-    if (viewMode === 'form') {
+    if (viewMode === 'form' && !editingId) {
       setBuscaRadioModal('');
       fetchEquipamentosParaManutencao();
     }
-  }, [viewMode]);
+  }, [viewMode, editingId]);
 
   const fetchManutencoes = async () => {
     try {
+      setLoading(true);
       const res = await axios.get('/api/manutencoes');
       setManutencoes(res.data);
     } catch (error) {
       console.error("Erro ao buscar manutenções", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchEquipamentosParaManutencao = async () => {
     try {
       const res = await axios.get('/api/equipamentos');
-      // Filtra Rádios que não estão em manutenção e nem extraviados permanentemente
       const disponiveis = res.data.filter((eq: any) => eq.status !== 'MANUTENCAO' && eq.status !== 'EXTRAVIADO');
       setRadiosDisponiveis(disponiveis);
     } catch (error) {
@@ -74,27 +82,65 @@ const Manutencao: React.FC = () => {
     }
   };
 
-  const handleCreateManutencao = async () => {
+  const handleCreateManutencao = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!equipamentoId || !problema) {
       alert("Preencha o equipamento e o problema.");
       return;
     }
 
     try {
-      await axios.post('/api/manutencoes', {
-        equipamentoId: equipamentoId,
-        problema,
-        dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : new Date().toISOString(),
-        previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
-      });
-      alert("Registro de manutenção incluído!");
-      setEquipamentoId('');
-      setProblema('');
-      setDataEntrada('');
-      setPrevisaoRetorno('');
-      fetchManutencoes(); // reload list
+      if (editingId) {
+        await axios.put(`/api/manutencoes/${editingId}`, {
+          problema,
+          dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : undefined,
+          previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
+        });
+        alert("Registro de manutenção atualizado!");
+      } else {
+        await axios.post('/api/manutencoes', {
+          equipamentoId,
+          problema,
+          dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : new Date().toISOString(),
+          previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
+        });
+        alert("Registro de manutenção incluído!");
+      }
+      resetForm();
+      fetchManutencoes();
+      setViewMode('list');
     } catch (error) {
-      console.error("Erro ao registrar manutenção", error);
+      console.error("Erro ao salvar manutenção", error);
+    }
+  };
+
+  const resetForm = () => {
+    setEquipamentoId('');
+    setProblema('');
+    setDataEntrada(new Date().toISOString().split('T')[0]);
+    setPrevisaoRetorno('');
+    setEditingId(null);
+  };
+
+  const handleEdit = (m: ManutencaoRecord) => {
+    setEditingId(m.id);
+    setEquipamentoId(m.equipamentoId);
+    setProblema(m.problema);
+    setDataEntrada(m.dataEntrada.split('T')[0]);
+    setPrevisaoRetorno(m.previsaoRetorno ? m.previsaoRetorno.split('T')[0] : '');
+    setViewMode('form');
+  };
+
+  const confirmDelete = async () => {
+    if (!idToDelete) return;
+    try {
+      await axios.delete(`/api/manutencoes/${idToDelete}`);
+      fetchManutencoes();
+    } catch (error) {
+      console.error("Erro ao excluir", error);
+    } finally {
+      setIsModalDeleteOpen(false);
+      setIdToDelete(null);
     }
   };
 
@@ -135,8 +181,8 @@ const Manutencao: React.FC = () => {
 
   const gerarOrdemServicoPdf = async (m: ManutencaoRecord) => {
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
     
-    // 1. Brasões
     try {
       const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
       doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
@@ -147,7 +193,6 @@ const Manutencao: React.FC = () => {
       doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
     } catch (err) { console.error('Sem brasao_pmpa.png'); }
 
-    // 2. Título Geral e Timbre
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: "center" });
@@ -156,53 +201,46 @@ const Manutencao: React.FC = () => {
     doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: "center" });
     doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
 
-    // 3. Título do Documento
     doc.setFontSize(14);
     doc.text("ORDEM DE SERVIÇO DE MANUTENÇÃO (OSM)", 105, 50, { align: "center" });
     doc.setFontSize(11);
-    doc.text(`Nº ${m.id}/${new Date().getFullYear()} - ATHENAS SYSTEM`, 105, 56, { align: "center" });
+    doc.text(`Nº ${m.id.substring(0,8).toUpperCase()}/${new Date(m.dataEntrada).getFullYear()}`, 105, 56, { align: "center" });
     
-    // Linha divisória
     doc.setLineWidth(0.5);
     doc.line(14, 62, 196, 62);
 
-    // 4. Seção 1: Dados do Equipamento
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("1. IDENTIFICAÇÃO DO EQUIPAMENTO", 14, 67);
     
     doc.setFont("helvetica", "normal");
-    doc.text(`Patrimônio (RP): ${m.equipamento.rp}`, 14, 75);
+    doc.text(`Patrimônio (RP): ${m.equipamento.rp || 'S/RP'}`, 14, 75);
     doc.text(`Nº de Série: ${m.equipamento.numSerie}`, 105, 75);
     doc.text(`Marca/Modelo: ${m.equipamento.marca || 'N/I'} / ${m.equipamento.modelo || 'N/I'}`, 14, 82);
     doc.text(`ID Lógico (Rádio): ${m.equipamento.idRadio || 'N/I'}`, 105, 82);
 
-    // 5. Seção 2: Diagnóstico Inicial
     doc.setFont("helvetica", "bold");
     doc.text("2. DESCRIÇÃO DO PROBLEMA (RELATO DA UNIDADE)", 14, 95);
     doc.setFont("helvetica", "normal");
     const splitProblema = doc.splitTextToSize(m.problema, 180);
     doc.text(splitProblema, 14, 102);
 
-    // 6. Seção 3: Campo Técnico (Espaço para Preenchimento Manual)
     const yCampoTecnico = 102 + (splitProblema.length * 6) + 10;
     doc.setFont("helvetica", "bold");
     doc.setDrawColor(200, 200, 200);
-    doc.rect(14, yCampoTecnico, 182, 50); // Caixa para preenchimento
+    doc.rect(14, yCampoTecnico, 182, 50);
     doc.text("3. PARECER TÉCNICO / SERVIÇOS EXECUTADOS (USO DITEL)", 14, yCampoTecnico - 2);
     
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.text("Espaço reservado para o técnico descrever peças trocadas, limpeza ou reparos efetuados.", 16, yCampoTecnico + 5);
 
-    // 7. Datas
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     const yDatas = yCampoTecnico + 60;
     doc.text(`Data de Entrada: ${new Date(m.dataEntrada).toLocaleDateString('pt-BR')}`, 14, yDatas);
     doc.text(`Previsão de Retorno: ${m.previsaoRetorno ? new Date(m.previsaoRetorno).toLocaleDateString('pt-BR') : 'N/A'}`, 105, yDatas);
 
-    // 8. Assinaturas
     const finalY = yDatas + 40;
     doc.line(20, finalY, 90, finalY);
     doc.text("REQUISITANTE (UNIDADE)", 55, finalY + 5, { align: "center" });
@@ -210,167 +248,174 @@ const Manutencao: React.FC = () => {
     doc.line(120, finalY, 190, finalY);
     doc.text("RECEBIDO POR (DITEL)", 155, finalY + 5, { align: "center" });
 
-    // Footer
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, 280, { align: "center" });
-    doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: citel@pm.pa.gov.br", 105, 285, { align: "center" });
+    const pageHeight = doc.internal.pageSize.height;
+    doc.text("Rod. Augusto Montenegro, Km 9, n° 3401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3255-9018 l E-mail: dtel@pm.pa.gov.br", 105, pageHeight - 10, { align: "center" });
 
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  const radiosDisponiveisFiltrados = radiosDisponiveis.filter(radio => {
-    if (!buscaRadioModal.trim()) return true;
-    const term = buscaRadioModal.toLowerCase();
-    return (
-      (radio.numSerie && radio.numSerie.toLowerCase().includes(term)) ||
-      (radio.rp && radio.rp.toLowerCase().includes(term)) ||
-      (radio.idRadio && radio.idRadio.toLowerCase().includes(term))
-    );
-  });
+  const radiosDisponiveisFiltrados = useMemo(() => {
+    return radiosDisponiveis.filter(radio => {
+      if (!buscaRadioModal.trim()) return true;
+      const term = buscaRadioModal.toLowerCase();
+      return (
+        (radio.numSerie && radio.numSerie.toLowerCase().includes(term)) ||
+        (radio.rp && radio.rp.toLowerCase().includes(term)) ||
+        (radio.idRadio && radio.idRadio.toLowerCase().includes(term))
+      );
+    });
+  }, [radiosDisponiveis, buscaRadioModal]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col transition-colors duration-200">
       
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-surface p-6 rounded-2xl border border-gray-100 dark:border-[#1f2937] shadow-sm">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
+             <Wrench className="text-primary" size={32} />
              Manutenção
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Gerenciamento de consertos ou reparos preventivos</p>
         </div>
         {viewMode === 'list' ? (
           <button 
-            onClick={() => setViewMode('form')}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-600/20 whitespace-nowrap"
+            onClick={() => { resetForm(); setViewMode('form'); }}
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Plus size={18} />
+            <Plus size={20} />
             Nova Manutenção
           </button>
         ) : (
           <button 
             onClick={() => setViewMode('list')}
-            className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap"
+            className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-5 py-3 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            <List size={18} />
+            <List size={20} />
             Consultar Registros
           </button>
         )}
       </div>
 
-      {/* INLINE FORM: REGISTRAR MANUTENÇÃO */}
       {viewMode === 'form' ? (
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col transition-colors">
-          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937] flex-shrink-0">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Registrar Manutenção</h2>
+        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col transition-colors shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937]">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Plus className="text-primary" size={24} />
+              {editingId ? 'Editar Registro de Manutenção' : 'Registrar Entrada na Oficina'}
+            </h2>
           </div>
           
-          <div className="p-6 space-y-4">
-            {/* Equipamento */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Equipamento</label>
-              <div className="border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#111827] rounded-lg overflow-hidden flex flex-col">
-                {/* Search bar inside block */}
-                <div className="p-2 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                    <input 
-                      type="text"
-                      placeholder="Buscar máquina (Série, RP, ID)..."
-                      value={buscaRadioModal}
-                      onChange={e => setBuscaRadioModal(e.target.value)}
-                      className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-1.5 focus:outline-none placeholder-gray-400"
-                    />
+          <form onSubmit={handleCreateManutencao} className="p-8 overflow-y-auto flex-1 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
+              <div className="space-y-4">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">1. Selecionar Equipamento</label>
+                <div className={`border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#0b101a] rounded-xl overflow-hidden flex flex-col ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div className="p-3 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input 
+                        type="text"
+                        placeholder="Buscar por Série, RP, ID..."
+                        value={buscaRadioModal}
+                        onChange={e => setBuscaRadioModal(e.target.value)}
+                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-2 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto p-2 space-y-1">
+                    {radiosDisponiveisFiltrados.length === 0 ? (
+                      <p className="text-xs text-gray-500 italic text-center py-4">Nenhum rádio disponível encontrado.</p>
+                    ) : (
+                      radiosDisponiveisFiltrados.map((radio) => (
+                        <div 
+                          key={radio.id} 
+                          onClick={() => setEquipamentoId(radio.id)}
+                          className={`px-4 py-3 rounded-lg text-sm cursor-pointer transition-all border flex items-center justify-between ${equipamentoId === radio.id ? 'bg-primary/10 border-primary font-bold text-primary shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 border-transparent'}`}
+                        >
+                          <div className="flex flex-col">
+                            <span>{radio.idRadio ? `Nº ${radio.idRadio}` : `SN: ${radio.numSerie}`}</span>
+                            <span className="text-[10px] opacity-60 font-normal">RP: {radio.rp || 'S/RP'}</span>
+                          </div>
+                          {equipamentoId === radio.id && <div className="w-2 h-2 rounded-full bg-primary" />}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
-                {/* List of radio buttons */}
-                <div className="max-h-48 overflow-y-auto p-4 space-y-3">
-                  {radiosDisponiveisFiltrados.length === 0 ? (
-                    <p className="text-sm text-gray-500 italic text-center py-2">Nenhuma máquina encontrada.</p>
-                  ) : (
-                    radiosDisponiveisFiltrados.map((radio) => (
-                      <label key={radio.id} className="flex items-center gap-3 cursor-pointer group">
-                        <div className="relative flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 dark:border-gray-500 bg-white dark:bg-surface group-hover:border-primary transition-colors">
-                          <input 
-                            type="radio" 
-                            name="manutencaoRadioSelect"
-                            className="peer w-full h-full opacity-0 cursor-pointer absolute" 
-                            checked={equipamentoId === String(radio.id)}
-                            onChange={() => setEquipamentoId(String(radio.id))}
-                          />
-                          <div className="hidden peer-checked:block pointer-events-none absolute w-2 h-2 rounded-full bg-primary" />
-                        </div>
-                        <span className="text-sm text-gray-700 dark:text-gray-300 select-none font-medium text-left">
-                          {radio.rp} - {radio.numSerie} {radio.idRadio ? `(${radio.idRadio})` : ''} - [{radio.idRadio || 'Sem ID'}]
-                        </span>
-                      </label>
-                    ))
-                  )}
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">2. Data de Entrada</label>
+                  <input 
+                    type="date"
+                    required
+                    value={dataEntrada}
+                    onChange={(e) => setDataEntrada(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">3. Previsão de Retorno</label>
+                  <input 
+                    type="date" 
+                    value={previsaoRetorno}
+                    onChange={(e) => setPrevisaoRetorno(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Descrição do Problema */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Descrição do Problema</label>
-              <textarea 
-                rows={3}
-                value={problema}
-                onChange={(e) => setProblema(e.target.value)}
-                placeholder="Exemplo: Antena trincada, botão PTT falhando, não carrega bateria..."
-                className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
-              />
-            </div>
-
-            {/* Datas */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Data de Entrada</label>
-                <input 
-                  type="date"
-                  value={dataEntrada}
-                  onChange={(e) => setDataEntrada(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Previsão de Retorno</label>
-                <input 
-                  type="date" 
-                  value={previsaoRetorno}
-                  onChange={(e) => setPrevisaoRetorno(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm text-gray-900 dark:text-gray-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">4. Descrição do Problema / Defeito</label>
+                <textarea 
+                  required
+                  rows={4}
+                  value={problema}
+                  onChange={(e) => setProblema(e.target.value)}
+                  placeholder="Descreva detalhadamente o defeito relatado..."
+                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
-            <button 
-              onClick={handleCreateManutencao}
-              className="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
-            >
-              Registrar Manutenção
-            </button>
-          </div>
+            <div className="flex items-center justify-end gap-3 pt-10 border-t border-gray-100 dark:border-[#1f2937]">
+              {editingId && (
+                <button 
+                  type="button"
+                  onClick={() => resetForm()}
+                  className="px-6 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
+                >
+                  Cancelar Edição
+                </button>
+              )}
+              <button 
+                type="submit"
+                className="px-10 py-3 text-base font-bold text-white bg-primary hover:bg-blue-600 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center gap-2"
+              >
+                {editingId ? <Edit3 size={20} /> : <Plus size={20} />}
+                {editingId ? 'Salvar Edição' : 'Registrar Entrada'}
+              </button>
+            </div>
+          </form>
         </div>
       ) : (
 
-      <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors">
-        
+      <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col overflow-hidden transition-colors shadow-sm">
         <div className="p-5 border-b border-gray-200 dark:border-[#1f2937] flex items-center gap-2">
-          <Wrench className="text-gray-400 dark:text-gray-500" size={20} />
+          <List className="text-primary" size={20} />
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Equipamentos em Manutenção</h2>
         </div>
         
-        {/* TABELA - Responsiva */}
-        <div className="flex-1 overflow-auto overflow-x-auto scrolling-touch z-0">
-          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-[900px]">
-            <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-medium text-xs sticky top-0 z-0">
+        <div className="flex-1 overflow-auto">
+          <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300 min-w-full">
+            <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">ID do Rádio</th>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Patrimônio / Série</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">RP / Série</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">ID Rádio</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Problema</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Datas</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
@@ -378,51 +423,66 @@ const Manutencao: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
-              {manutencoes.length === 0 ? (
-                <tr>
-                   <td colSpan={6} className="px-6 py-12 text-center text-gray-500 bg-transparent">
-                     Nenhum histórico de manutenção encontrado.
-                   </td>
-                </tr>
+              {loading ? (
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">Carregando registros...</td></tr>
+              ) : manutencoes.length === 0 ? (
+                <tr><td colSpan={6} className="px-6 py-16 text-center text-gray-500 italic">Nenhum registro encontrado.</td></tr>
               ) : (
                 manutencoes.map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{m.equipamento?.idRadio || '-'}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                      {m.equipamento?.rp} <span className="text-gray-400 font-normal">({m.equipamento?.numSerie})</span>
+                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors group">
+                    <td className="px-6 py-4">
+                       <p className="font-bold text-gray-900 dark:text-white">{m.equipamento?.rp || 'S/RP'}</p>
+                       <p className="text-[10px] text-gray-400 font-mono uppercase">{m.equipamento?.numSerie}</p>
                     </td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300 truncate max-w-[200px]" title={m.problema}>{m.problema}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
-                      Entrada: {new Date(m.dataEntrada).toLocaleDateString('pt-BR')} <br/>
-                      <span className="text-xs text-gray-400">Previsão: {m.previsaoRetorno ? new Date(m.previsaoRetorno).toLocaleDateString('pt-BR') : '-'}</span>
+                    <td className="px-6 py-4 font-bold text-primary">{m.equipamento?.idRadio || '-'}</td>
+                    <td className="px-6 py-4 max-w-[250px]">
+                       <p className="text-xs italic text-gray-600 dark:text-gray-400 truncate" title={m.problema}>{m.problema}</p>
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <p className="font-medium text-gray-500">Entrada: {new Date(m.dataEntrada).toLocaleDateString('pt-BR')}</p>
+                      {m.previsaoRetorno && <p className="text-[10px] text-blue-400">Previsão: {new Date(m.previsaoRetorno).toLocaleDateString('pt-BR')}</p>}
                     </td>
                     <td className="px-6 py-4">
                       {m.status === 'EM ANDAMENTO' ? (
-                        <span className="px-2.5 py-1 text-[11px] font-bold text-orange-600 bg-orange-500/10 border border-orange-500/20 rounded-full lowercase tracking-wider">
-                          Na Oficina
+                        <span className="px-3 py-1 text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full flex items-center gap-1 w-fit">
+                          <Wrench size={10} /> NA OFICINA
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 text-[11px] font-bold text-success bg-success/10 border border-success/20 rounded-full lowercase tracking-wider">
-                          Concluída
+                        <span className="px-3 py-1 text-[10px] font-bold text-green-600 bg-green-100 rounded-full flex items-center gap-1 w-fit">
+                          <CheckCircle size={10} /> CONCLUÍDA
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2 text-gray-400 dark:text-gray-500">
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => gerarOrdemServicoPdf(m)}
-                          className="hover:text-gray-900 dark:hover:text-white p-1.5 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-white/5" 
-                          title="Emitir Ordem de Serviço"
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all" 
+                          title="Gerar Ordem de Serviço"
                         >
-                          <FileText size={16} />
+                          <FileText size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleEdit(m)}
+                          className="p-2 text-gray-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                          title="Editar"
+                        >
+                          <Edit3 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => { setIdToDelete(m.id); setIsModalDeleteOpen(true); }}
+                          className="p-2 text-gray-500 hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
+                          title="Excluir Registro"
+                        >
+                          <Trash2 size={18} />
                         </button>
                         {m.status === 'EM ANDAMENTO' && (
                           <button 
                             onClick={() => openConcluirModal(m.id)}
-                            className="hover:text-success dark:hover:text-success p-1.5 rounded-lg transition-colors hover:bg-success/10"
-                            title="Finalizar Conserto"
+                            className="p-2 text-success hover:bg-success/10 rounded-lg transition-all"
+                            title="Concluir Manutenção"
                           >
-                            <CheckCircle size={16} />
+                            <CheckCircle size={18} />
                           </button>
                         )}
                       </div>
@@ -439,10 +499,19 @@ const Manutencao: React.FC = () => {
       <ModalConfirmacao 
         isOpen={isModalConcluirOpen}
         title="Finalizar Conserto"
-        message="A oficina concluiu os reparos? O Rádio voltará automaticamente para o status OPERACIONAL e será liberado para Cautela."
+        message="Confirma a conclusão do reparo técnico? O rádio retornará para o status OPERACIONAL."
         onConfirm={confirmConcluir}
         onCancel={() => { setIsModalConcluirOpen(false); setManutencaoConcluirId(null); }}
-        confirmText="Confirmar Retorno"
+        confirmText="Confirmar Conclusão"
+      />
+
+      <ModalConfirmacao 
+        isOpen={isModalDeleteOpen}
+        title="Excluir Registro"
+        message="Tem certeza que deseja remover este registro de manutenção? Se o rádio ainda estiver na oficina, seu status será resetado para OPERACIONAL."
+        onConfirm={confirmDelete}
+        onCancel={() => { setIsModalDeleteOpen(false); setIdToDelete(null); }}
+        confirmText="Sim, Excluir"
       />
     </div>
   );

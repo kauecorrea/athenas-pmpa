@@ -97,4 +97,59 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
   }
 });
 
+// Editar registro de manutenção
+// @ts-ignore
+router.put('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+  const { problema, dataEntrada, previsaoRetorno } = req.body;
+  
+  try {
+    const updated = await prisma.manutencao.update({
+      where: { id: id as string },
+      data: {
+        problema,
+        dataEntrada: dataEntrada ? new Date(dataEntrada) : undefined,
+        previsaoRetorno: previsaoRetorno !== undefined ? (previsaoRetorno ? new Date(previsaoRetorno) : null) : undefined,
+      }
+    });
+    
+    registrarAuditoria(req, 'Editou Manutenção', `Editou Ordem de Serviço ID Banco: ${id}`);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao editar manutenção' });
+  }
+});
+
+// Excluir registro de manutenção (Estornar)
+// @ts-ignore
+router.delete('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+  
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.manutencao.findUnique({ where: { id: id as string } });
+      if (!existing) throw new Error('Manutenção não encontrada');
+
+      // 1. Deletar a manutenção
+      await tx.manutencao.delete({ where: { id: id as string } });
+
+      // 2. Voltar o rádio para operacional se ele ainda estiver marcado como em manutenção
+      const equip = await tx.equipamento.findUnique({ where: { id: existing.equipamentoId } });
+      if (equip && equip.status === 'MANUTENCAO') {
+        await tx.equipamento.update({
+          where: { id: existing.equipamentoId },
+          data: { status: 'OPERACIONAL' }
+        });
+      }
+      
+      return { success: true };
+    });
+
+    registrarAuditoria(req, 'Excluiu/Estornou Manutenção', `Removeu Ordem de Serviço ID Banco: ${id}`);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Erro ao excluir manutenção' });
+  }
+});
+
 export default router;
