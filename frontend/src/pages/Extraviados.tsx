@@ -42,7 +42,7 @@ const Extraviados: React.FC = () => {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [viewMode, setViewMode] = useState<'form' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [busca, setBusca] = useState('');
   const [buscaMilitar, setBuscaMilitar] = useState('');
   const [buscaEquipamento, setBuscaEquipamento] = useState('');
@@ -66,16 +66,18 @@ const Extraviados: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [extRes, milRes, eqRes] = await Promise.all([
-        axios.get('/api/extraviados'),
-        axios.get('/api/militares'),
-        axios.get('/api/equipamentos')
-      ]);
-      setExtraviados(extRes.data);
-      setMilitares(milRes.data);
-      setEquipamentos(eqRes.data);
+      // Busca independente para não travar
+      const fetchExt = axios.get('/api/extraviados').catch(err => { console.error("Erro ao buscar extraviados", err); return { data: [] }; });
+      const fetchMil = axios.get('/api/militares').catch(err => { console.error("Erro ao buscar militares", err); return { data: [] }; });
+      const fetchEq = axios.get('/api/equipamentos').catch(err => { console.error("Erro ao buscar equipamentos", err); return { data: [] }; });
+
+      const [extRes, milRes, eqRes] = await Promise.all([fetchExt, fetchMil, fetchEq]);
+      
+      if (extRes.data) setExtraviados(extRes.data);
+      if (milRes.data) setMilitares(milRes.data);
+      if (eqRes.data) setEquipamentos(eqRes.data);
     } catch (e) {
-      console.error(e);
+      console.error("Erro crítico no fetchData", e);
     } finally {
       setLoading(false);
     }
