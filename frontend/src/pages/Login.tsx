@@ -86,7 +86,7 @@ const Login: React.FC = () => {
                     A recuperação de acesso à rede DITEL deve ser solicitada via protocolo interno ou e-mail oficial à Seção de Telemática.
                   </p>
                   <p className="text-xs mt-4 font-mono">
-                    dtel@pm.pa.gov.br
+                    citel@pm.pa.gov.br
                   </p>
                 </div>
                 <button
