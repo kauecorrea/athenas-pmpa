@@ -240,14 +240,15 @@ const Transferencias: React.FC = () => {
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     const dataLocal = `Belém PA, ${new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}`;
-    doc.text(dataLocal, 14, pageHeight - 45);
+    doc.text(dataLocal, 20, pageHeight - 60);
 
     doc.setFont("helvetica", "bold");
-    doc.line( pageHeight > 250 ? 30 : 20, pageHeight - 45, 95, pageHeight - 45);
-    doc.text("RESPONSÁVEL ORIGEM", 58, pageHeight - 40, { align: 'center' });
+    const lineY = pageHeight - 40;
+    doc.line(20, lineY, 95, lineY);
+    doc.text("RESPONSÁVEL ORIGEM", 58, lineY + 5, { align: 'center' });
     
-    doc.line(pageWidth - 95, pageHeight - 45, pageWidth - 20, pageHeight - 45);
-    doc.text("RESPONSÁVEL DESTINO", pageWidth - 58, pageHeight - 40, { align: 'center' });
+    doc.line(pageWidth - 95, lineY, pageWidth - 20, lineY);
+    doc.text("RESPONSÁVEL DESTINO", pageWidth - 58, lineY + 5, { align: 'center' });
 
     // Endereço Institucional no extremo rodapé (Igual ao de cautela)
     doc.setFontSize(8);
@@ -255,7 +256,7 @@ const Transferencias: React.FC = () => {
     doc.text("Rod. Augusto Montenegro, Km 9, n° 3401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
     doc.text("CEP: 66821-000. Contato: (91) 3255-9018 l E-mail: dtel@pm.pa.gov.br", 105, pageHeight - 10, { align: "center" });
 
-    doc.save(`Transferencia_${t.unidadeDestino.nome.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
+    window.open(doc.output('bloburl'), '_blank');
   };
 
   const transferenciasFiltradas = useMemo(() => {
