@@ -179,41 +179,44 @@ const Transferencias: React.FC = () => {
   const gerarPDF = async (t: Transferencia) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.height;
 
     // 1. Brasões Institucionais
     try {
       const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
       doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+      doc.setFontSize(6);
+      doc.text("GOVERNO DO ESTADO", 24, 34, { align: "center" });
+      doc.text("DO PARÁ", 24, 37, { align: "center" });
     } catch (err) { console.error('Sem brasao_para.png'); }
     
     try {
       const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
-      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+      doc.addImage(base64Pmpa, 'PNG', 170, 8, 25, 25);
     } catch (err) { console.error('Sem brasao_pmpa.png'); }
 
-    // 2. Cabeçalho Oficial
+    // 2. Cabeçalho Oficial (Timbre)
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("GOVERNO DO ESTADO DO PARÁ", pageWidth / 2, 15, { align: 'center' });
-    doc.text("POLÍCIA MILITAR DO PARÁ", pageWidth / 2, 20, { align: 'center' });
-    doc.text("DITEL - DIRETORIA DE TELEMÁTICA", pageWidth / 2, 25, { align: 'center' });
-    doc.text("DIVISÃO DE PATRIMÔNIO", pageWidth / 2, 30, { align: 'center' });
+    doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: 'center' });
+    doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 20, { align: 'center' });
+    doc.text("POLÍCIA MILITAR DO PARÁ", 105, 25, { align: 'center' });
+    doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: 'center' });
+    doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: 'center' });
     
     doc.setFontSize(14);
-    doc.text("TERMO DE TRANSFERÊNCIA DE CARGA DEFINITIVA", pageWidth / 2, 45, { align: 'center' });
+    doc.text("TERMO DE TRANSFERÊNCIA DE CARGA DEFINITIVA", 105, 52, { align: 'center' });
     
-    doc.setLineWidth(0.5);
-    doc.line(20, 50, pageWidth - 20, 50);
-
     // 3. Dados da Transferência
     doc.setFontSize(11);
-    doc.text(`DATA: ${new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}`, 20, 60);
-    doc.text(`UNIDADE DE ORIGEM: ${t.unidadeOrigem?.nome || 'DITEL'}`, 20, 68);
-    doc.text(`UNIDADE DE DESTINO: ${t.unidadeDestino.nome}`, 20, 76);
+    doc.setFont("helvetica", "bold");
+    doc.text(`DATA: ${new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}`, 20, 65);
+    doc.text(`UNIDADE DE ORIGEM: ${t.unidadeOrigem?.nome || 'DITEL'}`, 20, 73);
+    doc.text(`UNIDADE DE DESTINO: ${t.unidadeDestino.nome}`, 20, 81);
     
     doc.setFont("helvetica", "normal");
     const splitObs = doc.splitTextToSize(`OBSERVAÇÕES: ${t.observacoes || 'Sem observações'}`, pageWidth - 40);
-    doc.text(splitObs, 20, 84);
+    doc.text(splitObs, 20, 89);
 
     // 4. Tabela de Equipamentos
     const tableData = t.equipamentos.map(eq => [
@@ -225,7 +228,7 @@ const Transferencias: React.FC = () => {
     ]);
 
     autoTable(doc, {
-      startY: 100,
+      startY: 105,
       head: [['Nº RÁDIO', 'Nº SÉRIE', 'MARCA', 'MODELO', 'STATUS']],
       body: tableData,
       theme: 'grid',
@@ -233,23 +236,24 @@ const Transferencias: React.FC = () => {
       styles: { fontSize: 9, cellPadding: 3 }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 40;
+    // 5. Rodapé (Data e Assinaturas)
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const dataLocal = `Belém PA, ${new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}`;
+    doc.text(dataLocal, 14, pageHeight - 45);
 
-    // 5. Rodapé de Assinaturas
     doc.setFont("helvetica", "bold");
-    doc.line(20, finalY, 90, finalY);
-    doc.text("RESPONSÁVEL ORIGEM", 55, finalY + 5, { align: 'center' });
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text("(Assinatura e Carimbo)", 55, finalY + 10, { align: 'center' });
+    doc.line( pageHeight > 250 ? 30 : 20, pageHeight - 45, 95, pageHeight - 45);
+    doc.text("RESPONSÁVEL ORIGEM", 58, pageHeight - 40, { align: 'center' });
     
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.line(pageWidth - 90, finalY, pageWidth - 20, finalY);
-    doc.text("RESPONSÁVEL DESTINO", pageWidth - 55, finalY + 5, { align: 'center' });
+    doc.line(pageWidth - 95, pageHeight - 45, pageWidth - 20, pageHeight - 45);
+    doc.text("RESPONSÁVEL DESTINO", pageWidth - 58, pageHeight - 40, { align: 'center' });
+
+    // Endereço Institucional no extremo rodapé (Igual ao de cautela)
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text("(Assinatura e Carimbo)", pageWidth - 55, finalY + 10, { align: 'center' });
+    doc.text("Rod. Augusto Montenegro, Km 9, n° 3401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3255-9018 l E-mail: dtel@pm.pa.gov.br", 105, pageHeight - 10, { align: "center" });
 
     doc.save(`Transferencia_${t.unidadeDestino.nome.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
   };
