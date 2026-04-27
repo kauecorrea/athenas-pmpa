@@ -40,13 +40,17 @@ router.post('/', async (req: Request, res: Response) => {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Pegamos o primeiro rádio para saber a unidade de origem (assumindo que todos vêm da mesma, o que é o comum)
+      // Pequemos o primeiro rádio para saber a unidade de origem
+      if (!equipamentosIds || equipamentosIds.length === 0) {
+        throw new Error('Nenhum rádio selecionado.');
+      }
+
       const primeiroEquip = await tx.equipamento.findUnique({
         where: { id: equipamentosIds[0] },
         select: { unidadeId: true }
       });
 
-      const unidadeOrigemId = primeiroEquip?.unidadeId;
+      const unidadeOrigemId = primeiroEquip?.unidadeId || null;
 
       for (const equipId of equipamentosIds) {
         // 1. Desconectar das cautelas de ORIGEM (se houver)
@@ -61,10 +65,15 @@ router.post('/', async (req: Request, res: Response) => {
             data: { equipamentos: { disconnect: { id: equipId } } }
           });
 
+          // Se a cautela ficou vazia, encerra ela
           if (c.equipamentos.length <= 1) {
             await tx.cautela.update({
               where: { id: c.id },
-              data: { status: 'DEVOLVIDA', dataDevolucao: new Date(), missao: 'ENCERRADA POR TRANSFERÊNCIA DE CARGA' }
+              data: { 
+                status: 'DEVOLVIDA', 
+                dataDevolucao: new Date(), 
+                missao: 'ENCERRADA POR TRANSFERÊNCIA DE CARGA' 
+              }
             });
           }
         }
@@ -88,9 +97,7 @@ router.post('/', async (req: Request, res: Response) => {
           observacoes,
           qtdRadios: equipamentosIds.length,
           status: 'FINALIZADA',
-          equipamentos: {
-            connect: equipamentosIds.map((id: string) => ({ id }))
-          }
+          equipamentoIds: equipamentosIds // Usar o campo escalar diretamente para evitar problemas no MongoDB
         },
         include: { unidadeDestino: true }
       });
@@ -100,9 +107,12 @@ router.post('/', async (req: Request, res: Response) => {
 
     registrarAuditoria(req, 'Transferência de Carga Definitiva', `Transferiu IDs [${equipamentosIds.join(', ')}] para Unidade ID: ${unidadeDestinoId}`);
     res.status(201).json(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao processar transferência de carga' });
+  } catch (error: any) {
+    console.error('ERRO TRANSFERENCIA:', error);
+    res.status(500).json({ 
+      error: 'Erro ao processar transferência de carga',
+      details: error.message 
+    });
   }
 });
 
