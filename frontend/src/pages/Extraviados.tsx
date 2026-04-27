@@ -7,9 +7,16 @@ import {
   ShieldOff, 
   List,
   User,
-  Radio
+  Radio,
+  FileText,
+  CheckCircle,
+  Archive,
+  Edit3,
+  RotateCcw,
+  Check
 } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
+import jsPDF from 'jspdf';
 
 interface Equipamento {
   id: string;
@@ -28,8 +35,7 @@ interface Militar {
 
 interface Extraviado {
   id: string;
-  dataRegistro: string;
-  dataExtravio?: string;
+  dataExtravio: string;
   boNumero: string;
   descricao: string;
   status: string;
@@ -49,6 +55,7 @@ const Extraviados: React.FC = () => {
   const [buscaEquipamento, setBuscaEquipamento] = useState('');
 
   // Form state
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     militarId: '',
     equipamentoId: '',
@@ -57,8 +64,15 @@ const Extraviados: React.FC = () => {
     dataRegistro: new Date().toISOString().split('T')[0]
   });
 
+  // Modal actions
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState<string | null>(null);
+  
+  const [isModalRecuperarOpen, setIsModalRecuperarOpen] = useState(false);
+  const [idToRecuperar, setIdToRecuperar] = useState<string | null>(null);
+
+  const [isModalBaixarOpen, setIsModalBaixarOpen] = useState(false);
+  const [idToBaixar, setIdToBaixar] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -67,7 +81,6 @@ const Extraviados: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Busca independente para não travar
       const fetchExt = axios.get('/api/extravios').catch(err => { console.error("Erro ao buscar extravios", err); return { data: [] }; });
       const fetchMil = axios.get('/api/militares').catch(err => { console.error("Erro ao buscar militares", err); return { data: [] }; });
       const fetchEq = axios.get('/api/equipamentos').catch(err => { console.error("Erro ao buscar equipamentos", err); return { data: [] }; });
@@ -91,15 +104,14 @@ const Extraviados: React.FC = () => {
       return;
     }
     try {
-      await axios.post('/api/extravios', formData);
-      alert("Registro de extravio criado com sucesso!");
-      setFormData({
-        militarId: '',
-        equipamentoId: '',
-        boNumero: '',
-        descricao: '',
-        dataRegistro: new Date().toISOString().split('T')[0]
-      });
+      if (editingId) {
+        // Logica de edição se necessário futuramente
+        alert("Função de edição em implementação.");
+      } else {
+        await axios.post('/api/extravios', formData);
+        alert("Registro de extravio criado com sucesso!");
+      }
+      resetForm();
       fetchData();
       setViewMode('list');
     } catch (e: any) {
@@ -107,6 +119,19 @@ const Extraviados: React.FC = () => {
       const msg = e.response?.data?.error || e.message || "Erro desconhecido";
       alert(`Falha ao registrar extravio: ${msg}`);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      militarId: '',
+      equipamentoId: '',
+      boNumero: '',
+      descricao: '',
+      dataRegistro: new Date().toISOString().split('T')[0]
+    });
+    setEditingId(null);
+    setBuscaMilitar('');
+    setBuscaEquipamento('');
   };
 
   const confirmDelete = async () => {
@@ -119,6 +144,109 @@ const Extraviados: React.FC = () => {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleRecuperar = async () => {
+    if (!idToRecuperar) return;
+    try {
+      await axios.put(`/api/extravios/${idToRecuperar}/encontrado`);
+      setIsModalRecuperarOpen(false);
+      setIdToRecuperar(null);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleBaixar = async () => {
+    if (!idToBaixar) return;
+    try {
+      await axios.put(`/api/extravios/${idToBaixar}/baixar`);
+      setIsModalBaixarOpen(false);
+      setIdToBaixar(null);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const getBase64ImageFromUrl = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject('Erro ao carregar imagem');
+      img.src = imageUrl;
+    });
+  };
+
+  const gerarTermoPdf = async (ex: Extraviado) => {
+    const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height;
+    
+    try {
+      const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+      doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
+      const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+      doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
+    } catch(e) {}
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: "center" });
+    doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 20, { align: "center" });
+    doc.text("POLÍCIA MILITAR DO PARÁ", 105, 25, { align: "center" });
+    doc.text("DIRETORIA DE TELEMÁTICA", 105, 30, { align: "center" });
+
+    doc.setFontSize(14);
+    doc.text("TERMO DE REGISTRO DE EXTRAVIO / PERDA", 105, 50, { align: "center" });
+    doc.setFontSize(11);
+    doc.text(`Protocolo: ${ex.id.substring(0,8).toUpperCase()} | B.O: ${ex.boNumero}`, 105, 57, { align: "center" });
+
+    doc.line(14, 65, 196, 65);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("1. DADOS DO MILITAR RESPONSÁVEL", 14, 75);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Nome: ${ex.militar?.nome || 'N/I'}`, 14, 82);
+    doc.text(`RG: ${ex.militar?.rg || 'N/I'}`, 120, 82);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("2. IDENTIFICAÇÃO DO EQUIPAMENTO", 14, 95);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Material: Rádio Transceptor`, 14, 102);
+    doc.text(`Marca/Modelo: ${ex.equipamento?.marca} ${ex.equipamento?.modelo}`, 100, 102);
+    doc.text(`ID Rádio: ${ex.equipamento?.idRadio || 'N/I'}`, 14, 109);
+    doc.text(`Nº de Série: ${ex.equipamento?.numSerie}`, 100, 109);
+    doc.text(`Patrimônio (RP): ${ex.equipamento?.rp || 'S/RP'}`, 14, 116);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("3. DESCRIÇÃO DO FATO", 14, 130);
+    doc.setFont("helvetica", "normal");
+    const descLines = doc.splitTextToSize(ex.descricao, 180);
+    doc.text(descLines, 14, 137);
+
+    doc.text(`Data do Registro: ${new Date(ex.dataExtravio).toLocaleDateString('pt-BR')}`, 14, 180);
+    doc.text(`Status Atual: ${ex.status}`, 14, 187);
+
+    const signY = 230;
+    doc.line(30, signY, 85, signY);
+    doc.text("Assinatura do Militar", 57, signY + 5, { align: "center" });
+    doc.line(125, signY, 180, signY);
+    doc.text("Responsável DITEL", 152, signY + 5, { align: "center" });
+
+    doc.setFontSize(8);
+    doc.text("Rod. Augusto Montenegro, Km 9, n° 3401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3255-9018 l E-mail: dtel@pm.pa.gov.br", 105, pageHeight - 10, { align: "center" });
+
+    window.open(doc.output('bloburl'), '_blank');
   };
 
   const militaresFiltrados = useMemo(() => {
@@ -145,7 +273,7 @@ const Extraviados: React.FC = () => {
       return ex.militar.nome.toLowerCase().includes(term) || 
              ex.equipamento.rp?.toLowerCase().includes(term) ||
              ex.equipamento.numSerie?.toLowerCase().includes(term) ||
-             ex.boNumero.toLowerCase().includes(term);
+             ex.boNumero?.toLowerCase().includes(term);
     });
   }, [extraviados, busca]);
 
@@ -163,7 +291,7 @@ const Extraviados: React.FC = () => {
         </div>
         {viewMode === 'list' ? (
           <button 
-            onClick={() => { setViewMode('form'); setBuscaMilitar(''); setBuscaEquipamento(''); }}
+            onClick={() => { resetForm(); setViewMode('form'); }}
             className="flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus size={20} />
@@ -203,18 +331,19 @@ const Extraviados: React.FC = () => {
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar Responsável</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nº do B.O</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data do Registro</th>
+                  <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-6 py-12 text-center animate-pulse text-gray-400 italic">Carregando dados...</td></tr>
+                  <tr><td colSpan={6} className="px-6 py-12 text-center animate-pulse text-gray-400 italic">Carregando dados...</td></tr>
                 ) : extraviadosFiltrados.map(ex => (
                   <tr key={ex.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-danger uppercase">{ex.equipamento.rp || 'S/RP'}</span>
-                        <span className="text-[10px] text-gray-400 font-mono uppercase">{ex.equipamento.numSerie}</span>
+                        <span className="font-bold text-danger uppercase">{ex.equipamento.idRadio ? `Nº ${ex.equipamento.idRadio}` : `SN: ${ex.equipamento.numSerie}`}</span>
+                        <span className="text-[10px] text-gray-400 font-mono uppercase">{ex.equipamento.rp || 'S/RP'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -225,21 +354,71 @@ const Extraviados: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{ex.boNumero}</td>
                     <td className="px-6 py-4 text-xs font-medium">
-                      {new Date(ex.dataRegistro).toLocaleDateString('pt-BR')}
+                      {ex.dataExtravio ? new Date(ex.dataExtravio).toLocaleDateString('pt-BR') : '-'}
+                    </td>
+                    <td className="px-6 py-4">
+                       {ex.status === 'INVESTIGACAO' && (
+                         <span className="px-2 py-0.5 text-[10px] font-bold bg-orange-100 text-orange-600 rounded-full border border-orange-200">EM INVESTIGAÇÃO</span>
+                       )}
+                       {ex.status === 'RECUPERADO' && (
+                         <span className="px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-600 rounded-full border border-green-200">RECUPERADO</span>
+                       )}
+                       {ex.status === 'BAIXADO' && (
+                         <span className="px-2 py-0.5 text-[10px] font-bold bg-gray-100 text-gray-600 rounded-full border border-gray-200">BAIXADO (PERDA)</span>
+                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => { setIdToDelete(ex.id); setIsModalDeleteOpen(true); }}
-                        className="text-gray-400 hover:text-danger p-2 rounded-lg transition-colors hover:bg-danger/10 opacity-0 group-hover:opacity-100"
-                        title="Remover Registro"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => gerarTermoPdf(ex)}
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all" 
+                          title="Gerar Termo de Extravio"
+                        >
+                          <FileText size={18} />
+                        </button>
+                        
+                        {ex.status === 'INVESTIGACAO' && (
+                          <>
+                            <button 
+                              onClick={() => { setIdToRecuperar(ex.id); setIsModalRecuperarOpen(true); }}
+                              className="p-2 text-success hover:bg-success/10 rounded-lg transition-all"
+                              title="Marcar como Recuperado"
+                            >
+                              <CheckCircle size={18} />
+                            </button>
+                            <button 
+                              onClick={() => { setIdToBaixar(ex.id); setIsModalBaixarOpen(true); }}
+                              className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                              title="Dar Baixa Permanente"
+                            >
+                              <Archive size={18} />
+                            </button>
+                            <button 
+                              onClick={() => { 
+                                // Futuro handler de editar
+                                alert("Recurso disponível em breve.");
+                              }}
+                              className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-all"
+                              title="Editar Registro"
+                            >
+                              <Edit3 size={18} />
+                            </button>
+                          </>
+                        )}
+
+                        <button 
+                          onClick={() => { setIdToDelete(ex.id); setIsModalDeleteOpen(true); }}
+                          className="p-2 text-gray-400 hover:text-danger rounded-lg transition-colors hover:bg-danger/10"
+                          title="Remover Registro"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
                 {extraviadosFiltrados.length === 0 && !loading && (
-                  <tr><td colSpan={5} className="px-6 py-16 text-center text-gray-500 italic">Nenhum registro encontrado.</td></tr>
+                  <tr><td colSpan={6} className="px-6 py-16 text-center text-gray-500 italic">Nenhum registro encontrado.</td></tr>
                 )}
               </tbody>
             </table>
@@ -257,7 +436,6 @@ const Extraviados: React.FC = () => {
           <form onSubmit={handleCreate} className="p-8 overflow-y-auto flex-1 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
               
-              {/* PESQUISA MILITAR */}
               <div className="space-y-4">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
                   <User size={16} />
@@ -269,7 +447,7 @@ const Extraviados: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="Pesquisar militar (Nome ou RG)..." 
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       value={buscaMilitar}
                       onChange={(e) => setBuscaMilitar(e.target.value)}
                     />
@@ -284,12 +462,10 @@ const Extraviados: React.FC = () => {
                         {m.rg} - {m.nome}
                       </div>
                     ))}
-                    {militaresFiltrados.length === 0 && <div className="p-4 text-center text-gray-500 text-[10px] italic">Nenhum militar encontrado</div>}
                   </div>
                 </div>
               </div>
 
-              {/* PESQUISA EQUIPAMENTO */}
               <div className="space-y-4">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
                   <Radio size={16} />
@@ -301,7 +477,7 @@ const Extraviados: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="Pesquisar por Patrimônio ou Nº..." 
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       value={buscaEquipamento}
                       onChange={(e) => setBuscaEquipamento(e.target.value)}
                     />
@@ -316,11 +492,10 @@ const Extraviados: React.FC = () => {
                           className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-all border flex flex-col ${formData.equipamentoId === eq.id ? 'bg-danger/10 border-danger font-bold text-danger shadow-sm' : 'border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                         >
                           <span>{identificador}</span>
-                          <span className="text-[9px] opacity-60 font-normal">RP: {eq.rp || 'S/RP'} | {eq.modelo}</span>
+                          <span className="text-[9px] opacity-60 font-normal">RP: {eq.rp || 'S/RP'}</span>
                         </div>
                       );
                     })}
-                    {equipamentosFiltrados.length === 0 && <div className="p-4 text-center text-gray-500 text-[10px] italic">Nenhum rádio encontrado</div>}
                   </div>
                 </div>
               </div>
@@ -333,7 +508,7 @@ const Extraviados: React.FC = () => {
                   placeholder="EX: 00123/2023.100456-7"
                   value={formData.boNumero}
                   onChange={(e) => setFormData({...formData, boNumero: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 />
               </div>
 
@@ -344,7 +519,7 @@ const Extraviados: React.FC = () => {
                   required
                   value={formData.dataRegistro}
                   onChange={(e) => setFormData({...formData, dataRegistro: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 />
               </div>
 
@@ -352,10 +527,10 @@ const Extraviados: React.FC = () => {
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">5. Descrição do Ocorrido</label>
                 <textarea 
                   rows={4}
-                  placeholder="Detalhe as circunstâncias do extravio, local e envolvidos..."
+                  placeholder="Detalhe as circunstâncias do extravio..."
                   value={formData.descricao}
                   onChange={(e) => setFormData({...formData, descricao: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
+                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
                 />
               </div>
             </div>
@@ -375,10 +550,28 @@ const Extraviados: React.FC = () => {
       {/* MODAIS DE AÇÃO */}
       <ModalConfirmacao 
         isOpen={isModalDeleteOpen}
-        title="Remover Registro de Extravio"
-        message="Tem certeza que deseja remover este registro? O equipamento voltará a aparecer na listagem geral. Esta ação não apaga o B.O, apenas remove o status de extraviado do sistema."
+        title="Remover Registro"
+        message="Deseja excluir este registro de extravio? O rádio voltará ao status OPERACIONAL."
         onConfirm={confirmDelete}
         onCancel={() => { setIsModalDeleteOpen(false); setIdToDelete(null); }}
+      />
+
+      <ModalConfirmacao 
+        isOpen={isModalRecuperarOpen}
+        title="Marcar como Recuperado"
+        message="O equipamento foi localizado? Ele voltará ao inventário ativo como OPERACIONAL."
+        onConfirm={handleRecuperar}
+        onCancel={() => { setIsModalRecuperarOpen(false); setIdToRecuperar(null); }}
+        confirmText="Confirmar Recuperação"
+      />
+
+      <ModalConfirmacao 
+        isOpen={isModalBaixarOpen}
+        title="Baixa Permanente"
+        message="Deseja dar baixa definitiva neste equipamento? Ele será removido do inventário ativo e marcado como uma perda oficial e irreversível."
+        onConfirm={handleBaixar}
+        onCancel={() => { setIsModalBaixarOpen(false); setIdToBaixar(null); }}
+        confirmText="Confirmar Baixa"
       />
     </div>
   );
