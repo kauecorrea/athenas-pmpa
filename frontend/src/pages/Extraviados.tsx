@@ -29,6 +29,7 @@ interface Militar {
 interface Extraviado {
   id: string;
   dataRegistro: string;
+  dataExtravio?: string;
   boNumero: string;
   descricao: string;
   status: string;

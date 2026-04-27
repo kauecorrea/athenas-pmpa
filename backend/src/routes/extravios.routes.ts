@@ -25,7 +25,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Registrar Extravio
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentoId, militarId, dataExtravio, local, descricao } = req.body;
+  const { equipamentoId, militarId, dataRegistro, local, descricao, boNumero } = req.body;
   
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -34,7 +34,8 @@ router.post('/', async (req: Request, res: Response) => {
         data: {
           equipamentoId: equipamentoId,
           militarId: militarId ? militarId : null,
-          dataExtravio: dataExtravio ? new Date(dataExtravio) : new Date(),
+          dataExtravio: dataRegistro ? new Date(dataRegistro) : new Date(),
+          boNumero,
           local,
           descricao,
           status: 'INVESTIGACAO'
@@ -71,7 +72,7 @@ router.post('/', async (req: Request, res: Response) => {
       return extr;
     });
 
-    registrarAuditoria(req, 'Registrou Perda/Furto de Rádio na Tropa', `Rádio ID Banco perdido: ${equipamentoId} | Sumiu com B.O: ${descricao.substring(0, 30)}...`);
+    registrarAuditoria(req, 'Registrou Perda/Furto de Rádio na Tropa', `Rádio ID Banco perdido: ${equipamentoId} | B.O: ${boNumero} | Desc: ${descricao.substring(0, 30)}...`);
 
     res.status(201).json(result);
   } catch (error) {

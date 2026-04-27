@@ -125,6 +125,7 @@ model Extravio {
   militarId     String?     @db.ObjectId
   militar       Militar?    @relation(fields: [militarId], references: [id])
   dataExtravio  DateTime    @default(now())
+  boNumero      String?     // Número do B.O
   local         String?
   descricao     String
   status        String      @default("INVESTIGACAO") // INVESTIGACAO, LOCALIZADO, BAIXADO
@@ -184,7 +185,6 @@ model ManutencaoVTR {
   solucao           String?
   status            String    @default("Pendente") // Pronto, Pendente, Assistência Técnica
   
-  // Lista de serviços realizados (Checkbox slugs)
   servicos          String[]
   
   dataCriacao       DateTime @default(now())
