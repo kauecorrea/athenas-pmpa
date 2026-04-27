@@ -68,7 +68,7 @@ const Extraviados: React.FC = () => {
     try {
       setLoading(true);
       // Busca independente para não travar
-      const fetchExt = axios.get('/api/extraviados').catch(err => { console.error("Erro ao buscar extraviados", err); return { data: [] }; });
+      const fetchExt = axios.get('/api/extravios').catch(err => { console.error("Erro ao buscar extravios", err); return { data: [] }; });
       const fetchMil = axios.get('/api/militares').catch(err => { console.error("Erro ao buscar militares", err); return { data: [] }; });
       const fetchEq = axios.get('/api/equipamentos').catch(err => { console.error("Erro ao buscar equipamentos", err); return { data: [] }; });
 
@@ -91,7 +91,7 @@ const Extraviados: React.FC = () => {
       return;
     }
     try {
-      await axios.post('/api/extraviados', formData);
+      await axios.post('/api/extravios', formData);
       alert("Registro de extravio criado com sucesso!");
       setFormData({
         militarId: '',
@@ -102,16 +102,17 @@ const Extraviados: React.FC = () => {
       });
       fetchData();
       setViewMode('list');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Erro ao criar registro.");
+      const msg = e.response?.data?.error || e.message || "Erro desconhecido";
+      alert(`Falha ao registrar extravio: ${msg}`);
     }
   };
 
   const confirmDelete = async () => {
     if (!idToDelete) return;
     try {
-      await axios.delete(`/api/extraviados/${idToDelete}`);
+      await axios.delete(`/api/extravios/${idToDelete}`);
       setIsModalDeleteOpen(false);
       setIdToDelete(null);
       fetchData();
