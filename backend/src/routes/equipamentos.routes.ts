@@ -1,17 +1,17 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, StatusEquipamento } from '@prisma/client';
 import { registrarAuditoria } from '../utils/auditoria';
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // Listar todos os equipamentos (Rádios) com filtro opcional por status
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   const { status } = req.query;
   try {
     const equipamentos = await prisma.equipamento.findMany({
       where: status ? {
-        status: status as string
+        status: status as StatusEquipamento
       } : {},
       include: {
         unidade: true,
