@@ -8,12 +8,10 @@ import {
   List,
   User,
   Radio,
-  FileText,
+  Edit3,
   CheckCircle,
   Archive,
-  Edit3,
-  RotateCcw,
-  Check
+  FileText
 } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
