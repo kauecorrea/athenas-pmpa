@@ -273,7 +273,6 @@ const Usuarios: React.FC = () => {
                   required
                   value={formData.nomeGuerra}
                   onChange={(e) => setFormData({...formData, nomeGuerra: e.target.value.toUpperCase()})}
-                  placeholder="Ex: MAJ QOPM KAUÊ"
                   className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
