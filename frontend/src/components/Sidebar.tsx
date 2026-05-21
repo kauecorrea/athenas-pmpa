@@ -98,16 +98,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
 
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-[#0a0f1d] border-r border-gray-200 dark:border-[#1f2937] flex flex-col h-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:z-auto
+        fixed inset-y-0 left-0 z-50 w-72 bg-white/90 dark:bg-surface/80 border-r border-gray-200/50 dark:border-white/5 backdrop-blur-xl flex flex-col h-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:z-auto
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:flex'}
       `}>
         {/* Logo/Header */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200 dark:border-[#1f2937]">
+        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200/50 dark:border-white/5">
           <div className="flex items-center gap-3">
-            <img src="/brasao_pmpa.png" alt="PMPA Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
+            <img src="/brasao_pmpa.png" alt="PMPA Logo" className="w-10 h-10 object-contain drop-shadow-sm transition-transform duration-500 hover:rotate-[360deg]" />
             <div>
-              <h1 className="text-gray-900 dark:text-white font-bold tracking-wide text-lg leading-tight uppercase">Athenas</h1>
-              <p className="text-primary text-[10px] font-medium tracking-widest uppercase">PMPA</p>
+              <h1 className="text-gray-900 dark:text-white font-extrabold tracking-wider text-lg leading-tight uppercase bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Athenas</h1>
+              <p className="text-blue-500 dark:text-blue-400 text-[10px] font-black tracking-widest uppercase">PMPA</p>
             </div>
           </div>
           
@@ -124,46 +124,47 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <h2 className="px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
             Menu Principal
           </h2>
-          <nav className="space-y-1">
+          <nav className="space-y-1 px-3">
             {menuPrincipal.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
+                onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-6 py-3 text-sm transition-all duration-200 ${
+                  `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all duration-300 transform active:scale-95 ${
                     isActive 
-                      ? 'text-white bg-primary border-l-2 border-blue-400 font-medium' 
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 border-l-2 border-transparent'
+                      ? 'active-gradient shadow-md' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/5 hover:translate-x-1'
                   }`
                 }
               >
-                <item.icon size={18} className={location.pathname === item.path ? 'text-white' : ''} />
-                {item.label}
+                <item.icon size={18} className={`transition-transform duration-300 group-hover:scale-110 ${location.pathname === item.path ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
+                <span>{item.label}</span>
               </NavLink>
             ))}
           </nav>
 
           {isAdmin && (
             <>
-              <h2 className="px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 mt-6">
+              <h2 className="px-6 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 mt-6">
                 Administração
               </h2>
-              <nav className="space-y-1">
+              <nav className="space-y-1 px-3">
                 {menuAdmin.map((item) => (
                   <NavLink
                     key={item.path}
                     to={item.path}
                     onClick={onClose}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-6 py-3 text-sm transition-all duration-200 ${
+                      `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all duration-300 transform active:scale-95 ${
                         isActive 
-                          ? 'text-white bg-gray-100 dark:bg-white/5 border-l-2 border-primary font-medium' 
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 border-l-2 border-transparent'
+                          ? 'bg-gray-100 dark:bg-white/5 border-l-4 border-blue-500 text-gray-900 dark:text-white font-semibold' 
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-white/5 hover:translate-x-1'
                       }`
                     }
                   >
-                    <item.icon size={18} className={location.pathname === item.path ? 'text-primary' : ''} />
-                    {item.label}
+                    <item.icon size={18} className={`transition-transform duration-300 ${location.pathname === item.path ? 'text-blue-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                    <span>{item.label}</span>
                   </NavLink>
                 ))}
               </nav>
@@ -172,35 +173,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
       {/* User Area & Theme Toggle */}
-      <div className="p-4 border-t border-gray-200 dark:border-[#1f2937]">
+      {/* User Area & Theme Toggle */}
+      <div className="p-4 border-t border-gray-200/50 dark:border-white/5">
         {/* Theme Toggle */}
         <button 
           onClick={toggleTheme}
-          className="w-full mb-4 flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
+          className="w-full mb-3 flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white hover:bg-gray-100/70 dark:hover:bg-surface-hover rounded-xl transition-all duration-300 transform active:scale-98"
         >
-          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          {isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
+          {isDarkMode ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} className="text-indigo-400" />}
+          <span className="font-medium">{isDarkMode ? 'Modo Claro' : 'Modo Escuro'}</span>
         </button>
 
-        <NavLink to="/perfil" className="flex items-center justify-between mb-4 px-2 hover:bg-gray-100 dark:hover:bg-[#1f2937] p-2 rounded-lg transition-colors cursor-pointer">
-          <div className="flex items-center gap-3">
+        <NavLink to="/perfil" className="flex items-center justify-between mb-3 px-3 py-2.5 hover:bg-gray-100/70 dark:hover:bg-surface-hover rounded-xl transition-all duration-300 cursor-pointer border border-transparent hover:border-gray-200/30 dark:hover:border-white/5 shadow-sm hover:shadow">
+          <div className="flex items-center gap-3 overflow-hidden">
             {avatar ? (
-              <img src={avatar} alt="Perfil" className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover shrink-0" />
+              <img src={avatar} alt="Perfil" className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 object-cover shrink-0" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs ring-1 ring-primary/30 shrink-0">
+              <div className="w-9 h-9 rounded-full bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center text-blue-500 dark:text-blue-400 font-bold text-xs ring-2 ring-blue-500/20 dark:ring-blue-500/10 shrink-0">
                 {usuario?.nomeGuerra ? usuario.nomeGuerra.slice(0, 2).toUpperCase() : 'PM'}
               </div>
             )}
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{usuario?.nomeGuerra || 'Usuário'}</p>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">{usuario?.permissao || 'Operador'}</p>
+            <div className="truncate">
+              <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{usuario?.nomeGuerra || 'Usuário'}</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-wider truncate">{usuario?.permissao || 'Operador'}</p>
             </div>
           </div>
         </NavLink>
         
-        <button onClick={handleLogout} className="flex w-full items-center gap-2 px-2 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-danger hover:bg-danger/10 rounded-lg transition-colors">
+        <button onClick={handleLogout} className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-gray-500 hover:text-danger hover:bg-danger/10 rounded-xl transition-all duration-300 transform active:scale-98">
           <LogOut size={16} />
-          Sair
+          <span className="font-medium">Sair do Sistema</span>
         </button>
       </div>
     </aside>

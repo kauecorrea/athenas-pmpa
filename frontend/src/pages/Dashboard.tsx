@@ -90,108 +90,108 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
         
         {/* Total Operacional */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-5 md:p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="glass-card p-5 md:p-6 rounded-3xl shadow-premium shadow-premium-hover relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           <div className="flex justify-between items-start relative z-10">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Operacionais</p>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.operacional || 0}</h3>
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total Operacionais</p>
+              <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.operacional || 0}</h3>
             </div>
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
               <CheckCircle2 size={24} />
             </div>
           </div>
-          <div className="mt-3 md:mt-4 flex items-center gap-1 text-sm font-medium text-green-600 dark:text-green-400 relative z-10">
+          <div className="mt-3 md:mt-4 flex items-center gap-1 text-xs font-bold text-green-600 dark:text-green-400 relative z-10">
             <ArrowUpRight size={16} />
-            <span>Saudável</span>
+            <span className="uppercase tracking-wider">Saudável</span>
           </div>
         </div>
 
         {/* Cautelados - Verde (Ativo) */}
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-800 p-5 md:p-6 rounded-2xl shadow-lg shadow-emerald-500/20 text-white relative overflow-hidden group">
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-800 p-5 md:p-6 rounded-3xl shadow-lg shadow-emerald-500/20 text-white relative overflow-hidden group transition-all duration-300 hover:scale-[1.015] hover:shadow-emerald-500/35">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           <div className="flex justify-between items-start relative z-10">
             <div>
-              <p className="text-sm font-medium text-emerald-100">Rádios em Cautela</p>
-              <h3 className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">{stats?.cautelado || 0}</h3>
+              <p className="text-xs font-bold text-emerald-100/80 uppercase tracking-wider">Rádios em Cautela</p>
+              <h3 className="text-2xl md:text-3xl font-extrabold mt-1 md:mt-2">{stats?.cautelado || 0}</h3>
             </div>
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
               <Radio size={24} />
             </div>
           </div>
-          <div className="mt-3 md:mt-4 flex items-center gap-1 text-sm font-medium text-emerald-50 relative z-10">
+          <div className="mt-3 md:mt-4 flex items-center gap-1 text-xs font-bold text-emerald-5 relative z-10">
             <TrendingUp size={16} />
-            <span>Em uso nas ruas</span>
+            <span className="uppercase tracking-wider">Nas ruas</span>
           </div>
         </div>
 
         {/* Em Manutenção */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-5 md:p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="glass-card p-5 md:p-6 rounded-3xl shadow-premium shadow-premium-hover relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           <div className="flex justify-between items-start relative z-10">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Em Manutenção</p>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.emManutencao || 0}</h3>
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Em Manutenção</p>
+              <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.emManutencao || 0}</h3>
             </div>
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-red-600 dark:text-red-400">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-red-600 dark:text-red-400">
               <Wrench size={24} />
             </div>
           </div>
-          <div className="mt-3 md:mt-4 flex items-center gap-1 text-sm font-medium text-red-600 dark:text-red-400 relative z-10">
+          <div className="mt-3 md:mt-4 flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400 relative z-10">
             <AlertTriangle size={16} />
-            <span>Requer Atenção</span>
+            <span className="uppercase tracking-wider">Requer Atenção</span>
           </div>
         </div>
 
         {/* Cautelas Vencidas - Alerta (Amarelo) */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-5 md:p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="glass-card p-5 md:p-6 rounded-3xl shadow-premium shadow-premium-hover relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           <div className="flex justify-between items-start relative z-10">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Cautelas Vencidas</p>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.cautelasVencidas || 0}</h3>
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Cautelas Vencidas</p>
+              <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.cautelasVencidas || 0}</h3>
             </div>
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
               <Clock size={24} />
             </div>
           </div>
-          <div className="mt-3 md:mt-4 flex items-center gap-1 text-sm font-medium text-amber-600 dark:text-amber-500 relative z-10">
+          <div className="mt-3 md:mt-4 flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-500 relative z-10">
             <AlertTriangle size={16} />
-            <span>Retornos Atrasados</span>
+            <span className="uppercase tracking-wider">Atrasados</span>
           </div>
         </div>
 
         {/* Extraviados */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-5 md:p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="glass-card p-5 md:p-6 rounded-3xl shadow-premium shadow-premium-hover relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gray-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           <div className="flex justify-between items-start relative z-10">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rádios Extraviados</p>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.extraviados || 0}</h3>
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Extraviados</p>
+              <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.extraviados || 0}</h3>
             </div>
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gray-100 dark:bg-[#111827] flex items-center justify-center text-gray-600 dark:text-gray-400">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gray-100 dark:bg-gray-800/40 flex items-center justify-center text-gray-600 dark:text-gray-400">
               <Ban size={24} />
             </div>
           </div>
-          <div className="mt-3 md:mt-4 flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400 relative z-10">
-            <span>Perdas Registradas</span>
+          <div className="mt-3 md:mt-4 flex items-center gap-1 text-xs font-bold text-gray-500 dark:text-gray-400 relative z-10">
+            <span className="uppercase tracking-wider">Registrados</span>
           </div>
         </div>
 
         {/* Total do Acervo */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] p-5 md:p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-1">
+        <div className="glass-card p-5 md:p-6 rounded-3xl shadow-premium shadow-premium-hover relative overflow-hidden group col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-1">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gray-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           <div className="flex justify-between items-start relative z-10">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total do Acervo</p>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.total || 0}</h3>
+              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total do Acervo</p>
+              <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-1 md:mt-2">{stats?.total || 0}</h3>
             </div>
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-300">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gray-100 dark:bg-gray-800/40 flex items-center justify-center text-gray-700 dark:text-gray-300">
               <Radio size={24} />
             </div>
           </div>
-          <div className="mt-3 md:mt-4 flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400 relative z-10">
-            <span>Volume Patrimonial</span>
+          <div className="mt-3 md:mt-4 flex items-center gap-1 text-xs font-bold text-gray-500 dark:text-gray-400 relative z-10">
+            <span className="uppercase tracking-wider">Volume Total</span>
           </div>
         </div>
 
@@ -201,7 +201,7 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         
         {/* Gráfico de Barras: Produtividade (Cautelas na semana) */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-2xl p-6 lg:col-span-2 shadow-sm">
+        <div className="glass-card p-6 lg:col-span-2 rounded-3xl shadow-premium shadow-premium-hover transition-all duration-300">
           <div className="mb-6">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Fluxo de Cautelas na Semana</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Quantidade de rádios emprestados por dia</p>
@@ -239,7 +239,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Gráfico de Pizza: Distribuição de Status */}
-        <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-2xl p-6 shadow-sm flex flex-col">
+        <div className="glass-card p-6 rounded-3xl shadow-premium shadow-premium-hover flex flex-col transition-all duration-300">
           <div className="mb-2">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Capacidade Operativa</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Distribuição atual dos equipamentos</p>
