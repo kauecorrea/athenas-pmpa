@@ -1,5 +1,0 @@
-﻿src/index.ts(1,8): error TS1259: Module '"C:/Users/kaueh/Documents/Athenas/backend/node_modules/@types/express/index"' can only be default-imported using the 'esModuleInterop' flag
-src/index.ts(2,8): error TS1259: Module '"C:/Users/kaueh/Documents/Athenas/backend/node_modules/@types/cors/index"' can only be default-imported using the 'esModuleInterop' flag
-src/index.ts(3,8): error TS1192: Module '"C:/Users/kaueh/Documents/Athenas/backend/node_modules/dotenv/lib/main"' has no default export.
-src/index.ts(28,15): error TS7006: Parameter 'req' implicitly has an 'any' type.
-src/index.ts(28,20): error TS7006: Parameter 'res' implicitly has an 'any' type.
