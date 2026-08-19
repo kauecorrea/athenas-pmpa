@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -106,7 +107,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Excluir Usuário
-router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params as { id: string };
     await prisma.usuario.delete({ where: { id: id as string } });

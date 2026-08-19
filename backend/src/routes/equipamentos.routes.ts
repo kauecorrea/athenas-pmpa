@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient, StatusEquipamento } from '@prisma/client';
 import { registrarAuditoria } from '../utils/auditoria';
 
@@ -76,7 +77,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Excluir Equipamento (Delete)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', adminMiddleware, async (req, res) => {
   const { id } = req.params as { id: string };
   try {
     await prisma.equipamento.delete({

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { emitToast } from '../utils/toast';
 
 interface ModalConfirmacaoProps {
   isOpen: boolean;
@@ -20,6 +21,19 @@ const ModalConfirmacao: React.FC<ModalConfirmacaoProps> = ({
   confirmText = 'Excluir',
   cancelText = 'Cancelar'
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      const userStr = localStorage.getItem('usuario');
+      const currentUser = userStr ? JSON.parse(userStr) : null;
+      
+      // Se não for ADM, bloqueia a abertura do modal e mostra o aviso
+      if (currentUser && currentUser.permissao !== 'ADM') {
+        emitToast('Acesso Negado: Apenas administradores podem excluir itens.', 'error');
+        onCancel();
+      }
+    }
+  }, [isOpen, onCancel]);
+
   if (!isOpen) return null;
 
   return createPortal(

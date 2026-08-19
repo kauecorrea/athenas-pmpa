@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
@@ -58,7 +59,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Deletar Unidade
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', adminMiddleware, async (req, res) => {
   const { id } = req.params as { id: string };
   try {
     // Checar se existem militares vinculados

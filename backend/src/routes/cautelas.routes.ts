@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';
 import { registrarAuditoria } from '../utils/auditoria';
 
@@ -165,7 +166,7 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
 
 // Excluir Lote
 // @ts-ignore
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   try {
     const cautela = await prisma.cautela.findUnique({ where: { id: id as string }, include: { equipamentos: true } });

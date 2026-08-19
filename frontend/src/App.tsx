@@ -59,12 +59,28 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
+import Toast, { ToastType } from './components/Toast';
+
 // Layout Padrão com Sidebar para as Telas Internas
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [toast, setToast] = React.useState<{ message: string, type: ToastType } | null>(null);
+
+  React.useEffect(() => {
+    const handler = (e: any) => setToast(e.detail);
+    window.addEventListener('showToast', handler);
+    return () => window.removeEventListener('showToast', handler);
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-background text-gray-900 dark:text-gray-100 overflow-hidden transition-colors duration-200">
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 

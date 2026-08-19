@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';
 import { registrarAuditoria } from '../utils/auditoria';
 
@@ -192,7 +193,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
 // Excluir e Reverter Transferência (Rádio volta para Unidade de Origem)
 // @ts-ignore
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
 
   try {

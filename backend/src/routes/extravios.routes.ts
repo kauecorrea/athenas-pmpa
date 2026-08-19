@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';
 import { registrarAuditoria } from '../utils/auditoria';
 
@@ -146,7 +147,7 @@ router.put('/:id/baixar', async (req: Request, res: Response) => {
 
 // Excluir Registro de Extravio
 // @ts-ignore
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
 
   try {
