@@ -84,6 +84,10 @@ router.post('/', async (req: Request, res: Response) => {
           missao: missao || null,
           dataRetirada: dataInicio ? new Date(dataInicio) : new Date(),
           dataPrevista: dataPrevista ? new Date(dataPrevista) : null,
+          recebedorRgPM: recebedorRgPM || null,
+          recebedorNome: recebedorNome || null,
+          recebedorGuerra: recebedorGuerra || null,
+          recebedorContato: recebedorContato || null,
           status: 'ATIVA',
           equipamentos: {
             connect: equipamentosIds.map((id: any) => ({ id: id }))
@@ -120,6 +124,10 @@ router.put('/:id', async (req: Request, res: Response) => {
     const updateData: any = {
       missao: missao || null,
       dataPrevista: dataPrevista ? new Date(dataPrevista) : null,
+      recebedorRgPM: recebedorRgPM || null,
+      recebedorNome: recebedorNome || null,
+      recebedorGuerra: recebedorGuerra || null,
+      recebedorContato: recebedorContato || null,
     };
     if (dataInicio) {
       updateData.dataRetirada = new Date(dataInicio);
