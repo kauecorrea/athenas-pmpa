@@ -57,7 +57,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Emprestar Rádi(os) (Criar Cautelas em Lote M:N)
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio } = req.body;
+  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
   
   if (!equipamentosIds || !Array.isArray(equipamentosIds) || equipamentosIds.length === 0) {
     return res.status(400).json({ error: 'Nenhum equipamento fornecido.' });
@@ -114,7 +114,7 @@ router.post('/', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { missao, dataInicio, dataPrevista } = req.body;
+  const { missao, dataInicio, dataPrevista, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
   
   try {
     const updateData: any = {

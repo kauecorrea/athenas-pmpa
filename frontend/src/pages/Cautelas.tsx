@@ -15,6 +15,8 @@ import {
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getStatusClass } from '../utils/statusColor';
+import { emitToast } from '../utils/toast';
 
 interface Equipamento {
   id: string;
@@ -44,6 +46,10 @@ interface Cautela {
   dataPrevista: string | null;
   missao: string | null;
   status: string;
+  recebedorRgPM?: string;
+  recebedorNome?: string;
+  recebedorGuerra?: string;
+  recebedorContato?: string;
   militar: Militar | null;
   unidade: { nome: string } | null;
   equipamentos: Equipamento[];
@@ -66,6 +72,12 @@ const Cautelas: React.FC = () => {
   const [dataPrevista, setDataPrevista] = useState('');
   const [radiosSelecionados, setRadiosSelecionados] = useState<string[]>([]);
   const [editingCautelaId, setEditingCautelaId] = useState<string | null>(null);
+
+  const [recebedorRgPM, setRecebedorRgPM] = useState('');
+  const [recebedorNome, setRecebedorNome] = useState('');
+  const [recebedorGuerra, setRecebedorGuerra] = useState('');
+  const [recebedorContato, setRecebedorContato] = useState('');
+
   const [buscaRadio, setBuscaRadio] = useState('');
   const [isRadioListOpen, setIsRadioListOpen] = useState(false);
 
@@ -109,6 +121,11 @@ const Cautelas: React.FC = () => {
   };
 
   const handleCriarCautela = async () => {
+    if (!recebedorRgPM || !recebedorGuerra || !recebedorContato) {
+      emitToast("Por favor, preencha todos os campos obrigatórios do Militar Recebedor (*).", "warning");
+      return;
+    }
+    
     try {
       if (editingCautelaId) {
         await axios.put(`/api/cautelas/${editingCautelaId}`, {
@@ -116,25 +133,33 @@ const Cautelas: React.FC = () => {
           equipamentosIds: radiosSelecionados,
           missao,
           dataInicio,
-          dataPrevista
+          dataPrevista,
+          recebedorRgPM,
+          recebedorNome,
+          recebedorGuerra,
+          recebedorContato
         });
-        alert("Cautela atualizada!");
+        emitToast("Cautela atualizada!", "success");
       } else {
         await axios.post('/api/cautelas', {
           militarId,
           equipamentosIds: radiosSelecionados,
           missao,
           dataInicio,
-          dataPrevista
+          dataPrevista,
+          recebedorRgPM,
+          recebedorNome,
+          recebedorGuerra,
+          recebedorContato
         });
-        alert("Cautela registrada com sucesso!");
+        emitToast("Cautela registrada com sucesso!", "success");
       }
       resetForm();
       fetchData();
       setViewMode('list');
     } catch (e) {
       console.error(e);
-      alert("Erro ao registrar cautela.");
+      emitToast("Erro ao registrar cautela.", "error");
     }
   };
 
@@ -146,6 +171,10 @@ const Cautelas: React.FC = () => {
     setRadiosSelecionados([]);
     setEditingCautelaId(null);
     setBuscaRadio('');
+    setRecebedorRgPM('');
+    setRecebedorNome('');
+    setRecebedorGuerra('');
+    setRecebedorContato('');
   };
 
   const confirmDevolver = async () => {
@@ -182,6 +211,10 @@ const Cautelas: React.FC = () => {
     if (c.dataPrevista) {
       setDataPrevista(new Date(c.dataPrevista).toISOString().slice(0, 16));
     }
+    setRecebedorRgPM(c.recebedorRgPM || '');
+    setRecebedorNome(c.recebedorNome || '');
+    setRecebedorGuerra(c.recebedorGuerra || '');
+    setRecebedorContato(c.recebedorContato || '');
     setRadiosSelecionados(c.equipamentos.map(eq => eq.id));
     setViewMode('form');
   };
@@ -273,9 +306,14 @@ const Cautelas: React.FC = () => {
     const dataLocal = `Belém PA, ${new Date(c.dataRetirada).toLocaleDateString('pt-BR')}`;
     doc.text(dataLocal, 14, pageHeight - 45);
     
-    doc.line(125, pageHeight - 45, 195, pageHeight - 45);
+    doc.line(15, pageHeight - 45, 85, pageHeight - 45);
     doc.setFontSize(8);
-    doc.text('ASSINATURA DO MILITAR RESPONSÁVEL', 160, pageHeight - 40, { align: 'center' });
+    doc.text('ASSINATURA DE QUEM ENTREGA\n(Militar Responsável)', 50, pageHeight - 40, { align: 'center' });
+    doc.text(`${c.militar?.nomeGuerra || c.militar?.nome || ''}\nRG: ${c.militar?.rg || ''}`, 50, pageHeight - 32, { align: 'center' });
+
+    doc.line(125, pageHeight - 45, 195, pageHeight - 45);
+    doc.text('ASSINATURA DE QUEM RECEBE\n(Militar Recebedor)', 160, pageHeight - 40, { align: 'center' });
+    doc.text(`${c.recebedorGuerra || c.recebedorNome || ''}\nRG: ${c.recebedorRgPM || ''}`, 160, pageHeight - 32, { align: 'center' });
 
     // Endereço Institucional no extremo rodapé (Exatamente como o outro)
     doc.setFontSize(8);
@@ -618,6 +656,53 @@ const Cautelas: React.FC = () => {
                     onChange={(e) => setDataPrevista(e.target.value)}
                     className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all"
                   />
+                </div>
+              </div>
+
+              {/* Militar Recebedor */}
+              <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-[#1f2937]">
+                <h3 className="text-md font-bold text-gray-900 dark:text-white">Militar Recebedor</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">RG PM *</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 12345"
+                      value={recebedorRgPM}
+                      onChange={(e) => setRecebedorRgPM(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome Completo</label>
+                    <input
+                      type="text"
+                      placeholder="Opcional"
+                      value={recebedorNome}
+                      onChange={(e) => setRecebedorNome(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome de Guerra *</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: SD SILVA"
+                      value={recebedorGuerra}
+                      onChange={(e) => setRecebedorGuerra(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contato *</label>
+                    <input
+                      type="text"
+                      placeholder="(91) 90000-0000"
+                      value={recebedorContato}
+                      onChange={(e) => setRecebedorContato(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
                 </div>
               </div>
 

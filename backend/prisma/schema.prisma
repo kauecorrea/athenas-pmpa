@@ -87,6 +87,12 @@ model Cautela {
   dataDevolucao DateTime?   // Quando foi devolvido
   dataPrevista  DateTime?   // Data limite para devolução (ex: evento sábado)
   
+  // Dados do militar que recebe o rádio (inseridos manualmente)
+  recebedorRgPM    String?
+  recebedorNome    String?
+  recebedorGuerra  String?
+  recebedorContato String?
+  
   status        StatusCautela @default(ATIVA) // ATIVA, DEVOLVIDA, VENCIDA
 }
 
