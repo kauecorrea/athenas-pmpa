@@ -26,7 +26,7 @@ interface SidebarProps {
 
 const menuPrincipal = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-  { icon: Radio, label: 'Equipamentos', path: '/equipamentos' },
+  { icon: Radio, label: 'Rádios', path: '/equipamentos' },
   { icon: Users, label: 'Militares', path: '/militares' },
   { icon: Shield, label: 'Unidades', path: '/unidades' },
   { icon: ClipboardList, label: 'Cautelas', path: '/cautelas' },
