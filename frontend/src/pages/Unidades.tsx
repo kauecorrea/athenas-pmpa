@@ -106,10 +106,11 @@ const Unidades: React.FC = () => {
     }
   };
 
-  const unidadesFiltradas = unidades.filter(u => 
-    u.nome.toLowerCase().includes(busca.toLowerCase()) || 
-    u.localizacao.toLowerCase().includes(busca.toLowerCase())
-  );
+  const unidadesFiltradas = unidades.filter(u => {
+    const nomeMatch = u.nome?.toLowerCase().includes(busca.toLowerCase());
+    const localizacaoMatch = u.localizacao?.toLowerCase().includes(busca.toLowerCase());
+    return nomeMatch || localizacaoMatch;
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col relative transition-colors duration-200">
