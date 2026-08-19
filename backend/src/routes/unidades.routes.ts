@@ -24,6 +24,15 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const { nome, sigla, coint, localizacao } = req.body;
   try {
+    // Verifica duplicidade (nome é único)
+    const unidadeExistente = await prisma.unidade.findUnique({
+      where: { nome }
+    });
+    
+    if (unidadeExistente) {
+      return res.status(409).json({ error: `A unidade "${nome}" já está cadastrada no sistema.` });
+    }
+
     const unidade = await prisma.unidade.create({
       data: { nome, sigla, coint, localizacao },
     });

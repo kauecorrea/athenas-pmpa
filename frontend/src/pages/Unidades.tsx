@@ -10,6 +10,7 @@ import {
   MapPin
 } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
+import Toast, { ToastType } from '../components/Toast';
 
 interface Unidade {
   id: string;
@@ -24,6 +25,7 @@ const Unidades: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [busca, setBusca] = useState('');
+  const [toast, setToast] = useState<{ message: string, type: ToastType } | null>(null);
   
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -53,22 +55,27 @@ const Unidades: React.FC = () => {
     }
   };
 
+  const showToast = (message: string, type: ToastType) => {
+    setToast({ message, type });
+  };
+
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isEditing) {
         await axios.put(`/api/unidades/${formData.id}`, formData);
-        alert("Unidade atualizada!");
+        showToast("Unidade atualizada com sucesso!", "success");
       } else {
         await axios.post('/api/unidades', formData);
-        alert("Unidade cadastrada!");
+        showToast("Unidade cadastrada com sucesso!", "success");
       }
       resetForm();
       fetchUnidades();
       setViewMode('list');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Erro ao salvar unidade.");
+      const errorMessage = e.response?.data?.error || "Erro ao salvar unidade.";
+      showToast(errorMessage, "error");
     }
   };
 
@@ -90,9 +97,11 @@ const Unidades: React.FC = () => {
       setIsModalDeleteOpen(false);
       setUnidadeToDelete(null);
       fetchUnidades();
-    } catch (e) {
+      showToast("Unidade excluída com sucesso!", "success");
+    } catch (e: any) {
       console.error(e);
-      alert("Erro ao excluir unidade. Ela pode estar vinculada a militares ou equipamentos.");
+      const errorMessage = e.response?.data?.error || "Erro ao excluir unidade. Ela pode estar vinculada a militares ou equipamentos.";
+      showToast(errorMessage, "error");
     }
   };
 
@@ -104,6 +113,14 @@ const Unidades: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col relative transition-colors duration-200">
       
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
+
       {/* HEADER */}
       <div className="flex justify-between items-center bg-white dark:bg-surface p-6 rounded-2xl border border-gray-100 dark:border-[#1f2937] shadow-sm">
         <div>
@@ -215,7 +232,9 @@ const Unidades: React.FC = () => {
           <form onSubmit={handleSalvar} className="p-6 overflow-y-auto flex-1 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nome da Unidade</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Nome da Unidade <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   required
@@ -227,7 +246,9 @@ const Unidades: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">COINT (Comando Intermediário)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  COINT (Comando Intermediário) <span className="text-gray-400 font-normal italic">- Opcional</span>
+                </label>
                 <input 
                   type="text" 
                   placeholder="EX: QCG, CPA, CPC I"
