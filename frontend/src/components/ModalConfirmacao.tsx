@@ -26,8 +26,8 @@ const ModalConfirmacao: React.FC<ModalConfirmacaoProps> = ({
       const userStr = localStorage.getItem('usuario');
       const currentUser = userStr ? JSON.parse(userStr) : null;
       
-      // Se não for ADM, bloqueia a abertura do modal e mostra o aviso
-      if (currentUser && currentUser.permissao !== 'ADM') {
+      // Se não for Administrador, bloqueia a abertura do modal e mostra o aviso
+      if (currentUser && currentUser.permissao !== 'Administrador') {
         emitToast('Acesso Negado: Apenas administradores podem excluir itens.', 'error');
         onCancel();
       }
