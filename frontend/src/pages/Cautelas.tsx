@@ -304,7 +304,7 @@ const Cautelas: React.FC = () => {
     
     doc.setFontSize(10);
     const dataLocal = `Belém PA, ${new Date(c.dataRetirada).toLocaleDateString('pt-BR')}`;
-    doc.text(dataLocal, 14, pageHeight - 45);
+    doc.text(dataLocal, 105, pageHeight - 60, { align: 'center' });
     
     doc.line(15, pageHeight - 45, 85, pageHeight - 45);
     doc.setFontSize(8);
