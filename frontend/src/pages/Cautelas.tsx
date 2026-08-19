@@ -676,13 +676,25 @@ const Cautelas: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patente / Posto *</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: SD, SGT"
+                    <select
                       value={recebedorPosto}
                       onChange={(e) => setRecebedorPosto(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-                    />
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="SD PM">SD PM</option>
+                      <option value="CB PM">CB PM</option>
+                      <option value="3º SGT PM">3º SGT PM</option>
+                      <option value="2º SGT PM">2º SGT PM</option>
+                      <option value="1º SGT PM">1º SGT PM</option>
+                      <option value="SUB TEN PM">SUB TEN PM</option>
+                      <option value="2º TEN PM">2º TEN PM</option>
+                      <option value="1º TEN PM">1º TEN PM</option>
+                      <option value="CAP PM">CAP PM</option>
+                      <option value="MAJ PM">MAJ PM</option>
+                      <option value="TEN CEL PM">TEN CEL PM</option>
+                      <option value="CEL PM">CEL PM</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">RG PM *</label>
