@@ -62,7 +62,7 @@ const Login: React.FC = () => {
           </div>
           <h1 className="text-5xl font-black text-white tracking-tighter mt-4 uppercase italic">
             Athenas
-            <span className="block text-xs font-bold tracking-[0.5em] text-primary mt-1 not-italic opacity-80 uppercase">Patrimonial DITEL</span>
+            <span className="block text-xs font-bold tracking-[0.5em] text-primary mt-1 not-italic opacity-80 uppercase">Telecom DITEL</span>
           </h1>
           <div className="w-12 h-1 bg-primary mx-auto mt-4 rounded-full"></div>
         </div>
