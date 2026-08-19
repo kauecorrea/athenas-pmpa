@@ -15,7 +15,6 @@ import {
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { getStatusClass } from '../utils/statusColor';
 import { emitToast } from '../utils/toast';
 
 interface Equipamento {
@@ -36,6 +35,7 @@ interface Militar {
     nome: string;
   };
   contato?: string;
+  nomeGuerra?: string;
 }
 
 
@@ -122,7 +122,7 @@ const Cautelas: React.FC = () => {
 
   const handleCriarCautela = async () => {
     if (!recebedorRgPM || !recebedorGuerra || !recebedorContato) {
-      emitToast("Por favor, preencha todos os campos obrigatórios do Militar Recebedor (*).", "warning");
+      emitToast("Por favor, preencha todos os campos obrigatórios do Militar Recebedor (*).", "error");
       return;
     }
     
