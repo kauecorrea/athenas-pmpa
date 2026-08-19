@@ -10,7 +10,8 @@ import {
   MapPin
 } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
-import Toast, { ToastType } from '../components/Toast';
+import Toast from '../components/Toast';
+import type { ToastType } from '../components/Toast';
 
 interface Unidade {
   id: string;
