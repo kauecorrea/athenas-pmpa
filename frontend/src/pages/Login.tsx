@@ -40,7 +40,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full relative flex items-center justify-center p-4 overflow-hidden bg-[#050811]">
-      
+
       {/* BACKGROUND ELEMENTS */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] animate-pulse"></div>
@@ -49,14 +49,14 @@ const Login: React.FC = () => {
       </div>
 
       <div className="max-w-md w-full animate-fade-in relative z-10">
-        
+
         {/* LOGO AREA */}
         <div className="text-center mb-8">
           <div className="relative inline-block group">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/40 transition-all duration-500"></div>
-            <img 
-              src="/brasao_pmpa.png" 
-              alt="PMPA" 
+            <img
+              src="/brasao_pmpa.png"
+              alt="PMPA"
               className="w-24 h-24 relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-2xl"
             />
           </div>
@@ -86,7 +86,7 @@ const Login: React.FC = () => {
                     A recuperação de acesso à rede DITEL deve ser solicitada via PAE ou e-mail oficial à Seção de Telemática.
                   </p>
                   <p className="text-xs mt-4 font-mono">
-                    citel@pm.pa.gov.br
+                    ditelpmpa@gmail.com
                   </p>
                 </div>
                 <button
@@ -139,9 +139,9 @@ const Login: React.FC = () => {
                   <div className="flex items-center justify-between mt-2 px-1">
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <div className="w-5 h-5 rounded-md border border-white/10 flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                        <input 
-                          type="checkbox" 
-                          className="w-3 h-3 appearance-none checked:bg-primary rounded-sm transition-all" 
+                        <input
+                          type="checkbox"
+                          className="w-3 h-3 appearance-none checked:bg-primary rounded-sm transition-all"
                         />
                       </div>
                       <span className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">Memorizar sessão</span>
@@ -161,7 +161,7 @@ const Login: React.FC = () => {
                     className="w-full relative py-4 px-4 flex items-center justify-center text-base font-black text-white bg-gradient-to-r from-primary to-blue-700 hover:from-blue-600 hover:to-blue-800 rounded-[1.25rem] transition-all shadow-xl shadow-blue-600/20 active:scale-[0.98] disabled:opacity-50"
                   >
                     {isLoading ? (
-                       <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     ) : (
                       'VALIDAR ACESSO'
                     )}
@@ -170,14 +170,14 @@ const Login: React.FC = () => {
               </>
             )}
           </div>
-          
+
           <div className="px-8 py-5 bg-white/5 border-t border-white/5 text-center flex flex-col gap-1">
             <p className="text-[10px] text-gray-600 font-bold tracking-widest uppercase">
               Polícia Militar do Pará • DITEL
             </p>
           </div>
         </div>
-        
+
       </div>
 
       {/* VERSION BADGE */}

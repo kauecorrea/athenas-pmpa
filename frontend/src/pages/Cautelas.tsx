@@ -281,7 +281,7 @@ const Cautelas: React.FC = () => {
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
-    doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: citel@pm.pa.gov.br", 105, pageHeight - 10, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: ditelpmpa@gmail.com", 105, pageHeight - 10, { align: "center" });
 
     window.open(doc.output('bloburl'), '_blank');
   };
