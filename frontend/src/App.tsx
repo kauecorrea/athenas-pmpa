@@ -59,7 +59,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
-import Toast, { ToastType } from './components/Toast';
+import Toast from './components/Toast';
+import type { ToastType } from './components/Toast';
 
 // Layout Padrão com Sidebar para as Telas Internas
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
