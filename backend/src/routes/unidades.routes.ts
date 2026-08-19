@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 
 // Criar nova unidade
 router.post('/', async (req, res) => {
-  const { nome, sigla, coint, localizacao } = req.body;
+  const { nome, sigla, coint, localizacao, contato } = req.body;
   try {
     // Verifica duplicidade (nome é único)
     const unidadeExistente = await prisma.unidade.findUnique({
@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
     }
 
     const unidade = await prisma.unidade.create({
-      data: { nome, sigla, coint, localizacao },
+      data: { nome, sigla, coint, localizacao, contato },
     });
     res.status(201).json(unidade);
   } catch (error) {
@@ -45,11 +45,11 @@ router.post('/', async (req, res) => {
 // Atualizar Unidade
 router.put('/:id', async (req, res) => {
   const { id } = req.params as { id: string };
-  const { nome, sigla, coint, localizacao } = req.body;
+  const { nome, sigla, coint, localizacao, contato } = req.body;
   try {
     const unidade = await prisma.unidade.update({
       where: { id: id as string },
-      data: { nome, sigla, coint, localizacao },
+      data: { nome, sigla, coint, localizacao, contato },
     });
     res.json(unidade);
   } catch (error) {

@@ -13,6 +13,7 @@ model Unidade {
   sigla       String?
   coint       String?
   localizacao String?
+  contato     String?
   militares Militar[]
   cautelas  Cautela[]
   // Rádios podem pertencer a uma unidade
