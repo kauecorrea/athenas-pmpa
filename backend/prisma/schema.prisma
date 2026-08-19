@@ -88,6 +88,7 @@ model Cautela {
   dataPrevista  DateTime?   // Data limite para devolução (ex: evento sábado)
   
   // Dados do militar que recebe o rádio (inseridos manualmente)
+  recebedorPosto   String?
   recebedorRgPM    String?
   recebedorNome    String?
   recebedorGuerra  String?

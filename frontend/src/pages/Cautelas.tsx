@@ -36,6 +36,7 @@ interface Militar {
   };
   contato?: string;
   nomeGuerra?: string;
+  posto?: string;
 }
 
 
@@ -46,6 +47,7 @@ interface Cautela {
   dataPrevista: string | null;
   missao: string | null;
   status: string;
+  recebedorPosto?: string;
   recebedorRgPM?: string;
   recebedorNome?: string;
   recebedorGuerra?: string;
@@ -73,6 +75,7 @@ const Cautelas: React.FC = () => {
   const [radiosSelecionados, setRadiosSelecionados] = useState<string[]>([]);
   const [editingCautelaId, setEditingCautelaId] = useState<string | null>(null);
 
+  const [recebedorPosto, setRecebedorPosto] = useState('');
   const [recebedorRgPM, setRecebedorRgPM] = useState('');
   const [recebedorNome, setRecebedorNome] = useState('');
   const [recebedorGuerra, setRecebedorGuerra] = useState('');
@@ -121,7 +124,7 @@ const Cautelas: React.FC = () => {
   };
 
   const handleCriarCautela = async () => {
-    if (!recebedorRgPM || !recebedorGuerra || !recebedorContato) {
+    if (!recebedorPosto || !recebedorRgPM || !recebedorGuerra || !recebedorContato) {
       emitToast("Por favor, preencha todos os campos obrigatórios do Militar Recebedor (*).", "error");
       return;
     }
@@ -134,6 +137,7 @@ const Cautelas: React.FC = () => {
           missao,
           dataInicio,
           dataPrevista,
+          recebedorPosto,
           recebedorRgPM,
           recebedorNome,
           recebedorGuerra,
@@ -147,6 +151,7 @@ const Cautelas: React.FC = () => {
           missao,
           dataInicio,
           dataPrevista,
+          recebedorPosto,
           recebedorRgPM,
           recebedorNome,
           recebedorGuerra,
@@ -171,6 +176,7 @@ const Cautelas: React.FC = () => {
     setRadiosSelecionados([]);
     setEditingCautelaId(null);
     setBuscaRadio('');
+    setRecebedorPosto('');
     setRecebedorRgPM('');
     setRecebedorNome('');
     setRecebedorGuerra('');
@@ -211,6 +217,7 @@ const Cautelas: React.FC = () => {
     if (c.dataPrevista) {
       setDataPrevista(new Date(c.dataPrevista).toISOString().slice(0, 16));
     }
+    setRecebedorPosto(c.recebedorPosto || '');
     setRecebedorRgPM(c.recebedorRgPM || '');
     setRecebedorNome(c.recebedorNome || '');
     setRecebedorGuerra(c.recebedorGuerra || '');
@@ -309,11 +316,11 @@ const Cautelas: React.FC = () => {
     doc.line(15, pageHeight - 45, 85, pageHeight - 45);
     doc.setFontSize(8);
     doc.text('ASSINATURA DE QUEM ENTREGA\n(Militar Responsável)', 50, pageHeight - 40, { align: 'center' });
-    doc.text(`${c.militar?.nomeGuerra || c.militar?.nome || ''}\nRG: ${c.militar?.rg || ''}`, 50, pageHeight - 32, { align: 'center' });
+    doc.text(`${c.militar?.posto ? c.militar.posto + ' ' : ''}${c.militar?.nomeGuerra || c.militar?.nome || ''}\nRG: ${c.militar?.rg || ''}`, 50, pageHeight - 32, { align: 'center' });
 
     doc.line(125, pageHeight - 45, 195, pageHeight - 45);
     doc.text('ASSINATURA DE QUEM RECEBE\n(Militar Recebedor)', 160, pageHeight - 40, { align: 'center' });
-    doc.text(`${c.recebedorGuerra || c.recebedorNome || ''}\nRG: ${c.recebedorRgPM || ''}`, 160, pageHeight - 32, { align: 'center' });
+    doc.text(`${c.recebedorPosto ? c.recebedorPosto + ' ' : ''}${c.recebedorGuerra || c.recebedorNome || ''}\nRG: ${c.recebedorRgPM || ''}`, 160, pageHeight - 32, { align: 'center' });
 
     // Endereço Institucional no extremo rodapé (Exatamente como o outro)
     doc.setFontSize(8);
@@ -499,7 +506,8 @@ const Cautelas: React.FC = () => {
           <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Responsável (Entrega)</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Recebedor</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Quantidade</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data Início</th>
@@ -515,7 +523,10 @@ const Cautelas: React.FC = () => {
               ) : cautelasFiltradas.map(c => (
                 <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
                   <td className="px-6 py-4 font-bold text-gray-900 dark:text-white uppercase truncate max-w-[150px]">
-                    {c.militar?.nome || 'Reserva'}
+                    {c.militar ? `${c.militar.posto || ''} ${c.militar.nomeGuerra || c.militar.nome}`.trim() : 'RESERVA'}
+                  </td>
+                  <td className="px-6 py-4 font-bold text-gray-900 dark:text-white uppercase truncate max-w-[150px]">
+                    {c.recebedorPosto || c.recebedorGuerra ? `${c.recebedorPosto || ''} ${c.recebedorGuerra || c.recebedorNome || ''}`.trim() : '-'}
                   </td>
                   <td className="px-6 py-4 text-xs font-medium text-gray-500 uppercase">
                     {c.militar?.unidade?.nome || c.unidade?.nome || 'DITEL'}
@@ -662,7 +673,17 @@ const Cautelas: React.FC = () => {
               {/* Militar Recebedor */}
               <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-[#1f2937]">
                 <h3 className="text-md font-bold text-gray-900 dark:text-white">Militar Recebedor</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patente / Posto *</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: SD, SGT"
+                      value={recebedorPosto}
+                      onChange={(e) => setRecebedorPosto(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">RG PM *</label>
                     <input
