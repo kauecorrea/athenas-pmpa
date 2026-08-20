@@ -57,7 +57,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Emprestar Rádi(os) (Criar Cautelas em Lote M:N)
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
+  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
   
   if (!equipamentosIds || !Array.isArray(equipamentosIds) || equipamentosIds.length === 0) {
     return res.status(400).json({ error: 'Nenhum equipamento fornecido.' });
@@ -84,6 +84,7 @@ router.post('/', async (req: Request, res: Response) => {
           missao: missao || null,
           dataRetirada: dataInicio ? new Date(dataInicio) : new Date(),
           dataPrevista: dataPrevista ? new Date(dataPrevista) : null,
+          recebedorPosto: recebedorPosto || null,
           recebedorRgPM: recebedorRgPM || null,
           recebedorNome: recebedorNome || null,
           recebedorGuerra: recebedorGuerra || null,
@@ -118,17 +119,23 @@ router.post('/', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { missao, dataInicio, dataPrevista, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
+  const { missao, dataInicio, dataPrevista, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
   
   try {
     const updateData: any = {
       missao: missao || null,
       dataPrevista: dataPrevista ? new Date(dataPrevista) : null,
+      recebedorPosto: recebedorPosto || null,
       recebedorRgPM: recebedorRgPM || null,
       recebedorNome: recebedorNome || null,
       recebedorGuerra: recebedorGuerra || null,
       recebedorContato: recebedorContato || null,
     };
+    
+    const cautelaExistente = await prisma.cautela.findUnique({ where: { id: id as string } });
+    if (cautelaExistente && cautelaExistente.status === 'VENCIDA' && updateData.dataPrevista && updateData.dataPrevista > new Date()) {
+      updateData.status = 'ATIVA';
+    }
     if (dataInicio) {
       updateData.dataRetirada = new Date(dataInicio);
     }

@@ -231,7 +231,7 @@ const Cautelas: React.FC = () => {
 
   const gerarComprovantePDF = async (c: Cautela) => {
     const doc = new jsPDF();
-    const nomeRecebedor = (c.recebedorPosto ? c.recebedorPosto + ' ' : '') + (c.recebedorNome || c.recebedorGuerra || 'N/A');
+    const nomeRecebedor = (c.recebedorPosto ? c.recebedorPosto + ' ' : '') + (c.recebedorGuerra || 'N/A');
     const rgRecebedor = c.recebedorRgPM || 'N/A';
     const contatoRecebedor = c.recebedorContato || '-';
     
@@ -323,7 +323,7 @@ const Cautelas: React.FC = () => {
 
     doc.line(125, pageHeight - 45, 195, pageHeight - 45);
     doc.text('ASSINATURA DE QUEM RECEBE\n(Militar Recebedor)', 160, pageHeight - 40, { align: 'center' });
-    doc.text(`${c.recebedorPosto ? c.recebedorPosto + ' ' : ''}${c.recebedorGuerra || c.recebedorNome || ''}\nRG: ${c.recebedorRgPM || ''}`, 160, pageHeight - 32, { align: 'center' });
+    doc.text(`${c.recebedorPosto ? c.recebedorPosto + ' ' : ''}${c.recebedorGuerra || ''}\nRG: ${c.recebedorRgPM || ''}`, 160, pageHeight - 32, { align: 'center' });
 
     // Endereço Institucional no extremo rodapé (Exatamente como o outro)
     doc.setFontSize(8);
