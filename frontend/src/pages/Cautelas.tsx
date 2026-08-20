@@ -84,6 +84,9 @@ const Cautelas: React.FC = () => {
   const [buscaRadio, setBuscaRadio] = useState('');
   const [isRadioListOpen, setIsRadioListOpen] = useState(false);
 
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState<'7dias' | '30dias' | 'tudo'>('30dias');
+
   // Modal actions
   const [isModalDevolverOpen, setIsModalDevolverOpen] = useState(false);
   const [cautelaDevolverId, setCautelaDevolverId] = useState<string | null>(null);
@@ -331,10 +334,37 @@ const Cautelas: React.FC = () => {
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  const gerarRelatorioGeral = async () => {
+  const gerarRelatorioEstatistico = async () => {
     const doc = new jsPDF();
     
-    // Brasões
+    // 1. Filtrar Cautelas
+    const hoje = new Date();
+    let dataLimite = new Date(0);
+    let periodoTexto = "Todo o Histórico";
+
+    if (reportPeriod === '7dias') {
+      dataLimite = new Date();
+      dataLimite.setDate(hoje.getDate() - 7);
+      periodoTexto = "Últimos 7 Dias";
+    } else if (reportPeriod === '30dias') {
+      dataLimite = new Date();
+      dataLimite.setDate(hoje.getDate() - 30);
+      periodoTexto = "Últimos 30 Dias";
+    }
+
+    const cautelasPeriodo = cautelas.filter(c => new Date(c.dataRetirada) >= dataLimite);
+
+    // 2. Calcular Estatísticas
+    const total = cautelasPeriodo.length;
+    const ativas = cautelasPeriodo.filter(c => c.status === 'ATIVA');
+    const devolvidas = cautelasPeriodo.filter(c => c.status === 'DEVOLVIDA');
+    
+    // Atrasadas: ATIVA e com dataPrevista < hoje
+    const atrasadas = ativas.filter(c => c.dataPrevista && new Date(c.dataPrevista) < hoje);
+    const taxaDevolucao = total > 0 ? Math.round((devolvidas.length / total) * 100) : 0;
+    const totalEquips = cautelasPeriodo.reduce((acc, c) => acc + (c.equipamentos?.length || 0), 0);
+
+    // 3. Montar PDF
     try {
       const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
       doc.addImage(base64Para, 'PNG', 14, 10, 15, 17);
@@ -349,15 +379,46 @@ const Cautelas: React.FC = () => {
     doc.setFont("helvetica", "bold");
     doc.text("POLÍCIA MILITAR DO PARÁ - DIRETORIA DE TELEMÁTICA", 105, 18, { align: "center" });
     doc.setFontSize(12);
-    doc.text('RELATÓRIO GERAL DE CAUTELAS - ATHENAS SYSTEM', 105, 30, { align: 'center' });
+    doc.text('RELATÓRIO ESTATÍSTICO DE CAUTELAS', 105, 26, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Período: ${periodoTexto}`, 105, 32, { align: 'center' });
 
+    // Desenhar Resumo Estatístico
+    doc.setDrawColor(200);
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(14, 40, 182, 35, 3, 3, 'FD');
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("RESUMO DO PERÍODO", 105, 46, { align: 'center' });
+    
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    
+    // Linha 1 de Status
+    doc.text(`Total de Cautelas: ${total}`, 20, 56);
+    doc.text(`Cautelas Ativas: ${ativas.length}`, 80, 56);
+    doc.text(`Cautelas Devolvidas: ${devolvidas.length}`, 140, 56);
+
+    // Linha 2 de Status
+    doc.setTextColor(220, 38, 38); // Vermelho
+    doc.setFont("helvetica", "bold");
+    doc.text(`Atrasadas (Vencidas): ${atrasadas.length}`, 20, 66);
+    
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Equipamentos Movimentados: ${totalEquips}`, 80, 66);
+    doc.text(`Taxa de Devolução: ${taxaDevolucao}%`, 140, 66);
+
+    // Tabela detalhada
     autoTable(doc, {
-      startY: 40,
-      head: [['Militar', 'Unidade', 'Qtd', 'Retirada', 'Previsão', 'Status']],
-      body: cautelasFiltradas.map(c => [
-        c.militar?.nome || 'Unidade',
+      startY: 85,
+      head: [['Militar (Resp)', 'Unidade', 'Qtd', 'Retirada', 'Previsão', 'Status']],
+      body: cautelasPeriodo.map(c => [
+        c.militar ? `${c.militar.posto || ''} ${c.militar.nomeGuerra || c.militar.nome}`.trim() : 'RESERVA',
         c.militar?.unidade?.nome || c.unidade?.nome || 'DITEL',
-        c.equipamentos.length,
+        c.equipamentos?.length || 0,
         new Date(c.dataRetirada).toLocaleDateString('pt-BR'),
         c.dataPrevista ? new Date(c.dataPrevista).toLocaleDateString('pt-BR') : '-',
         c.status
@@ -368,6 +429,7 @@ const Cautelas: React.FC = () => {
     });
 
     window.open(doc.output('bloburl'), '_blank');
+    setShowReportModal(false);
   };
 
 
@@ -448,7 +510,7 @@ const Cautelas: React.FC = () => {
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={gerarRelatorioGeral}
+            onClick={() => setShowReportModal(true)}
             className="flex items-center gap-2 bg-gray-100 dark:bg-surface border border-gray-300 dark:border-[#374151] hover:bg-gray-200 dark:hover:bg-[#1f2937] text-gray-900 dark:text-white px-5 py-3 rounded-xl font-bold transition-all shadow-sm group"
           >
             <Download size={18} className="text-gray-400 group-hover:text-primary" />
@@ -720,7 +782,7 @@ const Cautelas: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome de Guerra *</label>
                     <input
                       type="text"
-                      placeholder="Ex: SD SILVA"
+                      placeholder=""
                       value={recebedorGuerra}
                       onChange={(e) => setRecebedorGuerra(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
@@ -833,7 +895,69 @@ const Cautelas: React.FC = () => {
         </div>
       )}
 
-      <ModalConfirmacao 
+      {showReportModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-md shadow-2xl p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Gerar Relatório de Cautelas</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+              Selecione o período desejado para o relatório estatístico.
+            </p>
+            
+            <div className="space-y-3 mb-6">
+              <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <input 
+                  type="radio" 
+                  name="reportPeriod" 
+                  value="7dias"
+                  checked={reportPeriod === '7dias'}
+                  onChange={() => setReportPeriod('7dias')}
+                  className="text-primary w-4 h-4 focus:ring-primary"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Últimos 7 dias</span>
+              </label>
+
+              <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <input 
+                  type="radio" 
+                  name="reportPeriod" 
+                  value="30dias"
+                  checked={reportPeriod === '30dias'}
+                  onChange={() => setReportPeriod('30dias')}
+                  className="text-primary w-4 h-4 focus:ring-primary"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Últimos 30 dias</span>
+              </label>
+
+              <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <input 
+                  type="radio" 
+                  name="reportPeriod" 
+                  value="tudo"
+                  checked={reportPeriod === 'tudo'}
+                  onChange={() => setReportPeriod('tudo')}
+                  className="text-primary w-4 h-4 focus:ring-primary"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Todo o Histórico</span>
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setShowReportModal(false)}
+                className="px-4 py-2 text-sm font-bold text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={gerarRelatorioEstatistico}
+                className="px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
+              >
+                Gerar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}      <ModalConfirmacao 
         isOpen={isModalDevolverOpen}
         title="Registrar Devolução"
         message="Confirma o recebimento desta cautela? Todos os aparelhos vinculados a ela voltarão ao status OPERACIONAL livre na Reserva."
