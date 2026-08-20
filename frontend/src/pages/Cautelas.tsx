@@ -231,9 +231,9 @@ const Cautelas: React.FC = () => {
 
   const gerarComprovantePDF = async (c: Cautela) => {
     const doc = new jsPDF();
-    const nomeMilitar = c.militar?.nome || 'RESERVADO PARA UNIDADE';
-    const rgMilitar = c.militar?.rg || 'N/A';
-    const contatoMilitar = c.militar?.contato || '-';
+    const nomeRecebedor = (c.recebedorPosto ? c.recebedorPosto + ' ' : '') + (c.recebedorNome || c.recebedorGuerra || 'N/A');
+    const rgRecebedor = c.recebedorRgPM || 'N/A';
+    const contatoRecebedor = c.recebedorContato || '-';
     
     // Brasões
     try {
@@ -268,13 +268,13 @@ const Cautelas: React.FC = () => {
     // Nova Tabela conforme modelo
     autoTable(doc, {
       startY: 60,
-      head: [['Nº', 'Nº DE SÉRIE / RP', 'RESPONSÁVEL', 'RG', 'CONTATO', 'ASSINATURA']],
+      head: [['Nº', 'Nº DE SÉRIE / RP', 'RECEBEDOR', 'RG', 'CONTATO', 'ASSINATURA']],
       body: c.equipamentos.map((eq) => [
         eq.idRadio || '-',
         eq.rp || eq.numSerie,
-        nomeMilitar,
-        rgMilitar,
-        contatoMilitar,
+        nomeRecebedor,
+        rgRecebedor,
+        contatoRecebedor,
         '________________________'
       ]),
       theme: 'plain',
@@ -414,9 +414,10 @@ const Cautelas: React.FC = () => {
     // Tabela detalhada
     autoTable(doc, {
       startY: 85,
-      head: [['Militar (Resp)', 'Unidade', 'Qtd', 'Retirada', 'Previsão', 'Status']],
+      head: [['Militar (Resp)', 'Recebedor', 'Unidade', 'Qtd', 'Retirada', 'Previsão', 'Status']],
       body: cautelasPeriodo.map(c => [
         c.militar ? `${c.militar.posto || ''} ${c.militar.nomeGuerra || c.militar.nome}`.trim() : 'RESERVA',
+        c.recebedorPosto || c.recebedorGuerra ? `${c.recebedorPosto || ''} ${c.recebedorGuerra || c.recebedorNome || ''}`.trim() : '-',
         c.militar?.unidade?.nome || c.unidade?.nome || 'DITEL',
         c.equipamentos?.length || 0,
         new Date(c.dataRetirada).toLocaleDateString('pt-BR'),
