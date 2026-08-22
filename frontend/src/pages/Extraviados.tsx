@@ -61,7 +61,6 @@ const Extraviados: React.FC = () => {
   
   const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [busca, setBusca] = useState('');
-  const [buscaMilitar, setBuscaMilitar] = useState('');
   const [buscaUnidade, setBuscaUnidade] = useState('');
   const [buscaEquipamento, setBuscaEquipamento] = useState('');
 
@@ -278,12 +277,6 @@ const Extraviados: React.FC = () => {
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  const militaresFiltrados = useMemo(() => {
-    return militares.filter(m => 
-      m.nome.toLowerCase().includes(buscaMilitar.toLowerCase()) || 
-      m.rg.toLowerCase().includes(buscaMilitar.toLowerCase())
-    );
-  }, [militares, buscaMilitar]);
 
   const equipamentosFiltrados = useMemo(() => {
     return equipamentos.filter(eq => {
