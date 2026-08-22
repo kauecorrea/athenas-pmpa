@@ -268,9 +268,9 @@ const Extraviados: React.FC = () => {
   const extraviadosFiltrados = useMemo(() => {
     return extraviados.filter(ex => {
       const term = busca.toLowerCase();
-      return ex.militar.nome.toLowerCase().includes(term) || 
-             ex.equipamento.rp?.toLowerCase().includes(term) ||
-             ex.equipamento.numSerie?.toLowerCase().includes(term) ||
+      return ex.militar?.nome?.toLowerCase().includes(term) || 
+             ex.equipamento?.rp?.toLowerCase().includes(term) ||
+             ex.equipamento?.numSerie?.toLowerCase().includes(term) ||
              ex.boNumero?.toLowerCase().includes(term);
     });
   }, [extraviados, busca]);
@@ -340,14 +340,14 @@ const Extraviados: React.FC = () => {
                   <tr key={ex.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-danger uppercase">{ex.equipamento.idRadio ? `Nº ${ex.equipamento.idRadio}` : `SN: ${ex.equipamento.numSerie}`}</span>
-                        <span className="text-[10px] text-gray-400 font-mono uppercase">{ex.equipamento.rp || 'S/RP'}</span>
+                        <span className="font-bold text-danger uppercase">{ex.equipamento?.idRadio ? `Nº ${ex.equipamento.idRadio}` : `SN: ${ex.equipamento?.numSerie}`}</span>
+                        <span className="text-[10px] text-gray-400 font-mono uppercase">{ex.equipamento?.rp || 'S/RP'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <User size={14} className="text-gray-400" />
-                        <span className="text-gray-900 dark:text-white font-medium uppercase">{ex.militar.nome}</span>
+                        <span className="text-gray-900 dark:text-white font-medium uppercase">{ex.militar?.nome || 'Não Informado'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{ex.boNumero}</td>
