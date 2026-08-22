@@ -54,7 +54,6 @@ interface Extraviado {
 
 const Extraviados: React.FC = () => {
   const [extraviados, setExtraviados] = useState<Extraviado[]>([]);
-  const [militares, setMilitares] = useState<Militar[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,14 +96,12 @@ const Extraviados: React.FC = () => {
     try {
       setLoading(true);
       const fetchExt = axios.get('/api/extravios').catch(err => { console.error("Erro ao buscar extravios", err); return { data: [] }; });
-      const fetchMil = axios.get('/api/militares').catch(err => { console.error("Erro ao buscar militares", err); return { data: [] }; });
       const fetchEq = axios.get('/api/equipamentos').catch(err => { console.error("Erro ao buscar equipamentos", err); return { data: [] }; });
       const fetchUni = axios.get('/api/unidades').catch(err => { console.error("Erro ao buscar unidades", err); return { data: [] }; });
 
-      const [extRes, milRes, eqRes, uniRes] = await Promise.all([fetchExt, fetchMil, fetchEq, fetchUni]);
+      const [extRes, eqRes, uniRes] = await Promise.all([fetchExt, fetchEq, fetchUni]);
       
       if (extRes.data) setExtraviados(extRes.data);
-      if (milRes.data) setMilitares(milRes.data);
       if (eqRes.data) setEquipamentos(eqRes.data);
       if (uniRes.data) setUnidades(uniRes.data);
     } catch (e) {
