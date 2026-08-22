@@ -31,35 +31,53 @@ interface Militar {
   rg: string;
 }
 
+interface Unidade {
+  id: string;
+  nome: string;
+}
+
 interface Extraviado {
   id: string;
   dataExtravio: string;
   boNumero: string;
   descricao: string;
   status: string;
-  militar: Militar;
+  militar?: Militar;
+  militarResponsavelNome?: string;
+  militarResponsavelGuerra?: string;
+  militarResponsavelRg?: string;
+  militarResponsavelPatente?: string;
+  militarResponsavelContato?: string;
+  unidade?: Unidade;
   equipamento: Equipamento;
 }
 
 const Extraviados: React.FC = () => {
   const [extraviados, setExtraviados] = useState<Extraviado[]>([]);
   const [militares, setMilitares] = useState<Militar[]>([]);
+  const [unidades, setUnidades] = useState<Unidade[]>([]);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
   const [busca, setBusca] = useState('');
   const [buscaMilitar, setBuscaMilitar] = useState('');
+  const [buscaUnidade, setBuscaUnidade] = useState('');
   const [buscaEquipamento, setBuscaEquipamento] = useState('');
 
   // Form state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    militarId: '',
     equipamentoId: '',
     boNumero: '',
     descricao: '',
-    dataRegistro: new Date().toISOString().split('T')[0]
+    dataRegistro: new Date().toISOString().split('T')[0],
+    militarResponsavelNome: '',
+    militarResponsavelGuerra: '',
+    militarResponsavelRg: '',
+    militarResponsavelPatente: '',
+    militarResponsavelContato: '',
+    unidadeId: ''
   });
 
   // Modal actions
@@ -82,12 +100,14 @@ const Extraviados: React.FC = () => {
       const fetchExt = axios.get('/api/extravios').catch(err => { console.error("Erro ao buscar extravios", err); return { data: [] }; });
       const fetchMil = axios.get('/api/militares').catch(err => { console.error("Erro ao buscar militares", err); return { data: [] }; });
       const fetchEq = axios.get('/api/equipamentos').catch(err => { console.error("Erro ao buscar equipamentos", err); return { data: [] }; });
+      const fetchUni = axios.get('/api/unidades').catch(err => { console.error("Erro ao buscar unidades", err); return { data: [] }; });
 
-      const [extRes, milRes, eqRes] = await Promise.all([fetchExt, fetchMil, fetchEq]);
+      const [extRes, milRes, eqRes, uniRes] = await Promise.all([fetchExt, fetchMil, fetchEq, fetchUni]);
       
       if (extRes.data) setExtraviados(extRes.data);
       if (milRes.data) setMilitares(milRes.data);
       if (eqRes.data) setEquipamentos(eqRes.data);
+      if (uniRes.data) setUnidades(uniRes.data);
     } catch (e) {
       console.error("Erro crítico no fetchData", e);
     } finally {
@@ -97,8 +117,8 @@ const Extraviados: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.militarId || !formData.equipamentoId) {
-      alert("Por favor, selecione um militar e um equipamento.");
+    if (!formData.equipamentoId || !formData.militarResponsavelNome || !formData.militarResponsavelPatente || !formData.unidadeId) {
+      alert("Por favor, preencha todos os campos obrigatórios do militar, da unidade e selecione o equipamento.");
       return;
     }
     try {
@@ -121,14 +141,19 @@ const Extraviados: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      militarId: '',
       equipamentoId: '',
       boNumero: '',
       descricao: '',
-      dataRegistro: new Date().toISOString().split('T')[0]
+      dataRegistro: new Date().toISOString().split('T')[0],
+      militarResponsavelNome: '',
+      militarResponsavelGuerra: '',
+      militarResponsavelRg: '',
+      militarResponsavelPatente: '',
+      militarResponsavelContato: '',
+      unidadeId: ''
     });
     setEditingId(null);
-    setBuscaMilitar('');
+    setBuscaUnidade('');
     setBuscaEquipamento('');
   };
 
@@ -213,26 +238,32 @@ const Extraviados: React.FC = () => {
     doc.setFont("helvetica", "bold");
     doc.text("1. DADOS DO MILITAR RESPONSÁVEL", 14, 75);
     doc.setFont("helvetica", "normal");
-    doc.text(`Nome: ${ex.militar?.nome || 'N/I'}`, 14, 82);
-    doc.text(`RG: ${ex.militar?.rg || 'N/I'}`, 120, 82);
-
+    const nomePolicial = ex.militarResponsavelNome || ex.militar?.nome || 'N/I';
+    const patente = ex.militarResponsavelPatente ? `${ex.militarResponsavelPatente} ` : '';
+    doc.text(`Nome: ${patente}${nomePolicial}`, 14, 82);
+    doc.text(`RG: ${ex.militarResponsavelRg || ex.militar?.rg || 'N/I'}`, 120, 82);
+    doc.text(`Nome de Guerra: ${ex.militarResponsavelGuerra || 'N/I'}`, 14, 89);
+    doc.text(`Contato: ${ex.militarResponsavelContato || 'N/I'}`, 120, 89);
+    doc.text(`Unidade: ${ex.unidade?.nome || 'N/I'}`, 14, 96);
+    
+    // Adjusted Y coords for section 2 due to added fields
     doc.setFont("helvetica", "bold");
-    doc.text("2. IDENTIFICAÇÃO DO EQUIPAMENTO", 14, 95);
+    doc.text("2. IDENTIFICAÇÃO DO EQUIPAMENTO", 14, 110);
     doc.setFont("helvetica", "normal");
-    doc.text(`Material: Rádio Transceptor`, 14, 102);
-    doc.text(`Marca/Modelo: ${ex.equipamento?.marca} ${ex.equipamento?.modelo}`, 100, 102);
-    doc.text(`ID Rádio: ${ex.equipamento?.idRadio || 'N/I'}`, 14, 109);
-    doc.text(`Nº de Série: ${ex.equipamento?.numSerie}`, 100, 109);
-    doc.text(`Patrimônio (RP): ${ex.equipamento?.rp || 'S/RP'}`, 14, 116);
+    doc.text(`Material: Rádio Transceptor`, 14, 117);
+    doc.text(`Marca/Modelo: ${ex.equipamento?.marca} ${ex.equipamento?.modelo}`, 100, 117);
+    doc.text(`ID Rádio: ${ex.equipamento?.idRadio || 'N/I'}`, 14, 124);
+    doc.text(`Nº de Série: ${ex.equipamento?.numSerie}`, 100, 124);
+    doc.text(`Patrimônio (RP): ${ex.equipamento?.rp || 'S/RP'}`, 14, 131);
 
     doc.setFont("helvetica", "bold");
-    doc.text("3. DESCRIÇÃO DO FATO", 14, 130);
+    doc.text("3. DESCRIÇÃO DO FATO", 14, 145);
     doc.setFont("helvetica", "normal");
     const descLines = doc.splitTextToSize(ex.descricao, 180);
-    doc.text(descLines, 14, 137);
+    doc.text(descLines, 14, 152);
 
-    doc.text(`Data do Registro: ${new Date(ex.dataExtravio).toLocaleDateString('pt-BR')}`, 14, 180);
-    doc.text(`Status Atual: ${ex.status}`, 14, 187);
+    doc.text(`Data do Registro: ${new Date(ex.dataExtravio).toLocaleDateString('pt-BR')}`, 14, 195);
+    doc.text(`Status Atual: ${ex.status}`, 14, 202);
 
     const signY = 230;
     doc.line(30, signY, 85, signY);
@@ -268,7 +299,8 @@ const Extraviados: React.FC = () => {
   const extraviadosFiltrados = useMemo(() => {
     return extraviados.filter(ex => {
       const term = busca.toLowerCase();
-      return ex.militar?.nome?.toLowerCase().includes(term) || 
+      const nomePolicial = ex.militarResponsavelNome || ex.militar?.nome || '';
+      return nomePolicial.toLowerCase().includes(term) || 
              ex.equipamento?.rp?.toLowerCase().includes(term) ||
              ex.equipamento?.numSerie?.toLowerCase().includes(term) ||
              ex.boNumero?.toLowerCase().includes(term);
@@ -347,7 +379,9 @@ const Extraviados: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <User size={14} className="text-gray-400" />
-                        <span className="text-gray-900 dark:text-white font-medium uppercase">{ex.militar?.nome || 'Não Informado'}</span>
+                        <span className="text-gray-900 dark:text-white font-medium uppercase">
+                          {ex.militarResponsavelPatente ? `${ex.militarResponsavelPatente} ` : ''}{ex.militarResponsavelNome || ex.militar?.nome || 'Não Informado'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{ex.boNumero}</td>
@@ -434,32 +468,70 @@ const Extraviados: React.FC = () => {
           <form onSubmit={handleCreate} className="p-8 overflow-y-auto flex-1 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
               
-              <div className="space-y-4">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
+              <div className="md:col-span-2 space-y-4 bg-gray-50 dark:bg-[#0b101a] p-5 rounded-xl border border-gray-200 dark:border-[#1f2937]">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2 mb-4">
                   <User size={16} />
                   1. Militar Responsável
                 </label>
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <input 
-                      type="text" 
-                      placeholder="Pesquisar militar (Nome ou RG)..." 
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary outline-none transition-all"
-                      value={buscaMilitar}
-                      onChange={(e) => setBuscaMilitar(e.target.value)}
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Completo</label>
+                    <input type="text" required value={formData.militarResponsavelNome} onChange={e => setFormData({...formData, militarResponsavelNome: e.target.value})} className="w-full bg-white dark:bg-surface border border-gray-300 dark:border-[#374151] rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
                   </div>
-                  <div className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg h-48 overflow-y-auto p-1 space-y-1">
-                    {militaresFiltrados.map(m => (
-                      <div 
-                        key={m.id}
-                        onClick={() => setFormData({...formData, militarId: m.id})}
-                        className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-all border ${formData.militarId === m.id ? 'bg-primary/20 border-primary font-bold text-primary shadow-sm' : 'border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                      >
-                        {m.rg} - {m.nome}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome de Guerra</label>
+                    <input type="text" value={formData.militarResponsavelGuerra} onChange={e => setFormData({...formData, militarResponsavelGuerra: e.target.value})} className="w-full bg-white dark:bg-surface border border-gray-300 dark:border-[#374151] rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">RG PM</label>
+                    <input type="text" required value={formData.militarResponsavelRg} onChange={e => setFormData({...formData, militarResponsavelRg: e.target.value})} className="w-full bg-white dark:bg-surface border border-gray-300 dark:border-[#374151] rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Patente</label>
+                    <select required value={formData.militarResponsavelPatente} onChange={e => setFormData({...formData, militarResponsavelPatente: e.target.value})} className="w-full bg-white dark:bg-surface border border-gray-300 dark:border-[#374151] rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
+                      <option value="">Selecione...</option>
+                      {['CEL', 'TEN CEL', 'MAJ', 'CAP', '1º TEN', '2º TEN', 'ASP OF', 'CADETE', 'ST', '1º SGT', '2º SGT', '3º SGT', 'CB', 'SD', 'AL SD'].map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Contato</label>
+                    <input type="text" value={formData.militarResponsavelContato} onChange={e => setFormData({...formData, militarResponsavelContato: e.target.value})} className="w-full bg-white dark:bg-surface border border-gray-300 dark:border-[#374151] rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+                  </div>
+                  
+                  {/* Unidade Selector */}
+                  <div className="col-span-1 md:col-span-3 mt-2 relative">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Unidade do Militar</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input 
+                        type="text" 
+                        placeholder="Pesquisar unidade..." 
+                        className="w-full bg-white dark:bg-surface border border-gray-300 dark:border-[#374151] rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                        value={buscaUnidade}
+                        onChange={(e) => setBuscaUnidade(e.target.value)}
+                      />
+                    </div>
+                    {buscaUnidade && (
+                      <div className="w-full mt-1 bg-white dark:bg-surface border border-gray-300 dark:border-[#374151] rounded-lg max-h-32 overflow-y-auto shadow-lg z-10 absolute left-0 right-0">
+                        {unidades.filter(u => u.nome.toLowerCase().includes(buscaUnidade.toLowerCase())).map(u => (
+                          <div 
+                            key={u.id}
+                            onClick={() => {
+                              setFormData({...formData, unidadeId: u.id});
+                              setBuscaUnidade(u.nome);
+                            }}
+                            className={`px-3 py-2 text-xs cursor-pointer transition-all border-l-2 ${formData.unidadeId === u.id ? 'bg-primary/10 border-primary font-bold text-primary' : 'border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                          >
+                            {u.nome}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                    {formData.unidadeId && !buscaUnidade && (
+                      <div className="mt-2 text-xs font-bold text-primary bg-primary/10 px-3 py-2 rounded border border-primary/20">
+                        Unidade Selecionada: {unidades.find(u => u.id === formData.unidadeId)?.nome}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -21,6 +21,7 @@ model Unidade {
   manutencoesVTR ManutencaoVTR[]
   transferenciasEnviadas   Transferencia[] @relation("origem")
   transferenciasRecebidas  Transferencia[] @relation("destino")
+  extravios Extravio[]
 }
 
 model Militar {
@@ -137,6 +138,16 @@ model Extravio {
   local         String?
   descricao     String
   status        String      @default("INVESTIGACAO") // INVESTIGACAO, LOCALIZADO, BAIXADO
+  
+  // Dados do militar responsável pelo rádio (inseridos manualmente)
+  militarResponsavelNome    String?
+  militarResponsavelGuerra  String?
+  militarResponsavelRg      String?
+  militarResponsavelPatente String?
+  militarResponsavelContato String?
+  
+  unidadeId                 String?   @db.ObjectId
+  unidade                   Unidade?  @relation(fields: [unidadeId], references: [id])
 }
 
 model Transferencia {

@@ -14,6 +14,7 @@ router.get('/', async (req: Request, res: Response) => {
       include: {
         equipamento: true,
         militar: true,
+        unidade: true,
       },
       orderBy: { dataExtravio: 'desc' }
     });
@@ -26,7 +27,19 @@ router.get('/', async (req: Request, res: Response) => {
 // Registrar Extravio
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentoId, militarId, dataRegistro, local, descricao, boNumero } = req.body;
+  const { 
+    equipamentoId, 
+    dataRegistro, 
+    local, 
+    descricao, 
+    boNumero,
+    militarResponsavelNome,
+    militarResponsavelGuerra,
+    militarResponsavelRg,
+    militarResponsavelPatente,
+    militarResponsavelContato,
+    unidadeId
+  } = req.body;
   
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -34,12 +47,18 @@ router.post('/', async (req: Request, res: Response) => {
       const extr = await tx.extravio.create({
         data: {
           equipamentoId: equipamentoId,
-          militarId: militarId ? militarId : null,
+          militarId: null,
           dataExtravio: dataRegistro ? new Date(dataRegistro) : new Date(),
           boNumero,
           local,
           descricao,
-          status: 'INVESTIGACAO'
+          status: 'INVESTIGACAO',
+          militarResponsavelNome,
+          militarResponsavelGuerra,
+          militarResponsavelRg,
+          militarResponsavelPatente,
+          militarResponsavelContato,
+          unidadeId
         },
       });
 
