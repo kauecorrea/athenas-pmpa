@@ -220,16 +220,15 @@ const Transferencias: React.FC = () => {
 
     // 4. Tabela de Equipamentos
     const tableData = t.equipamentos.map(eq => [
-      eq.idRadio || '-',
       eq.numSerie,
       eq.marca || '-',
       eq.modelo || '-',
-      'OPERACIONAL'
+      'TRANSFERIDO'
     ]);
 
     autoTable(doc, {
       startY: 105,
-      head: [['Nº RÁDIO', 'Nº SÉRIE', 'MARCA', 'MODELO', 'STATUS']],
+      head: [['Nº SÉRIE', 'MARCA', 'MODELO', 'STATUS']],
       body: tableData,
       theme: 'grid',
       headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },

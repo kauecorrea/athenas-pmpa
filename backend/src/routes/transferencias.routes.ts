@@ -12,6 +12,28 @@ const prisma = new PrismaClient();
 // @ts-ignore
 router.get('/', async (req: Request, res: Response) => {
   try {
+    // Lógica de exclusão definitiva após 30 dias (Lazy Delete)
+    const trintaDiasAtras = new Date();
+    trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+
+    const transferenciasVencidas = await prisma.transferencia.findMany({
+      where: { dataTransferencia: { lte: trintaDiasAtras } },
+      select: { equipamentoIds: true }
+    });
+    
+    if (transferenciasVencidas.length > 0) {
+      const idsParaDeletar = transferenciasVencidas.flatMap(t => t.equipamentoIds);
+      if (idsParaDeletar.length > 0) {
+        // Exclui definitivamente do sistema apenas se ainda estiverem como TRANSFERIDO
+        await prisma.equipamento.deleteMany({
+          where: { 
+            id: { in: idsParaDeletar },
+            status: 'TRANSFERIDO'
+          }
+        });
+      }
+    }
+
     const transferencias = await prisma.transferencia.findMany({
       include: {
         unidadeOrigem: true,
@@ -79,12 +101,12 @@ router.post('/', async (req: Request, res: Response) => {
           }
         }
 
-        // 2. Atualizar a Unidade do Rádio Definitivamente e voltar para OPERACIONAL na nova casa
+        // 2. Atualizar a Unidade do Rádio Definitivamente e mudar para TRANSFERIDO
         await tx.equipamento.update({
           where: { id: equipId },
           data: { 
             unidadeId: unidadeDestinoId,
-            status: 'OPERACIONAL' 
+            status: 'TRANSFERIDO' 
           }
         });
       }
@@ -152,7 +174,7 @@ router.put('/:id', async (req: Request, res: Response) => {
         for (const eqId of finalEquipIds) {
           await tx.equipamento.update({
             where: { id: eqId },
-            data: { unidadeId: finalDestinoId, status: 'OPERACIONAL' }
+            data: { unidadeId: finalDestinoId, status: 'TRANSFERIDO' }
           });
         }
         
