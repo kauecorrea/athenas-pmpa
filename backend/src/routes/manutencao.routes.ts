@@ -25,48 +25,57 @@ router.get('/', async (req: Request, res: Response) => {
 // Registrar entrada em manutenção
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentoId, problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa } = req.body;
+  const { equipamentoId, equipamentoIds, problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa } = req.body;
+  const idsToProcess = equipamentoIds && equipamentoIds.length > 0 ? equipamentoIds : (equipamentoId ? [equipamentoId] : []);
+  
+  if (idsToProcess.length === 0) {
+    return res.status(400).json({ error: 'Nenhum equipamento selecionado' });
+  }
   
   try {
     // Usando transaction para garantir a consistência
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Criar o registro de Manutenção
-      const manut = await tx.manutencao.create({
-        data: {
-          equipamentoId: equipamentoId,
-          problema,
-          dataEntrada: dataEntrada ? new Date(dataEntrada) : new Date(),
-          dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel) : null,
-          dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa) : null,
-          previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno) : null,
-          status: 'EM ANDAMENTO'
-        },
-      });
-
-      // 2. Atualizar status do Equipamento para MANUTENCAO
-      await tx.equipamento.update({
-        where: { id: equipamentoId as string },
-        data: { status: 'MANUTENCAO' }
-      });
-
-      // 3. Opcional: Se ele estava cautelado, poderíamos dar baixa na cautela aqui.
-      // O sistema assume que apenas o adm manda para manutenção após devolução,
-      // mas podemos forçar a baixa de cautelas ativas se existirem.
-      const cautelasAtivas = await tx.cautela.findMany({
-        where: { equipamentoIds: { has: equipamentoId as string }, status: 'ATIVA' }
-      });
-
-      for (const c of cautelasAtivas) {
-        await tx.cautela.update({
-          where: { id: c.id },
-          data: { status: 'DEVOLVIDA', dataDevolucao: new Date() }
+      const created = [];
+      
+      for (const eqId of idsToProcess) {
+        // 1. Criar o registro de Manutenção
+        const manut = await tx.manutencao.create({
+          data: {
+            equipamentoId: eqId,
+            problema,
+            dataEntrada: dataEntrada ? new Date(dataEntrada) : new Date(),
+            dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel) : null,
+            dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa) : null,
+            previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno) : null,
+            status: 'EM ANDAMENTO'
+          },
         });
+
+        // 2. Atualizar status do Equipamento para MANUTENCAO
+        await tx.equipamento.update({
+          where: { id: eqId as string },
+          data: { status: 'MANUTENCAO' }
+        });
+
+        // 3. Dar baixa na cautela se houver
+        const cautelasAtivas = await tx.cautela.findMany({
+          where: { equipamentoIds: { has: eqId as string }, status: 'ATIVA' }
+        });
+
+        for (const c of cautelasAtivas) {
+          await tx.cautela.update({
+            where: { id: c.id },
+            data: { status: 'DEVOLVIDA', dataDevolucao: new Date() }
+          });
+        }
+        
+        created.push(manut);
       }
 
-      return manut;
+      return created;
     });
 
-    registrarAuditoria(req, 'Registrou Rádio na Oficina/Manutenção', `Rádio ID Banco: ${equipamentoId} | Problema relatado: ${problema}`);
+    registrarAuditoria(req, 'Registrou Rádio(s) na Oficina/Manutenção', `Foram enviados ${idsToProcess.length} rádio(s). Problema relatado: ${problema}`);
 
     res.status(201).json(result);
   } catch (error) {

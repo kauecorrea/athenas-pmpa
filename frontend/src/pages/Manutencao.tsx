@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Plus, Wrench, FileText, CheckCircle, Search, List, Edit3, Trash2 } from 'lucide-react';
+import { Plus, Wrench, FileText, CheckCircle, Search, List, Edit3, Trash2, Check } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 
@@ -45,7 +45,7 @@ const Manutencao: React.FC = () => {
 
   // Form states
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [equipamentoId, setEquipamentoId] = useState('');
+  const [equipamentosSelecionados, setEquipamentosSelecionados] = useState<string[]>([]);
   const [problema, setProblema] = useState('');
   const [dataEntrada, setDataEntrada] = useState(new Date().toISOString().split('T')[0]);
   const [dataChegadaDitel, setDataChegadaDitel] = useState('');
@@ -88,8 +88,8 @@ const Manutencao: React.FC = () => {
 
   const handleCreateManutencao = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!equipamentoId || !problema) {
-      alert("Preencha o equipamento e o problema.");
+    if (equipamentosSelecionados.length === 0 || !problema) {
+      alert("Selecione pelo menos um equipamento e descreva o problema.");
       return;
     }
 
@@ -105,7 +105,7 @@ const Manutencao: React.FC = () => {
         alert("Registro de manutenção atualizado!");
       } else {
         await axios.post('/api/manutencoes', {
-          equipamentoId,
+          equipamentoIds: equipamentosSelecionados,
           problema,
           dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : new Date().toISOString(),
           dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel).toISOString() : null,
@@ -123,7 +123,7 @@ const Manutencao: React.FC = () => {
   };
 
   const resetForm = () => {
-    setEquipamentoId('');
+    setEquipamentosSelecionados([]);
     setProblema('');
     setDataEntrada(new Date().toISOString().split('T')[0]);
     setDataChegadaDitel('');
@@ -134,7 +134,7 @@ const Manutencao: React.FC = () => {
 
   const handleEdit = (m: ManutencaoRecord) => {
     setEditingId(m.id);
-    setEquipamentoId(m.equipamentoId);
+    setEquipamentosSelecionados([m.equipamentoId]);
     setProblema(m.problema);
     setDataEntrada(m.dataEntrada.split('T')[0]);
     setDataChegadaDitel(m.dataChegadaDitel ? m.dataChegadaDitel.split('T')[0] : '');
@@ -346,14 +346,23 @@ const Manutencao: React.FC = () => {
                       radiosDisponiveisFiltrados.map((radio) => (
                         <div 
                           key={radio.id} 
-                          onClick={() => setEquipamentoId(radio.id)}
-                          className={`px-4 py-3 rounded-lg text-sm cursor-pointer transition-all border flex items-center justify-between ${equipamentoId === radio.id ? 'bg-primary/10 border-primary font-bold text-primary shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 border-transparent'}`}
+                          onClick={() => {
+                            if (editingId) return;
+                            setEquipamentosSelecionados(prev => 
+                              prev.includes(radio.id) ? prev.filter(e => e !== radio.id) : [...prev, radio.id]
+                            );
+                          }}
+                          className={`px-4 py-3 rounded-lg text-sm cursor-pointer transition-all border flex items-center justify-between ${equipamentosSelecionados.includes(radio.id) ? 'bg-primary/10 border-primary font-bold text-primary shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 border-transparent'}`}
                         >
                           <div className="flex flex-col">
                             <span>{radio.idRadio ? `Nº ${radio.idRadio}` : `SN: ${radio.numSerie}`}</span>
                             <span className="text-[10px] opacity-60 font-normal">RP: {radio.rp || 'S/RP'}</span>
                           </div>
-                          {equipamentoId === radio.id && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          {equipamentosSelecionados.includes(radio.id) && (
+                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                              <Check size={12} className="text-white font-bold" />
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
