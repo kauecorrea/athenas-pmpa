@@ -577,6 +577,7 @@ const Manutencao: React.FC = () => {
                   className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
                 />
               </div>
+            </div>
             ) : (
               <div className="grid grid-cols-1 gap-8 max-w-5xl">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
