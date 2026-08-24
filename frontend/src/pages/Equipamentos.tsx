@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Plus, Search, Trash2, Edit2, ChevronDown, List, ClipboardCheck, FileText } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, ChevronDown, List, ClipboardCheck } from "lucide-react";
 import ModalConfirmacao from "../components/ModalConfirmacao";
 import jsPDF from 'jspdf';
 
