@@ -25,7 +25,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Registrar entrada em manutenção
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentoId, problema, dataEntrada, previsaoRetorno } = req.body;
+  const { equipamentoId, problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa } = req.body;
   
   try {
     // Usando transaction para garantir a consistência
@@ -36,6 +36,8 @@ router.post('/', async (req: Request, res: Response) => {
           equipamentoId: equipamentoId,
           problema,
           dataEntrada: dataEntrada ? new Date(dataEntrada) : new Date(),
+          dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel) : null,
+          dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa) : null,
           previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno) : null,
           status: 'EM ANDAMENTO'
         },
@@ -102,12 +104,14 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { problema, dataEntrada, previsaoRetorno } = req.body;
+  const { problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa } = req.body;
   
   try {
     const updateData: any = { problema };
     if (dataEntrada) updateData.dataEntrada = new Date(dataEntrada);
     if (previsaoRetorno !== undefined) updateData.previsaoRetorno = previsaoRetorno ? new Date(previsaoRetorno) : null;
+    if (dataChegadaDitel !== undefined) updateData.dataChegadaDitel = dataChegadaDitel ? new Date(dataChegadaDitel) : null;
+    if (dataSaidaEmpresa !== undefined) updateData.dataSaidaEmpresa = dataSaidaEmpresa ? new Date(dataSaidaEmpresa) : null;
 
     const updated = await prisma.manutencao.update({
       where: { id: id as string },

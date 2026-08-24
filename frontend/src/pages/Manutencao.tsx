@@ -17,6 +17,8 @@ interface ManutencaoRecord {
   };
   problema: string;
   dataEntrada: string;
+  dataChegadaDitel: string | null;
+  dataSaidaEmpresa: string | null;
   previsaoRetorno: string | null;
   dataConclusao: string | null;
   status: string;
@@ -46,6 +48,8 @@ const Manutencao: React.FC = () => {
   const [equipamentoId, setEquipamentoId] = useState('');
   const [problema, setProblema] = useState('');
   const [dataEntrada, setDataEntrada] = useState(new Date().toISOString().split('T')[0]);
+  const [dataChegadaDitel, setDataChegadaDitel] = useState('');
+  const [dataSaidaEmpresa, setDataSaidaEmpresa] = useState('');
   const [previsaoRetorno, setPrevisaoRetorno] = useState('');
   const [buscaRadioModal, setBuscaRadioModal] = useState('');
 
@@ -94,6 +98,8 @@ const Manutencao: React.FC = () => {
         await axios.put(`/api/manutencoes/${editingId}`, {
           problema,
           dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : undefined,
+          dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel).toISOString() : null,
+          dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa).toISOString() : null,
           previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
         });
         alert("Registro de manutenção atualizado!");
@@ -102,6 +108,8 @@ const Manutencao: React.FC = () => {
           equipamentoId,
           problema,
           dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : new Date().toISOString(),
+          dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel).toISOString() : null,
+          dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa).toISOString() : null,
           previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
         });
         alert("Registro de manutenção incluído!");
@@ -118,6 +126,8 @@ const Manutencao: React.FC = () => {
     setEquipamentoId('');
     setProblema('');
     setDataEntrada(new Date().toISOString().split('T')[0]);
+    setDataChegadaDitel('');
+    setDataSaidaEmpresa('');
     setPrevisaoRetorno('');
     setEditingId(null);
   };
@@ -127,6 +137,8 @@ const Manutencao: React.FC = () => {
     setEquipamentoId(m.equipamentoId);
     setProblema(m.problema);
     setDataEntrada(m.dataEntrada.split('T')[0]);
+    setDataChegadaDitel(m.dataChegadaDitel ? m.dataChegadaDitel.split('T')[0] : '');
+    setDataSaidaEmpresa(m.dataSaidaEmpresa ? m.dataSaidaEmpresa.split('T')[0] : '');
     setPrevisaoRetorno(m.previsaoRetorno ? m.previsaoRetorno.split('T')[0] : '');
     setViewMode('form');
   };
@@ -238,7 +250,10 @@ const Manutencao: React.FC = () => {
     doc.setFont("helvetica", "normal");
     const yDatas = yCampoTecnico + 60;
     doc.text(`Data de Entrada: ${new Date(m.dataEntrada).toLocaleDateString('pt-BR')}`, 14, yDatas);
-    doc.text(`Previsão de Retorno: ${m.previsaoRetorno ? new Date(m.previsaoRetorno).toLocaleDateString('pt-BR') : 'N/A'}`, 105, yDatas);
+    doc.text(`Chegada ao DITEL: ${m.dataChegadaDitel ? new Date(m.dataChegadaDitel).toLocaleDateString('pt-BR') : 'N/A'}`, 105, yDatas);
+    
+    doc.text(`Saída para Empresa: ${m.dataSaidaEmpresa ? new Date(m.dataSaidaEmpresa).toLocaleDateString('pt-BR') : 'N/A'}`, 14, yDatas + 6);
+    doc.text(`Previsão de Retorno: ${m.previsaoRetorno ? new Date(m.previsaoRetorno).toLocaleDateString('pt-BR') : 'N/A'}`, 105, yDatas + 6);
 
     const finalY = yDatas + 40;
     doc.line(20, finalY, 90, finalY);
@@ -357,19 +372,39 @@ const Manutencao: React.FC = () => {
                     className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">3. Previsão de Retorno</label>
-                  <input 
-                    type="date" 
-                    value={previsaoRetorno}
-                    onChange={(e) => setPrevisaoRetorno(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                  />
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">3. Chegada ao DITEL</label>
+                    <input 
+                      type="date" 
+                      value={dataChegadaDitel}
+                      onChange={(e) => setDataChegadaDitel(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">4. Saída para Empresa</label>
+                    <input 
+                      type="date" 
+                      value={dataSaidaEmpresa}
+                      onChange={(e) => setDataSaidaEmpresa(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">5. Previsão de Retorno</label>
+                    <input 
+                      type="date" 
+                      value={previsaoRetorno}
+                      onChange={(e) => setPrevisaoRetorno(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">4. Descrição do Problema / Defeito</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">6. Descrição do Problema / Defeito</label>
                 <textarea 
                   required
                   rows={4}

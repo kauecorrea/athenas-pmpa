@@ -122,6 +122,8 @@ model Manutencao {
   equipamento     Equipamento @relation(fields: [equipamentoId], references: [id])
   problema        String
   dataEntrada     DateTime    @default(now())
+  dataChegadaDitel DateTime?
+  dataSaidaEmpresa DateTime?
   previsaoRetorno DateTime?
   dataConclusao   DateTime?
   status          String      @default("EM ANDAMENTO") // EM ANDAMENTO, CONCLUIDA
