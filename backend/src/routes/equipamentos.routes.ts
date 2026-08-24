@@ -39,6 +39,9 @@ router.post('/', async (req, res) => {
         garantia: garantia || 'Não',
         unidadeId: unidadeId ? unidadeId : null,
       },
+      include: {
+        unidade: true,
+      },
     });
 
     registrarAuditoria(req, 'Cadastrou novo Rádio / Equipamento', `RP: ${rp} - Série: ${numSerie} - ID Virtual: ${idRadio}`);
@@ -65,6 +68,9 @@ router.put('/:id', async (req, res) => {
         status,
         garantia,
         unidadeId: unidadeId ? unidadeId : null,
+      },
+      include: {
+        unidade: true,
       },
     });
 
