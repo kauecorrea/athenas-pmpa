@@ -26,7 +26,10 @@ router.get('/', async (req: Request, res: Response) => {
 
 // Criar equipamento
 router.post('/', async (req, res) => {
-  const { rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId } = req.body;
+  const { 
+    rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId,
+    problema, solicitante, paeNumero, analiseTecnica, laudoTecnico, tecnicoResp, dataEntradaLaudo, dataSaidaLaudo
+  } = req.body;
   try {
     const equipamento = await prisma.equipamento.create({
       data: {
@@ -38,6 +41,14 @@ router.post('/', async (req, res) => {
         status: status || 'OPERACIONAL',
         garantia: garantia || 'Não',
         unidadeId: unidadeId ? unidadeId : null,
+        problema,
+        solicitante,
+        paeNumero,
+        analiseTecnica,
+        laudoTecnico,
+        tecnicoResp,
+        dataEntradaLaudo: dataEntradaLaudo ? new Date(dataEntradaLaudo) : null,
+        dataSaidaLaudo: dataSaidaLaudo ? new Date(dataSaidaLaudo) : null,
       },
       include: {
         unidade: true,
@@ -55,7 +66,10 @@ router.post('/', async (req, res) => {
 // Atualizar Equipamento (Edit)
 router.put('/:id', async (req, res) => {
   const { id } = req.params as { id: string };
-  const { rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId } = req.body;
+  const { 
+    rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId,
+    problema, solicitante, paeNumero, analiseTecnica, laudoTecnico, tecnicoResp, dataEntradaLaudo, dataSaidaLaudo
+  } = req.body;
   try {
     const equipamento = await prisma.equipamento.update({
       where: { id: id as string },
@@ -68,6 +82,14 @@ router.put('/:id', async (req, res) => {
         status,
         garantia,
         unidadeId: unidadeId ? unidadeId : null,
+        problema,
+        solicitante,
+        paeNumero,
+        analiseTecnica,
+        laudoTecnico,
+        tecnicoResp,
+        dataEntradaLaudo: dataEntradaLaudo ? new Date(dataEntradaLaudo) : null,
+        dataSaidaLaudo: dataSaidaLaudo ? new Date(dataSaidaLaudo) : null,
       },
       include: {
         unidade: true,

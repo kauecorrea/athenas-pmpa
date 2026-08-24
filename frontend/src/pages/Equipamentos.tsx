@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Plus, Search, Trash2, Edit2, ChevronDown, List } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, ChevronDown, List, ClipboardCheck, FileText } from "lucide-react";
 import ModalConfirmacao from "../components/ModalConfirmacao";
+import jsPDF from 'jspdf';
 
 interface Equipamento {
   id: string;
@@ -17,6 +18,14 @@ interface Equipamento {
     id: string;
     nome: string;
   };
+  problema?: string;
+  solicitante?: string;
+  paeNumero?: string;
+  analiseTecnica?: string;
+  laudoTecnico?: string;
+  tecnicoResp?: string;
+  dataEntradaLaudo?: string;
+  dataSaidaLaudo?: string;
 }
 
 interface Unidade {
@@ -52,7 +61,16 @@ const Equipamentos: React.FC = () => {
     status: "OPERACIONAL",
     garantia: "Não",
     unidadeId: "",
+    problema: "",
+    solicitante: "",
+    paeNumero: "",
+    analiseTecnica: "",
+    laudoTecnico: "",
+    tecnicoResp: "",
+    dataEntradaLaudo: "",
+    dataSaidaLaudo: "",
   });
+  const [activeTab, setActiveTab] = useState<'identificacao' | 'laudo'>('identificacao');
 
   useEffect(() => {
     fetchEquipamentos();
@@ -93,7 +111,16 @@ const Equipamentos: React.FC = () => {
       status: "OPERACIONAL",
       garantia: "Não",
       unidadeId: "",
+      problema: "",
+      solicitante: "",
+      paeNumero: "",
+      analiseTecnica: "",
+      laudoTecnico: "",
+      tecnicoResp: "",
+      dataEntradaLaudo: "",
+      dataSaidaLaudo: "",
     });
+    setActiveTab("identificacao");
     setViewMode("form");
   };
 
@@ -103,14 +130,145 @@ const Equipamentos: React.FC = () => {
       id: eq.id,
       numSerie: eq.numSerie,
       idRadio: eq.idRadio || "",
-      rp: eq.rp,
+      rp: eq.rp || "",
       marca: eq.marca || "Motorola",
       modelo: eq.modelo || "APX 900",
       status: eq.status,
       garantia: eq.garantia || "Não",
       unidadeId: eq.unidadeId || "",
+      problema: eq.problema || "",
+      solicitante: eq.solicitante || "",
+      paeNumero: eq.paeNumero || "",
+      analiseTecnica: eq.analiseTecnica || "",
+      laudoTecnico: eq.laudoTecnico || "",
+      tecnicoResp: eq.tecnicoResp || "",
+      dataEntradaLaudo: eq.dataEntradaLaudo ? eq.dataEntradaLaudo.substring(0, 10) : "",
+      dataSaidaLaudo: eq.dataSaidaLaudo ? eq.dataSaidaLaudo.substring(0, 10) : "",
     });
+    setActiveTab("identificacao");
     setViewMode("form");
+  };
+
+  const getBase64ImageFromUrl = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject('Erro ao carregar imagem');
+      img.src = imageUrl;
+    });
+  };
+
+  const gerarLaudoPdf = async (m: any) => {
+    const doc = new jsPDF();
+    
+    const drawVia = async (offsetY: number) => {
+      try {
+        const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+        doc.addImage(base64Para, 'PNG', 14, 10 + offsetY, 20, 22);
+      } catch (err) { }
+      try {
+        const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+        doc.addImage(base64Pmpa, 'PNG', 176, 10 + offsetY, 20, 22);
+      } catch (err) { }
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 12 + offsetY, { align: "center" });
+      doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 16 + offsetY, { align: "center" });
+      doc.text("POLÍCIA MILITAR DO PARÁ", 105, 20 + offsetY, { align: "center" });
+      doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 24 + offsetY, { align: "center" });
+      doc.text("DIRETORIA DE TELEMÁTICA", 105, 28 + offsetY, { align: "center" });
+
+      doc.setFontSize(14);
+      doc.text("RELATÓRIO DE LAUDO TÉCNICO", 105, 40 + offsetY, { align: "center" });
+      
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(14, 45 + offsetY, 196, 45 + offsetY);
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Nº: ${m.idRadio ? String(m.idRadio).toUpperCase() : ''}`, 14, 52 + offsetY);
+      doc.text(`Suporte: ${m.marca || ''} ${m.modelo || ''}`, 60, 52 + offsetY);
+      doc.text(`Telecom: Rádio HT`, 130, 52 + offsetY);
+
+      doc.line(14, 55 + offsetY, 196, 55 + offsetY);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text("UNIDADE", 14, 62 + offsetY);
+      doc.text("Nº PAE", 40, 62 + offsetY);
+      doc.text("RP/PM", 75, 62 + offsetY);
+      doc.text("Nº SÉRIE", 105, 62 + offsetY);
+      doc.text("SOLICITANTE", 140, 62 + offsetY);
+      doc.text("DATA ENTRADA", 175, 62 + offsetY);
+
+      doc.setFont("helvetica", "normal");
+      const unidadeNome = unidades.find(u => u.id === m.unidadeId)?.nome || "DITEL";
+      doc.text(unidadeNome, 14, 68 + offsetY);
+      doc.text(m.paeNumero || "-", 40, 68 + offsetY);
+      doc.text(m.rp || "-", 75, 68 + offsetY);
+      doc.text(m.numSerie || "-", 105, 68 + offsetY);
+      doc.text(m.solicitante || "-", 140, 68 + offsetY);
+      doc.text(m.dataEntradaLaudo ? new Date(m.dataEntradaLaudo).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : "-", 175, 68 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("DEFEITO RECLAMADO:", 14, 78 + offsetY);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(m.problema || "-", 182), 14, 83 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("ANÁLISE TÉCNICA:", 14, 98 + offsetY);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(m.analiseTecnica || "Sob análise.", 182), 14, 103 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("LAUDO TÉCNICO:", 14, 118 + offsetY);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(m.laudoTecnico || "-", 182), 14, 123 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text(`DATA DE SAÍDA: ${m.dataSaidaLaudo ? new Date(m.dataSaidaLaudo).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-'}`, 14, 138 + offsetY);
+      doc.text(`TÉCNICO RESP: ${m.tecnicoResp || '-'}`, 130, 138 + offsetY);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.text('"A Diretoria de Telemática não possui peças de reposição ou suprimento para aquisição destas peças informadas"', 105, 145 + offsetY, { align: "center" });
+
+      doc.setDrawColor(0, 0, 0);
+      doc.line(20, 155 + offsetY, 95, 155 + offsetY);
+      doc.line(115, 155 + offsetY, 190, 155 + offsetY);
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 57.5, 158 + offsetY, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.text("CHEFE DAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 57.5, 161 + offsetY, { align: "center" });
+      
+      doc.setFont("helvetica", "bold");
+      doc.text("RECEBEDOR DO EQUIPAMENTO", 152.5, 158 + offsetY, { align: "center" });
+    };
+
+    await drawVia(0);
+    
+    // Linha tracejada para corte
+    doc.setDrawColor(150, 150, 150);
+    doc.setLineDashPattern([2, 2], 0);
+    doc.line(10, 148, 200, 148);
+    doc.setLineDashPattern([], 0); // reset
+    
+    await drawVia(148);
+
+    window.open(doc.output('bloburl'), '_blank');
   };
 
   const handleSalvar = async () => {
@@ -138,6 +296,14 @@ const Equipamentos: React.FC = () => {
           status: "OPERACIONAL",
           garantia: "Não",
           unidadeId: "",
+          problema: "",
+          solicitante: "",
+          paeNumero: "",
+          analiseTecnica: "",
+          laudoTecnico: "",
+          tecnicoResp: "",
+          dataEntradaLaudo: "",
+          dataSaidaLaudo: "",
         });
       }
     } catch (e) {
@@ -505,10 +671,29 @@ const Equipamentos: React.FC = () => {
                 ? "Atualize as informações do rádio."
                 : "Preencha as informações abaixo para cadastrar um novo rádio no sistema."}
             </p>
+            {isEditing && (
+              <div className="flex gap-6 mt-4 border-t border-gray-200 dark:border-[#1f2937] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('identificacao')}
+                  className={`py-2 font-bold text-sm border-b-2 transition-colors outline-none ${activeTab === 'identificacao' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                  IDENTIFICAÇÃO
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('laudo')}
+                  className={`py-2 font-bold text-sm border-b-2 transition-colors outline-none ${activeTab === 'laudo' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                  ANÁLISE & SERVIÇO
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="p-6 overflow-y-auto flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+            {activeTab === 'identificacao' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Nº (Opcional)
@@ -639,16 +824,112 @@ const Equipamentos: React.FC = () => {
                 </select>
               </div>
             </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-8 max-w-4xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Solicitante (Nome)</label>
+                    <input 
+                      type="text" 
+                      value={novoEquip.solicitante}
+                      onChange={(e) => setNovoEquip({ ...novoEquip, solicitante: e.target.value })}
+                      placeholder="Ex: SD LAIANE"
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nº PAE</label>
+                    <input 
+                      type="text" 
+                      value={novoEquip.paeNumero}
+                      onChange={(e) => setNovoEquip({ ...novoEquip, paeNumero: e.target.value })}
+                      placeholder="Ex: 2025/3481287"
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Data Entrada (Oficina)</label>
+                    <input 
+                      type="date" 
+                      value={novoEquip.dataEntradaLaudo}
+                      onChange={(e) => setNovoEquip({ ...novoEquip, dataEntradaLaudo: e.target.value })}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Data Saída (Oficina)</label>
+                    <input 
+                      type="date" 
+                      value={novoEquip.dataSaidaLaudo}
+                      onChange={(e) => setNovoEquip({ ...novoEquip, dataSaidaLaudo: e.target.value })}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Descrição do Problema / Defeito</label>
+                  <textarea 
+                    rows={3}
+                    value={novoEquip.problema}
+                    onChange={(e) => setNovoEquip({ ...novoEquip, problema: e.target.value })}
+                    placeholder="Descreva detalhadamente o defeito relatado..."
+                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Análise Técnica Preliminar</label>
+                  <textarea 
+                    rows={3}
+                    value={novoEquip.analiseTecnica}
+                    onChange={(e) => setNovoEquip({ ...novoEquip, analiseTecnica: e.target.value })}
+                    placeholder="Descreva a análise técnica preliminar..."
+                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Laudo Técnico Final</label>
+                  <textarea 
+                    rows={3}
+                    value={novoEquip.laudoTecnico}
+                    onChange={(e) => setNovoEquip({ ...novoEquip, laudoTecnico: e.target.value })}
+                    placeholder="Descreva o laudo técnico final detalhado..."
+                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
+                  />
+                </div>
+                
+                <div className="md:w-1/2">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Técnico Responsável</label>
+                  <input 
+                    type="text" 
+                    value={novoEquip.tecnicoResp}
+                    onChange={(e) => setNovoEquip({ ...novoEquip, tecnicoResp: e.target.value })}
+                    placeholder="Ex: Subten"
+                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-6 border-t border-gray-200 dark:border-[#1f2937] flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50 dark:bg-[#0b101a]">
             {isEditing && (
-              <button
-                onClick={() => setViewMode("list")}
-                className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
-              >
-                Cancelar Edição
-              </button>
+              <>
+                <button
+                  onClick={() => gerarLaudoPdf(novoEquip)}
+                  className="px-4 py-2.5 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-lg transition-colors flex items-center gap-2 mr-auto"
+                >
+                  <ClipboardCheck size={18} /> Imprimir Laudo
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-[#1f2937] rounded-lg transition-colors"
+                >
+                  Cancelar Edição
+                </button>
+              </>
             )}
             <button
               onClick={handleSalvar}

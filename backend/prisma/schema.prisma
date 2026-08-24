@@ -48,6 +48,16 @@ model Equipamento {
   garantia    String    @default("Não")
   status      StatusEquipamento @default(OPERACIONAL)
   
+  // Campos de Laudo Técnico vinculados ao rádio
+  problema       String?
+  solicitante    String?
+  paeNumero      String?
+  analiseTecnica String?
+  laudoTecnico   String?
+  tecnicoResp    String?
+  dataEntradaLaudo DateTime?
+  dataSaidaLaudo   DateTime?
+  
   unidadeId   String?   @db.ObjectId
   unidade     Unidade?  @relation(fields: [unidadeId], references: [id])
   
