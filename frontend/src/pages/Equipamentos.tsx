@@ -172,101 +172,109 @@ const Equipamentos: React.FC = () => {
     const drawVia = async (offsetY: number) => {
       try {
         const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
-        doc.addImage(base64Para, 'PNG', 14, 10 + offsetY, 20, 22);
+        doc.addImage(base64Para, 'PNG', 14, 5 + offsetY, 20, 22);
       } catch (err) { }
       try {
         const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
-        doc.addImage(base64Pmpa, 'PNG', 176, 10 + offsetY, 20, 22);
+        doc.addImage(base64Pmpa, 'PNG', 176, 5 + offsetY, 20, 22);
       } catch (err) { }
 
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(0, 0, 0);
-      doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 12 + offsetY, { align: "center" });
-      doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 16 + offsetY, { align: "center" });
-      doc.text("POLÍCIA MILITAR DO PARÁ", 105, 20 + offsetY, { align: "center" });
-      doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 24 + offsetY, { align: "center" });
-      doc.text("DIRETORIA DE TELEMÁTICA", 105, 28 + offsetY, { align: "center" });
+      doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 8 + offsetY, { align: "center" });
+      doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 11 + offsetY, { align: "center" });
+      doc.text("POLÍCIA MILITAR DO PARÁ", 105, 14 + offsetY, { align: "center" });
+      doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 17 + offsetY, { align: "center" });
+      doc.text("DIRETORIA DE TELEMÁTICA", 105, 20 + offsetY, { align: "center" });
 
-      doc.setFontSize(14);
-      doc.text("RELATÓRIO DE LAUDO TÉCNICO", 105, 40 + offsetY, { align: "center" });
+      doc.setFontSize(12);
+      doc.text("RELATÓRIO DE LAUDO TÉCNICO", 105, 28 + offsetY, { align: "center" });
       
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.5);
-      doc.line(14, 45 + offsetY, 196, 45 + offsetY);
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.3);
+      doc.line(10, 34 + offsetY, 200, 34 + offsetY);
 
-      doc.setFontSize(11);
+      doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.text(`Nº: ${m.idRadio ? String(m.idRadio).toUpperCase() : ''}`, 14, 52 + offsetY);
-      doc.text(`Suporte: ${m.marca || ''} ${m.modelo || ''}`, 60, 52 + offsetY);
-      doc.text(`Telecom: Rádio HT`, 130, 52 + offsetY);
+      doc.text(`Nº: ${m.idRadio ? String(m.idRadio).toUpperCase() : ''}`, 10, 39 + offsetY);
+      doc.text(`Suporte: ${m.marca || ''} ${m.modelo || ''}`, 60, 39 + offsetY);
+      doc.text(`Telecom: Rádio HT`, 130, 39 + offsetY);
 
-      doc.line(14, 55 + offsetY, 196, 55 + offsetY);
+      doc.line(10, 43 + offsetY, 200, 43 + offsetY);
 
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.text("UNIDADE", 10, 48 + offsetY);
+      doc.text("Nº PAE", 40, 48 + offsetY);
+      doc.text("RP/PM", 75, 48 + offsetY);
+      doc.text("Nº SÉRIE", 105, 48 + offsetY);
+      doc.text("SOLICITANTE", 140, 48 + offsetY);
+      doc.text("DATA ENTRADA", 175, 48 + offsetY);
+
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.text("UNIDADE", 14, 62 + offsetY);
-      doc.text("Nº PAE", 40, 62 + offsetY);
-      doc.text("RP/PM", 75, 62 + offsetY);
-      doc.text("Nº SÉRIE", 105, 62 + offsetY);
-      doc.text("SOLICITANTE", 140, 62 + offsetY);
-      doc.text("DATA ENTRADA", 175, 62 + offsetY);
-
-      doc.setFont("helvetica", "normal");
       const unidadeNome = unidades.find(u => u.id === m.unidadeId)?.nome || "DITEL";
-      doc.text(unidadeNome, 14, 68 + offsetY);
-      doc.text(m.paeNumero || "-", 40, 68 + offsetY);
-      doc.text(m.rp || "-", 75, 68 + offsetY);
-      doc.text(m.numSerie || "-", 105, 68 + offsetY);
-      doc.text(m.solicitante || "-", 140, 68 + offsetY);
-      doc.text(m.dataEntradaLaudo ? new Date(m.dataEntradaLaudo).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : "-", 175, 68 + offsetY);
+      doc.text(unidadeNome, 10, 53 + offsetY);
+      doc.text(m.paeNumero || "-", 40, 53 + offsetY);
+      doc.text(m.rp || "-", 75, 53 + offsetY);
+      doc.text(m.numSerie || "-", 105, 53 + offsetY);
+      doc.text(m.solicitante || "-", 140, 53 + offsetY);
+      doc.text(m.dataEntradaLaudo ? new Date(m.dataEntradaLaudo).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : "-", 175, 53 + offsetY);
 
       doc.setFont("helvetica", "bold");
-      doc.text("DEFEITO RECLAMADO:", 14, 78 + offsetY);
+      doc.text("DEFEITO RECLAMADO:", 10, 61 + offsetY);
       doc.setFont("helvetica", "normal");
-      doc.text(doc.splitTextToSize(m.problema || "-", 182), 14, 83 + offsetY);
+      doc.text(doc.splitTextToSize(m.problema || "-", 190), 10, 65 + offsetY);
 
       doc.setFont("helvetica", "bold");
-      doc.text("ANÁLISE TÉCNICA:", 14, 98 + offsetY);
+      doc.text("ANÁLISE TÉCNICA:", 10, 75 + offsetY);
       doc.setFont("helvetica", "normal");
-      doc.text(doc.splitTextToSize(m.analiseTecnica || "Sob análise.", 182), 14, 103 + offsetY);
+      doc.text(doc.splitTextToSize(m.analiseTecnica || "Sob análise.", 190), 10, 79 + offsetY);
 
       doc.setFont("helvetica", "bold");
-      doc.text("LAUDO TÉCNICO:", 14, 118 + offsetY);
+      doc.text("LAUDO TÉCNICO:", 10, 89 + offsetY);
       doc.setFont("helvetica", "normal");
-      doc.text(doc.splitTextToSize(m.laudoTecnico || "-", 182), 14, 123 + offsetY);
+      doc.text(doc.splitTextToSize(m.laudoTecnico || "-", 190), 10, 93 + offsetY);
 
       doc.setFont("helvetica", "bold");
-      doc.text(`DATA DE SAÍDA: ${m.dataSaidaLaudo ? new Date(m.dataSaidaLaudo).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-'}`, 14, 138 + offsetY);
-      doc.text(`TÉCNICO RESP: ${m.tecnicoResp || '-'}`, 130, 138 + offsetY);
+      doc.text(`DATA DE SAÍDA: ${m.dataSaidaLaudo ? new Date(m.dataSaidaLaudo).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-'}`, 10, 107 + offsetY);
+      doc.text(`TÉCNICO RESP: ${m.tecnicoResp || '-'}`, 130, 107 + offsetY);
 
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
-      doc.text('"A Diretoria de Telemática não possui peças de reposição ou suprimento para aquisição destas peças informadas"', 105, 145 + offsetY, { align: "center" });
+      doc.text('"A Diretoria de Telemática não possui peças de reposição ou suprimento para aquisição destas peças informadas"', 105, 114 + offsetY, { align: "center" });
+
+      doc.setDrawColor(150, 150, 150);
+      doc.setLineDashPattern([2, 2], 0);
+      doc.line(10, 120 + offsetY, 200, 120 + offsetY);
+      doc.setLineDashPattern([], 0); // reset
 
       doc.setDrawColor(0, 0, 0);
-      doc.line(20, 155 + offsetY, 95, 155 + offsetY);
-      doc.line(115, 155 + offsetY, 190, 155 + offsetY);
+      doc.line(15, 128 + offsetY, 95, 128 + offsetY);
+      doc.line(115, 128 + offsetY, 195, 128 + offsetY);
       
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 57.5, 158 + offsetY, { align: "center" });
+      doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 55, 131 + offsetY, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.text("CHEFE DAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 57.5, 161 + offsetY, { align: "center" });
+      doc.setFontSize(6);
+      doc.text("CHEFE DAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 55, 134 + offsetY, { align: "center" });
       
       doc.setFont("helvetica", "bold");
-      doc.text("RECEBEDOR DO EQUIPAMENTO", 152.5, 158 + offsetY, { align: "center" });
+      doc.setFontSize(7);
+      doc.text("RECEBEDOR DO EQUIPAMENTO", 155, 131 + offsetY, { align: "center" });
     };
 
     await drawVia(0);
     
-    // Linha tracejada para corte
-    doc.setDrawColor(150, 150, 150);
-    doc.setLineDashPattern([2, 2], 0);
-    doc.line(10, 148, 200, 148);
-    doc.setLineDashPattern([], 0); // reset
+    // Linha tracejada de corte (meio da página A4)
+    doc.setDrawColor(100, 100, 100);
+    doc.setLineDashPattern([4, 4], 0);
+    doc.line(0, 148.5, 210, 148.5);
+    doc.setLineDashPattern([], 0);
     
-    await drawVia(148);
+    await drawVia(148.5);
 
     window.open(doc.output('bloburl'), '_blank');
   };
@@ -785,6 +793,7 @@ const Equipamentos: React.FC = () => {
                   <option value="CAUTELADO">Cautelado</option>
                   <option value="MANUTENCAO">Em Manutenção</option>
                   <option value="EXTRAVIADO">Extraviado</option>
+                  <option value="LAUDO">Laudo</option>
                 </select>
               </div>
 
@@ -894,7 +903,11 @@ const Equipamentos: React.FC = () => {
                   <textarea 
                     rows={3}
                     value={novoEquip.laudoTecnico}
-                    onChange={(e) => setNovoEquip({ ...novoEquip, laudoTecnico: e.target.value })}
+                    onChange={(e) => setNovoEquip({ 
+                      ...novoEquip, 
+                      laudoTecnico: e.target.value, 
+                      status: e.target.value.trim() !== '' ? 'LAUDO' : novoEquip.status 
+                    })}
                     placeholder="Descreva o laudo técnico final detalhado..."
                     className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
                   />

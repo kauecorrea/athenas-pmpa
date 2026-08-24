@@ -78,6 +78,7 @@ enum StatusEquipamento {
   EXTRAVIADO
   BAIXADO
   TRANSFERIDO
+  LAUDO
 }
 
 model Cautela {
