@@ -354,6 +354,8 @@ const Equipamentos: React.FC = () => {
         return "text-danger bg-danger/10 border-danger/20";
       case "TRANSFERIDO":
         return "text-purple-400 bg-purple-400/10 border-purple-400/20";
+      case "LAUDO":
+        return "text-orange-400 bg-orange-400/10 border-orange-400/20";
       default:
         return "text-gray-400 bg-gray-600/10 border-gray-600/20";
     }
@@ -477,6 +479,12 @@ const Equipamentos: React.FC = () => {
                     onClick={() => setFiltroStatus("Extraviado")}
                   >
                     Extraviado
+                  </div>
+                  <div
+                    className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2937] cursor-pointer"
+                    onClick={() => setFiltroStatus("Laudo")}
+                  >
+                    Laudo
                   </div>
                 </div>
               </div>
