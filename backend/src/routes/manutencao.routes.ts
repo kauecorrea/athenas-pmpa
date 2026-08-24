@@ -25,7 +25,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Registrar entrada em manutenção
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentoId, equipamentoIds, problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa } = req.body;
+  const { equipamentoId, equipamentoIds, problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa, analiseTecnica, laudoTecnico, tecnicoResp, solicitante, paeNumero } = req.body;
   const idsToProcess = equipamentoIds && equipamentoIds.length > 0 ? equipamentoIds : (equipamentoId ? [equipamentoId] : []);
   
   if (idsToProcess.length === 0) {
@@ -47,6 +47,11 @@ router.post('/', async (req: Request, res: Response) => {
             dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel) : null,
             dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa) : null,
             previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno) : null,
+            analiseTecnica,
+            laudoTecnico,
+            tecnicoResp,
+            solicitante,
+            paeNumero,
             status: 'EM ANDAMENTO'
           },
         });
@@ -113,7 +118,7 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa } = req.body;
+  const { problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa, analiseTecnica, laudoTecnico, tecnicoResp, solicitante, paeNumero } = req.body;
   
   try {
     const updateData: any = { problema };
@@ -121,6 +126,11 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (previsaoRetorno !== undefined) updateData.previsaoRetorno = previsaoRetorno ? new Date(previsaoRetorno) : null;
     if (dataChegadaDitel !== undefined) updateData.dataChegadaDitel = dataChegadaDitel ? new Date(dataChegadaDitel) : null;
     if (dataSaidaEmpresa !== undefined) updateData.dataSaidaEmpresa = dataSaidaEmpresa ? new Date(dataSaidaEmpresa) : null;
+    if (analiseTecnica !== undefined) updateData.analiseTecnica = analiseTecnica;
+    if (laudoTecnico !== undefined) updateData.laudoTecnico = laudoTecnico;
+    if (tecnicoResp !== undefined) updateData.tecnicoResp = tecnicoResp;
+    if (solicitante !== undefined) updateData.solicitante = solicitante;
+    if (paeNumero !== undefined) updateData.paeNumero = paeNumero;
 
     const updated = await prisma.manutencao.update({
       where: { id: id as string },

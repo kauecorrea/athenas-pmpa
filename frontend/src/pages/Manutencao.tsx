@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Plus, Wrench, FileText, CheckCircle, Search, List, Edit3, Trash2, Check } from 'lucide-react';
+import { Plus, Wrench, FileText, CheckCircle, Search, List, Edit3, Trash2, Check, ClipboardCheck } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 
@@ -22,6 +22,11 @@ interface ManutencaoRecord {
   previsaoRetorno: string | null;
   dataConclusao: string | null;
   status: string;
+  analiseTecnica: string | null;
+  laudoTecnico: string | null;
+  tecnicoResp: string | null;
+  solicitante: string | null;
+  paeNumero: string | null;
 }
 
 interface EquipamentoDisponivel {
@@ -51,7 +56,13 @@ const Manutencao: React.FC = () => {
   const [dataChegadaDitel, setDataChegadaDitel] = useState('');
   const [dataSaidaEmpresa, setDataSaidaEmpresa] = useState('');
   const [previsaoRetorno, setPrevisaoRetorno] = useState('');
+  const [analiseTecnica, setAnaliseTecnica] = useState('');
+  const [laudoTecnico, setLaudoTecnico] = useState('');
+  const [tecnicoResp, setTecnicoResp] = useState('');
+  const [solicitante, setSolicitante] = useState('');
+  const [paeNumero, setPaeNumero] = useState('');
   const [buscaRadioModal, setBuscaRadioModal] = useState('');
+  const [activeTab, setActiveTab] = useState<'identificacao' | 'laudo'>('identificacao');
 
   useEffect(() => {
     fetchManutencoes();
@@ -100,7 +111,12 @@ const Manutencao: React.FC = () => {
           dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : undefined,
           dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel).toISOString() : null,
           dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa).toISOString() : null,
-          previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
+          previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null,
+          analiseTecnica,
+          laudoTecnico,
+          tecnicoResp,
+          solicitante,
+          paeNumero
         });
         alert("Registro de manutenção atualizado!");
       } else {
@@ -129,7 +145,13 @@ const Manutencao: React.FC = () => {
     setDataChegadaDitel('');
     setDataSaidaEmpresa('');
     setPrevisaoRetorno('');
+    setAnaliseTecnica('');
+    setLaudoTecnico('');
+    setTecnicoResp('');
+    setSolicitante('');
+    setPaeNumero('');
     setEditingId(null);
+    setActiveTab('identificacao');
   };
 
   const handleEdit = (m: ManutencaoRecord) => {
@@ -140,7 +162,13 @@ const Manutencao: React.FC = () => {
     setDataChegadaDitel(m.dataChegadaDitel ? m.dataChegadaDitel.split('T')[0] : '');
     setDataSaidaEmpresa(m.dataSaidaEmpresa ? m.dataSaidaEmpresa.split('T')[0] : '');
     setPrevisaoRetorno(m.previsaoRetorno ? m.previsaoRetorno.split('T')[0] : '');
+    setAnaliseTecnica(m.analiseTecnica || '');
+    setLaudoTecnico(m.laudoTecnico || '');
+    setTecnicoResp(m.tecnicoResp || '');
+    setSolicitante(m.solicitante || '');
+    setPaeNumero(m.paeNumero || '');
     setViewMode('form');
+    setActiveTab('identificacao');
   };
 
   const confirmDelete = async () => {
@@ -271,6 +299,111 @@ const Manutencao: React.FC = () => {
     window.open(doc.output('bloburl'), '_blank');
   };
 
+  const gerarLaudoPdf = async (m: ManutencaoRecord) => {
+    const doc = new jsPDF();
+    
+    const drawVia = async (offsetY: number) => {
+      try {
+        const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
+        doc.addImage(base64Para, 'PNG', 14, 10 + offsetY, 20, 22);
+      } catch (err) { }
+      try {
+        const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
+        doc.addImage(base64Pmpa, 'PNG', 176, 10 + offsetY, 20, 22);
+      } catch (err) { }
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 12 + offsetY, { align: "center" });
+      doc.text("SECRETARIA DE ESTADO DE SEGURANÇA PÚBLICA E DEFESA SOCIAL", 105, 16 + offsetY, { align: "center" });
+      doc.text("POLÍCIA MILITAR DO PARÁ", 105, 20 + offsetY, { align: "center" });
+      doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 24 + offsetY, { align: "center" });
+      doc.text("DIRETORIA DE TELEMÁTICA", 105, 28 + offsetY, { align: "center" });
+
+      doc.setFontSize(14);
+      doc.text("RELATÓRIO DE LAUDO TÉCNICO", 105, 40 + offsetY, { align: "center" });
+      
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(14, 45 + offsetY, 196, 45 + offsetY);
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(`OS: ${m.id.substring(0,6).toUpperCase()}`, 14, 52 + offsetY);
+      doc.text(`Suporte: ${m.equipamento.marca || ''} ${m.equipamento.modelo || ''}`, 60, 52 + offsetY);
+      doc.text(`Telecom:`, 130, 52 + offsetY);
+
+      doc.line(14, 55 + offsetY, 196, 55 + offsetY);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.text("UNIDADE", 14, 62 + offsetY);
+      doc.text("Nº PAE", 40, 62 + offsetY);
+      doc.text("RP/PM", 75, 62 + offsetY);
+      doc.text("Nº SÉRIE", 105, 62 + offsetY);
+      doc.text("SOLICITANTE", 140, 62 + offsetY);
+      doc.text("DATA ENTRADA", 175, 62 + offsetY);
+
+      doc.setFont("helvetica", "normal");
+      doc.text("DITEL", 14, 68 + offsetY);
+      doc.text(m.paeNumero || "-", 40, 68 + offsetY);
+      doc.text(m.equipamento.rp || "-", 75, 68 + offsetY);
+      doc.text(m.equipamento.numSerie || "-", 105, 68 + offsetY);
+      doc.text(m.solicitante || "-", 140, 68 + offsetY);
+      doc.text(new Date(m.dataEntrada).toLocaleDateString('pt-BR'), 175, 68 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("DEFEITO RECLAMADO:", 14, 78 + offsetY);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(m.problema || "-", 182), 14, 83 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("ANÁLISE TÉCNICA:", 14, 98 + offsetY);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(m.analiseTecnica || "Sob análise.", 182), 14, 103 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("LAUDO TÉCNICO:", 14, 118 + offsetY);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(m.laudoTecnico || "-", 182), 14, 123 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      const outDate = m.dataConclusao || m.dataSaidaEmpresa || new Date().toISOString();
+      doc.text(`DATA DE SAÍDA: ${new Date(outDate).toLocaleDateString('pt-BR')}`, 14, 138 + offsetY);
+      doc.text(`TÉCNICO RESP: ${m.tecnicoResp || '-'}`, 130, 138 + offsetY);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.text('"A Diretoria de Telemática não possui peças de reposição ou suprimento para aquisição destas peças informadas"', 105, 145 + offsetY, { align: "center" });
+
+      doc.setDrawColor(0, 0, 0);
+      doc.line(20, 155 + offsetY, 95, 155 + offsetY);
+      doc.line(115, 155 + offsetY, 190, 155 + offsetY);
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 57.5, 158 + offsetY, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.text("CHEFE DAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 57.5, 161 + offsetY, { align: "center" });
+      
+      doc.setFont("helvetica", "bold");
+      doc.text("RECEBEDOR DO EQUIPAMENTO", 152.5, 158 + offsetY, { align: "center" });
+    };
+
+    await drawVia(0);
+    
+    // Linha tracejada para corte
+    doc.setDrawColor(150, 150, 150);
+    doc.setLineDashPattern([2, 2], 0);
+    doc.line(10, 148, 200, 148);
+    doc.setLineDashPattern([], 0); // reset
+    
+    await drawVia(148);
+
+    window.open(doc.output('bloburl'), '_blank');
+  };
+
   const radiosDisponiveisFiltrados = useMemo(() => {
     return radiosDisponiveis.filter(radio => {
       if (!buscaRadioModal.trim()) return true;
@@ -315,15 +448,36 @@ const Manutencao: React.FC = () => {
 
       {viewMode === 'form' ? (
         <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl flex-1 flex flex-col transition-colors shadow-sm">
-          <div className="p-6 border-b border-gray-200 dark:border-[#1f2937]">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Plus className="text-primary" size={24} />
-              {editingId ? 'Editar Registro de Manutenção' : 'Registrar Entrada na Oficina'}
-            </h2>
+          <div className="flex flex-col border-b border-gray-200 dark:border-[#1f2937]">
+            <div className="p-6 pb-2">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                {editingId ? <Edit3 className="text-primary" size={24} /> : <Plus className="text-primary" size={24} />}
+                {editingId ? 'Visualização e Edição de Registro' : 'Registrar Entrada na Oficina'}
+              </h2>
+            </div>
+            {editingId && (
+              <div className="flex px-6 gap-6">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('identificacao')}
+                  className={`py-3 font-bold text-sm border-b-2 transition-colors outline-none ${activeTab === 'identificacao' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                  IDENTIFICAÇÃO
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('laudo')}
+                  className={`py-3 font-bold text-sm border-b-2 transition-colors outline-none ${activeTab === 'laudo' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                  ANÁLISE & SERVIÇO
+                </button>
+              </div>
+            )}
           </div>
           
-          <form onSubmit={handleCreateManutencao} className="p-8 overflow-y-auto flex-1 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
+          <form onSubmit={handleCreateManutencao} className="p-8 overflow-y-auto flex-1 flex flex-col">
+            {activeTab === 'identificacao' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
               <div className="space-y-4">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">1. Selecionar Equipamento</label>
                 <div className={`border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#0b101a] rounded-xl overflow-hidden flex flex-col ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -423,9 +577,67 @@ const Manutencao: React.FC = () => {
                   className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
                 />
               </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-10 border-t border-gray-100 dark:border-[#1f2937]">
+            ) : (
+              <div className="grid grid-cols-1 gap-8 max-w-5xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Solicitante (Nome)</label>
+                    <input 
+                      type="text" 
+                      value={solicitante}
+                      onChange={(e) => setSolicitante(e.target.value)}
+                      placeholder="Ex: SD LAIANE"
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nº PAE</label>
+                    <input 
+                      type="text" 
+                      value={paeNumero}
+                      onChange={(e) => setPaeNumero(e.target.value)}
+                      placeholder="Ex: 2025/3481287"
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Análise Técnica Preliminar</label>
+                  <textarea 
+                    rows={4}
+                    value={analiseTecnica}
+                    onChange={(e) => setAnaliseTecnica(e.target.value)}
+                    placeholder="Descreva a análise técnica preliminar..."
+                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Laudo Técnico Final</label>
+                  <textarea 
+                    rows={4}
+                    value={laudoTecnico}
+                    onChange={(e) => setLaudoTecnico(e.target.value)}
+                    placeholder="Descreva o laudo técnico final detalhado..."
+                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
+                  />
+                </div>
+                
+                <div className="md:w-1/2">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Técnico Responsável</label>
+                  <input 
+                    type="text" 
+                    value={tecnicoResp}
+                    onChange={(e) => setTecnicoResp(e.target.value)}
+                    placeholder="Ex: Subten"
+                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
+                </div>
+              </div>
+            )}
+            
+            <div className="mt-8 flex items-center justify-end gap-3 pt-6 border-t border-gray-100 dark:border-[#1f2937]">
               {editingId && (
                 <button 
                   type="button"
@@ -504,6 +716,13 @@ const Manutencao: React.FC = () => {
                           title="Gerar Ordem de Serviço"
                         >
                           <FileText size={18} />
+                        </button>
+                        <button 
+                          onClick={() => gerarLaudoPdf(m)}
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all" 
+                          title="Imprimir Laudo Técnico"
+                        >
+                          <ClipboardCheck size={18} />
                         </button>
                         <button 
                           onClick={() => handleEdit(m)}

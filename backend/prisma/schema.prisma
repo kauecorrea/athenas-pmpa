@@ -127,6 +127,13 @@ model Manutencao {
   previsaoRetorno DateTime?
   dataConclusao   DateTime?
   status          String      @default("EM ANDAMENTO") // EM ANDAMENTO, CONCLUIDA
+  
+  // Campos de Laudo / Serviço
+  analiseTecnica  String?
+  laudoTecnico    String?
+  tecnicoResp     String?
+  solicitante     String?
+  paeNumero       String?
 }
 
 model Extravio {
