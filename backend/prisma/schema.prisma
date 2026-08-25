@@ -136,6 +136,7 @@ model Manutencao {
   dataChegadaDitel DateTime?
   dataSaidaEmpresa DateTime?
   previsaoRetorno DateTime?
+  dataEnvioUnidade DateTime?
   dataConclusao   DateTime?
   status          String      @default("EM ANDAMENTO") // EM ANDAMENTO, CONCLUIDA
   

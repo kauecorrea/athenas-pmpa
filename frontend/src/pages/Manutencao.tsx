@@ -20,6 +20,7 @@ interface ManutencaoRecord {
   dataChegadaDitel: string | null;
   dataSaidaEmpresa: string | null;
   previsaoRetorno: string | null;
+  dataEnvioUnidade: string | null;
   dataConclusao: string | null;
   status: string;
   analiseTecnica: string | null;
@@ -56,6 +57,7 @@ const Manutencao: React.FC = () => {
   const [dataChegadaDitel, setDataChegadaDitel] = useState('');
   const [dataSaidaEmpresa, setDataSaidaEmpresa] = useState('');
   const [previsaoRetorno, setPrevisaoRetorno] = useState('');
+  const [dataEnvioUnidade, setDataEnvioUnidade] = useState('');
   const [analiseTecnica, setAnaliseTecnica] = useState('');
   const [laudoTecnico, setLaudoTecnico] = useState('');
   const [tecnicoResp, setTecnicoResp] = useState('');
@@ -112,6 +114,7 @@ const Manutencao: React.FC = () => {
           dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel).toISOString() : null,
           dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa).toISOString() : null,
           previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null,
+          dataEnvioUnidade: dataEnvioUnidade ? new Date(dataEnvioUnidade).toISOString() : null,
           analiseTecnica,
           laudoTecnico,
           tecnicoResp,
@@ -126,7 +129,8 @@ const Manutencao: React.FC = () => {
           dataEntrada: dataEntrada ? new Date(dataEntrada).toISOString() : new Date().toISOString(),
           dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel).toISOString() : null,
           dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa).toISOString() : null,
-          previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null
+          previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null,
+          dataEnvioUnidade: dataEnvioUnidade ? new Date(dataEnvioUnidade).toISOString() : null
         });
         alert("Registro de manutenção incluído!");
       }
@@ -145,6 +149,7 @@ const Manutencao: React.FC = () => {
     setDataChegadaDitel('');
     setDataSaidaEmpresa('');
     setPrevisaoRetorno('');
+    setDataEnvioUnidade('');
     setAnaliseTecnica('');
     setLaudoTecnico('');
     setTecnicoResp('');
@@ -162,6 +167,7 @@ const Manutencao: React.FC = () => {
     setDataChegadaDitel(m.dataChegadaDitel ? m.dataChegadaDitel.split('T')[0] : '');
     setDataSaidaEmpresa(m.dataSaidaEmpresa ? m.dataSaidaEmpresa.split('T')[0] : '');
     setPrevisaoRetorno(m.previsaoRetorno ? m.previsaoRetorno.split('T')[0] : '');
+    setDataEnvioUnidade(m.dataEnvioUnidade ? m.dataEnvioUnidade.split('T')[0] : '');
     setAnaliseTecnica(m.analiseTecnica || '');
     setLaudoTecnico(m.laudoTecnico || '');
     setTecnicoResp(m.tecnicoResp || '');
@@ -277,11 +283,11 @@ const Manutencao: React.FC = () => {
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     const yDatas = yCampoTecnico + 60;
-    doc.text(`Data de Entrada: ${new Date(m.dataEntrada).toLocaleDateString('pt-BR')}`, 14, yDatas);
-    doc.text(`Chegada ao DITEL: ${m.dataChegadaDitel ? new Date(m.dataChegadaDitel).toLocaleDateString('pt-BR') : 'N/A'}`, 105, yDatas);
+    doc.text(`Chegada ao DITEL: ${m.dataChegadaDitel ? new Date(m.dataChegadaDitel).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}`, 14, yDatas);
+    doc.text(`Saída para Empresa: ${m.dataSaidaEmpresa ? new Date(m.dataSaidaEmpresa).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}`, 105, yDatas);
     
-    doc.text(`Saída para Empresa: ${m.dataSaidaEmpresa ? new Date(m.dataSaidaEmpresa).toLocaleDateString('pt-BR') : 'N/A'}`, 14, yDatas + 6);
-    doc.text(`Previsão de Retorno: ${m.previsaoRetorno ? new Date(m.previsaoRetorno).toLocaleDateString('pt-BR') : 'N/A'}`, 105, yDatas + 6);
+    doc.text(`Previsão de Retorno: ${m.previsaoRetorno ? new Date(m.previsaoRetorno).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}`, 14, yDatas + 6);
+    doc.text(`Envio à Unidade: ${m.dataEnvioUnidade ? new Date(m.dataEnvioUnidade).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}`, 105, yDatas + 6);
 
     const finalY = yDatas + 40;
     doc.line(20, finalY, 90, finalY);
@@ -525,19 +531,9 @@ const Manutencao: React.FC = () => {
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">2. Data de Entrada</label>
-                  <input 
-                    type="date"
-                    required
-                    value={dataEntrada}
-                    onChange={(e) => setDataEntrada(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                  />
-                </div>
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">3. Chegada ao DITEL</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">2. Chegada ao DITEL</label>
                     <input 
                       type="date" 
                       value={dataChegadaDitel}
@@ -546,7 +542,7 @@ const Manutencao: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">4. Saída para Empresa</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">3. Saída para Empresa</label>
                     <input 
                       type="date" 
                       value={dataSaidaEmpresa}
@@ -554,12 +550,21 @@ const Manutencao: React.FC = () => {
                       className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                     />
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">5. Previsão de Retorno</label>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">4. Previsão de Retorno</label>
                     <input 
                       type="date" 
                       value={previsaoRetorno}
                       onChange={(e) => setPrevisaoRetorno(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">5. Envio à Unidade</label>
+                    <input 
+                      type="date" 
+                      value={dataEnvioUnidade}
+                      onChange={(e) => setDataEnvioUnidade(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                     />
                   </div>
@@ -695,8 +700,8 @@ const Manutencao: React.FC = () => {
                        <p className="text-xs italic text-gray-600 dark:text-gray-400 truncate" title={m.problema}>{m.problema}</p>
                     </td>
                     <td className="px-6 py-4 text-xs">
-                      <p className="font-medium text-gray-500">Entrada: {new Date(m.dataEntrada).toLocaleDateString('pt-BR')}</p>
-                      {m.previsaoRetorno && <p className="text-[10px] text-blue-400">Previsão: {new Date(m.previsaoRetorno).toLocaleDateString('pt-BR')}</p>}
+                      <p className="font-medium text-gray-500">DITEL: {m.dataChegadaDitel ? new Date(m.dataChegadaDitel).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'}</p>
+                      {m.dataEnvioUnidade && <p className="text-[10px] text-green-500">Envio Unid: {new Date(m.dataEnvioUnidade).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</p>}
                     </td>
                     <td className="px-6 py-4">
                       {m.status === 'EM ANDAMENTO' ? (
