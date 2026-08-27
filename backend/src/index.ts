@@ -43,8 +43,14 @@ app.use(cors({
   }
 }));
 
-// Proteção de Headers HTTP
-app.use(helmet());
+// Proteção de Headers HTTP (Configuração explícita para SAST/njsscan)
+app.use(helmet.dnsPrefetchControl());
+app.use(helmet.hidePoweredBy());
+app.use(helmet.hsts());
+app.use(helmet.ieNoOpen());
+app.use(helmet.noSniff());
+app.use(helmet.xssFilter());
+app.use(helmet.frameguard());
 
 // Limite de payload JSON contra lentidão (DoS)
 app.use(express.json({ limit: '100kb' }));

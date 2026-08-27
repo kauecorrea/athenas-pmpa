@@ -49,7 +49,7 @@ router.get('/', async (req: Request, res: Response) => {
     
     res.json(cautelas);
   } catch (error) {
-    console.error(error);
+    console.error('Erro na Busca de Cautela:', error.message);
     res.status(500).json({ error: 'Erro ao buscar cautelas' });
   }
 });
@@ -110,7 +110,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     res.status(201).json(cautelaRealizada);
   } catch (error) {
-    console.error(error);
+    console.error('Erro ao Criar Cautela:', error.message);
     res.status(500).json({ error: 'Erro ao criar as cautelas em lote' });
   }
 });

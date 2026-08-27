@@ -72,7 +72,7 @@ router.post('/login', loginLimiter, async (req: Request, res: Response): Promise
     });
 
   } catch (error) {
-    console.error(error);
+    console.error('Erro de Autenticação:', error.message);
     res.status(500).json({ error: 'Erro interno ao realizar login' });
   }
 });

@@ -247,7 +247,7 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
     registrarAuditoria(req, 'Estornou Transferência de Carga', `A Transferência ID ${id} foi revertida.`);
     res.json({ message: 'Transferência estornada e carga devolvida à unidade de origem.' });
   } catch (error) {
-    console.error(error);
+    console.error('Erro em Transferências:', error.message);
     res.status(500).json({ error: 'Erro ao estornar transferência' });
   }
 });

@@ -2,31 +2,32 @@
 
 # Relatório de Segurança — kauecorrea/athenas-pmpa
 
-**Scan:** `cmtazlngs003bncdwwt201p2p` · MANUAL · branch `main` · commit `5ab6e5e7e1af`
-**Status:** COMPLETED · **Executado em:** 2026-08-27T03:52:39.037Z · **Concluído em:** 2026-08-27T03:55:12.471Z
-**Relatório gerado em:** 2026-08-27T03:56:26.846Z por GitGuard
+**Scan:** `cmtb07cwl003dncdwytwaa17a` · MANUAL · branch `main` · commit `bc01cb9c4ce2`
+**Status:** COMPLETED · **Executado em:** 2026-08-27T04:09:31.812Z · **Concluído em:** 2026-08-27T04:12:06.539Z
+**Relatório gerado em:** 2026-08-27T04:13:16.457Z por GitGuard
 
 ## Instruções para a IA que for corrigir isto
 
-- Repositório alvo: kauecorrea/athenas-pmpa, branch "main", commit 5ab6e5e7e1afe7ed3090ee26a491b22ac8e3948f. Aplique as correções diretamente nesse checkout.
+- Repositório alvo: kauecorrea/athenas-pmpa, branch "main", commit bc01cb9c4ce249fc547d21f7db1d838ce71fab03. Aplique as correções diretamente nesse checkout.
 - Em "dependencyUpgrades", cada entrada agrupa TODOS os CVEs de um mesmo pacote — faça UM upgrade por pacote (para "recommendedVersion" ou mais recente), não uma correção por CVE.
 - Em "secrets", nunca tente adivinhar ou reconstruir o valor original do segredo (ele foi propositalmente redigido) — apenas remova/rotacione conforme "remediation".
 - Depois de aplicar as correções, rode os testes existentes do projeto e, se disponível, o linter/build antes de considerar concluído.
 
 ## Resumo
 
-- **Total de findings:** 71
-- **Por severidade:** HIGH: 20 · MEDIUM: 42 · LOW: 9
-- **Por scanner:** TRIVY: 62 · SEMGREP: 9
+- **Total de findings:** 78
+- **Por severidade:** HIGH: 21 · MEDIUM: 42 · LOW: 15
+- **Por scanner:** TRIVY: 63 · SEMGREP: 15
 
 ## Dependências para atualizar
 
-### 📦 `react-router` (12 CVEs) — severidade máxima: HIGH
+### 📦 `react-router` (13 CVEs) — severidade máxima: HIGH
 
-**Ação recomendada:** atualizar de `7.13.1` para `a versão mais recente` (ou superior).
+**Ação recomendada:** atualizar de `7.18.2` para `a versão mais recente` (ou superior).
 
 | Severidade | CVE | Descrição | Corrigido em |
 |---|---|---|---|
+| HIGH | — | React Router: RSC Mode CSRF Bypass Allows Action Execution Before 400 Response | — |
 | HIGH | CVE-2026-42211 | react-router: React Router: Remote Code Execution via prototype pollution in Framework Mode | — |
 | HIGH | CVE-2026-42342 | react-router: @remix-run/server-runtime: React Router / Remix: Denial of Service via unbounded path expansion in __manifest endpoint | — |
 | HIGH | CVE-2026-55685 | React Router: Unauthenticated Denial of Service via Inefficient Route Matching | — |
@@ -107,7 +108,6 @@
 
 | Severidade | CVE | Descrição | Corrigido em |
 |---|---|---|---|
-| MEDIUM | CVE-2026-65898 | DOMPurify before 3.4.11 fails to clone the ALLOWED_ATTR allowlist when ... | — |
 | MEDIUM | CVE-2026-65902 | DOMPurify before 3.4.7 (affected versions <= 3.4.5) passes direct refe ... | — |
 | MEDIUM | CVE-2026-65903 | dompurify: DOMPurify: Security bypass allows injection of malicious content | — |
 | MEDIUM | CVE-2026-41238 | DOMPurify: DOMPurify: Cross-Site Scripting bypass via prototype pollution | — |
@@ -116,10 +116,11 @@
 | MEDIUM | CVE-2026-49458 | dompurify: DOMPurify: Cross-site scripting due to improper sanitization of DOM nodes | — |
 | MEDIUM | CVE-2026-49459 | dompurify: DOMPurify: Cross-site scripting bypass allows arbitrary script execution | — |
 | MEDIUM | CVE-2026-49978 | dompurify: DOMPurify: Cross-site scripting vulnerability allows code execution | — |
+| MEDIUM | CVE-2026-65898 | DOMPurify before 3.4.11 fails to clone the ALLOWED_ATTR allowlist when ... | — |
 | LOW | CVE-2026-65899 | DOMPurify 3.0.0 before 3.4.9 does not reset the retained Trusted Types ... | — |
 | LOW | CVE-2026-65900 | DOMPurify versions >=3.0.0 and before 3.4.8, when configured with SAFE ... | — |
-| LOW | — | DOMPurify: `CUSTOM_ELEMENT_HANDLING` bypasses `afterSanitizeElements` for allowed custom elements. | — |
 | LOW | CVE-2026-65901 | DOMPurify through 3.4.6 contains a cross-site scripting vulnerability  ... | — |
+| LOW | — | DOMPurify: `CUSTOM_ELEMENT_HANDLING` bypasses `afterSanitizeElements` for allowed custom elements. | — |
 
 ### 📦 `follow-redirects` (1 CVE) — severidade máxima: MEDIUM
 
@@ -165,4 +166,10 @@
 | MEDIUM | SEMGREP | SAST | Semgrep Finding: rules.ajinabraham.njsscan.generic.error_disclosure.generic_error_disclosure | — |
 | MEDIUM | SEMGREP | SAST | Semgrep Finding: rules.ajinabraham.njsscan.generic.error_disclosure.generic_error_disclosure | — |
 | LOW | SEMGREP | SAST | Semgrep Finding: rules.javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring | — |
+| LOW | SEMGREP | SAST | Semgrep Finding: rules.ajinabraham.njsscan.good.good_helmet_checks.helmet_header_dns_prefetch | — |
+| LOW | SEMGREP | SAST | Semgrep Finding: rules.ajinabraham.njsscan.good.good_helmet_checks.helmet_header_hsts | — |
+| LOW | SEMGREP | SAST | Semgrep Finding: rules.ajinabraham.njsscan.good.good_helmet_checks.helmet_header_ienoopen | — |
+| LOW | SEMGREP | SAST | Semgrep Finding: rules.ajinabraham.njsscan.good.good_helmet_checks.helmet_header_nosniff | — |
+| LOW | SEMGREP | SAST | Semgrep Finding: rules.ajinabraham.njsscan.good.good_helmet_checks.helmet_header_x_powered_by | — |
+| LOW | SEMGREP | SAST | Semgrep Finding: rules.ajinabraham.njsscan.good.good_helmet_checks.helmet_header_xss_filter | — |
 | LOW | SEMGREP | SAST | Semgrep Finding: rules.javascript.lang.security.audit.unsafe-formatstring.unsafe-formatstring | — |
