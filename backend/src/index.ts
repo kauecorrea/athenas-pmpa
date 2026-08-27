@@ -58,8 +58,8 @@ app.use(express.json({ limit: '100kb' }));
 // Proteção contra injeção NoSQL (Customizado para compatibilidade com Express 5)
 app.use((req, res, next) => {
   ['body', 'params', 'headers', 'query'].forEach((k) => {
-    if (req[k]) {
-      mongoSanitize.sanitize(req[k]);
+    if ((req as any)[k]) {
+      mongoSanitize.sanitize((req as any)[k]);
     }
   });
   next();
