@@ -133,8 +133,7 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('ERRO TRANSFERENCIA:', error);
     res.status(500).json({ 
-      error: 'Erro ao processar transferência de carga',
-      details: error.message 
+      error: 'Erro ao processar transferência de carga'
     });
   }
 });
@@ -208,8 +207,8 @@ router.put('/:id', async (req: Request, res: Response) => {
     registrarAuditoria(req, 'Editou Transferência', `Transferência ID ${id} atualizada.`);
     res.json(result);
   } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message || 'Erro ao atualizar transferência' });
+    console.error('ERRO ATUALIZAR TRANSFERENCIA:', error);
+    res.status(500).json({ error: 'Erro ao atualizar transferência' });
   }
 });
 

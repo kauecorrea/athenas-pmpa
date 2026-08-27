@@ -174,7 +174,8 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
     registrarAuditoria(req, 'Excluiu/Estornou Manutenção', `Removeu Ordem de Serviço ID Banco: ${id}`);
     res.json(result);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || 'Erro ao excluir manutenção' });
+    console.error('ERRO EXCLUIR MANUTENCAO:', error);
+    res.status(500).json({ error: 'Erro ao excluir manutenção' });
   }
 });
 
