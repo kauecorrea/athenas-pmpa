@@ -2,12 +2,20 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'super-senha-secreta-athenas-dev-local';
 
-router.post('/login', async (req: Request, res: Response): Promise<void> => {
+// Bloqueio de Força Bruta exclusivo para login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // Bloqueia após 5 tentativas de login erradas/sucesso do mesmo IP
+  message: { error: 'Muitas tentativas de login. Sua conta foi temporariamente bloqueada. Tente novamente após 15 minutos.' }
+});
+
+router.post('/login', loginLimiter, async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, senha } = req.body;
 

@@ -3,6 +3,9 @@ import cors from 'cors';
 import * as dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
+import helmet from 'helmet';
+import hpp from 'hpp';
+import mongoSanitize from 'express-mongo-sanitize';
 
 import { authMiddleware } from './middlewares/auth.middleware';
 
@@ -39,7 +42,18 @@ app.use(cors({
     }
   }
 }));
-app.use(express.json());
+
+// Proteção de Headers HTTP
+app.use(helmet());
+
+// Limite de payload JSON contra lentidão (DoS)
+app.use(express.json({ limit: '100kb' }));
+
+// Proteção contra injeção NoSQL
+app.use(mongoSanitize());
+
+// Proteção contra Poluição de Parâmetros HTTP
+app.use(hpp());
 
 // Rate Limiter Global contra DDoS
 const limiter = rateLimit({
