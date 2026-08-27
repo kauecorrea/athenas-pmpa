@@ -124,7 +124,7 @@ const App: React.FC = () => {
     // Obfuscated signature with UTF-8 support
     const sig = decodeURIComponent(escape(window.atob('SGFuZGNyYWZ0ZWQgYnkgS2F1w6ogQ29ycsOqYQ==')));
     
-    console.log(`%c🚀 DITEL SYSTEM %c${sig}`, s1, s2);
+    console.log('%c🚀 DITEL SYSTEM %c%s', s1, s2, sig);
     console.log('%cv1.0.4', s3);
   }, []);
 

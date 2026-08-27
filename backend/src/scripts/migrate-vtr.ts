@@ -159,7 +159,7 @@ async function migrate() {
         sucessos++;
         if (sucessos % 50 === 0) console.log(`Progresso: ${sucessos} migrados...`);
       } catch (e) {
-        console.error(`Erro na OS ${osNumero}:`, e.message);
+        console.error('Erro na OS %s:', osNumero, e.message);
         erros++;
       }
     }

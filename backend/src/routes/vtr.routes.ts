@@ -19,7 +19,7 @@ router.get('/', async (req: Request, res: Response) => {
     
     res.json(manutencoes);
   } catch (error) {
-    console.error('Erro VTR:', error.message);
+    console.error('Erro VTR:', (error as Error).message);
     res.status(500).json({ error: 'Erro ao buscar manutenções VTR' });
   }
 });
@@ -88,7 +88,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     res.status(201).json(manutencaoRealizada);
   } catch (error) {
-    console.error('Erro VTR:', error.message);
+    console.error('Erro VTR:', (error as Error).message);
     res.status(500).json({ error: 'Erro ao criar manutenção VTR' });
   }
 });

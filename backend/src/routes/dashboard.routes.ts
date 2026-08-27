@@ -92,7 +92,7 @@ router.get('/flow', async (req, res) => {
 
     res.json(history);
   } catch (error) {
-    console.error('Erro no Dashboard:', error.message);
+    console.error('Erro no Dashboard:', (error as Error).message);
     res.status(500).json({ error: 'Erro ao buscar fluxo semanal' });
   }
 });
