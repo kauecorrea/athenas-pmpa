@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { 
   Plus, 
@@ -350,6 +351,14 @@ const Cautelas: React.FC = () => {
       dataLimite = new Date();
       dataLimite.setDate(hoje.getDate() - 30);
       periodoTexto = "Últimos 30 Dias";
+    } else if (reportPeriod === '6meses') {
+      dataLimite = new Date();
+      dataLimite.setMonth(hoje.getMonth() - 6);
+      periodoTexto = "Últimos 6 Meses";
+    } else if (reportPeriod === '1ano') {
+      dataLimite = new Date();
+      dataLimite.setFullYear(hoje.getFullYear() - 1);
+      periodoTexto = "Últimos 365 Dias (1 Ano)";
     }
 
     const cautelasPeriodo = cautelas.filter(c => new Date(c.dataRetirada) >= dataLimite);
@@ -896,7 +905,7 @@ const Cautelas: React.FC = () => {
         </div>
       )}
 
-      {showReportModal && (
+      {showReportModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-md animate-fade-in">
           <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-md shadow-2xl p-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Gerar Relatório de Cautelas</h2>
@@ -933,6 +942,30 @@ const Cautelas: React.FC = () => {
                 <input 
                   type="radio" 
                   name="reportPeriod" 
+                  value="6meses"
+                  checked={reportPeriod === '6meses'}
+                  onChange={() => setReportPeriod('6meses')}
+                  className="text-primary w-4 h-4 focus:ring-primary"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Últimos 6 Meses</span>
+              </label>
+
+              <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <input 
+                  type="radio" 
+                  name="reportPeriod" 
+                  value="1ano"
+                  checked={reportPeriod === '1ano'}
+                  onChange={() => setReportPeriod('1ano')}
+                  className="text-primary w-4 h-4 focus:ring-primary"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Últimos 365 Dias (1 ano)</span>
+              </label>
+
+              <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <input 
+                  type="radio" 
+                  name="reportPeriod" 
                   value="tudo"
                   checked={reportPeriod === 'tudo'}
                   onChange={() => setReportPeriod('tudo')}
@@ -957,7 +990,8 @@ const Cautelas: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}      <ModalConfirmacao 
         isOpen={isModalDevolverOpen}
         title="Registrar Devolução"
