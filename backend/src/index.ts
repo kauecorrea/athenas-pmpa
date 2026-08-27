@@ -55,8 +55,15 @@ app.use(helmet.frameguard());
 // Limite de payload JSON contra lentidão (DoS)
 app.use(express.json({ limit: '100kb' }));
 
-// Proteção contra injeção NoSQL
-app.use(mongoSanitize());
+// Proteção contra injeção NoSQL (Customizado para compatibilidade com Express 5)
+app.use((req, res, next) => {
+  ['body', 'params', 'headers', 'query'].forEach((k) => {
+    if (req[k]) {
+      mongoSanitize.sanitize(req[k]);
+    }
+  });
+  next();
+});
 
 // Proteção contra Poluição de Parâmetros HTTP
 app.use(hpp());
