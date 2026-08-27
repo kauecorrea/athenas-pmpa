@@ -86,7 +86,7 @@ const Cautelas: React.FC = () => {
   const [isRadioListOpen, setIsRadioListOpen] = useState(false);
 
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reportPeriod, setReportPeriod] = useState<'7dias' | '30dias' | 'tudo'>('30dias');
+  const [reportPeriod, setReportPeriod] = useState<'7dias' | '30dias' | '6meses' | '1ano' | 'tudo'>('30dias');
 
   // Modal actions
   const [isModalDevolverOpen, setIsModalDevolverOpen] = useState(false);
