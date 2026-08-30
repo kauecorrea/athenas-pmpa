@@ -57,7 +57,7 @@ const Login: React.FC = () => {
             <img
               src="/brasao_pmpa.png"
               alt="PMPA"
-              className="w-24 h-24 relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-2xl"
+              className="w-24 h-24 object-contain relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-2xl"
             />
           </div>
           <h1 className="text-5xl font-black text-white tracking-tighter mt-4 uppercase italic">
