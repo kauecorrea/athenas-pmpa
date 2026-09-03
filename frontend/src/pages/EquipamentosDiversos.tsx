@@ -391,11 +391,11 @@ const EquipamentosDiversos: React.FC = () => {
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in text-gray-900 dark:text-white h-full flex flex-col relative transition-colors duration-200">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
             Equipamentos
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Gerenciamento de rádios
+            Gerenciamento de equipamentos diversos
           </p>
         </div>
         {viewMode === "list" ? (
