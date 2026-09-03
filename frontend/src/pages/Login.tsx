@@ -57,10 +57,10 @@ const Login: React.FC = () => {
             <img
               src="/brasao_pmpa.png"
               alt="PMPA"
-              className="w-32 h-32 md:w-40 md:h-40 object-contain relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-2xl"
+              className="w-24 h-24 md:w-32 md:h-32 object-contain relative z-10 transition-transform duration-500 group-hover:scale-110 drop-shadow-2xl"
             />
           </div>
-          <h1 className="text-5xl font-black text-white tracking-tighter mt-4 uppercase italic">
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter mt-3 uppercase italic">
             Athenas
             <span className="block text-xs font-bold tracking-[0.5em] text-primary mt-1 not-italic opacity-80 uppercase">Telecom DITEL</span>
           </h1>
@@ -69,8 +69,8 @@ const Login: React.FC = () => {
 
         {/* LOGIN CARD */}
         <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl shadow-black/50 overflow-hidden">
-          <div className="p-8 md:p-10">
-            <div className="flex items-center gap-3 mb-8">
+          <div className="p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-6">
               <div className="w-1.5 h-6 bg-primary rounded-full"></div>
               <h2 className="text-2xl font-bold text-white tracking-tight">Acesso Restrito</h2>
             </div>
@@ -105,33 +105,33 @@ const Login: React.FC = () => {
                   </div>
                 )}
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-5">
                   <div className="relative group">
-                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2 ml-1 group-focus-within:text-primary transition-colors">E-mail Corporativo</label>
+                    <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1 group-focus-within:text-primary transition-colors">E-mail / Usuário</label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
                       <input
                         type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="E-mail ou Usuário"
                         required
-                        className="w-full bg-white/5 border border-white/5 group-focus-within:border-primary/50 group-focus-within:bg-white/10 rounded-[1.25rem] pl-12 pr-4 py-4 text-sm text-white placeholder-gray-600 outline-none transition-all"
+                        className="w-full bg-white/5 border border-white/5 group-focus-within:border-primary/50 group-focus-within:bg-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-gray-600 outline-none transition-all"
                       />
                     </div>
                   </div>
 
                   <div className="relative group">
-                    <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2 ml-1 group-focus-within:text-primary transition-colors">Chave de Acesso</label>
+                    <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1 group-focus-within:text-primary transition-colors">Chave de Acesso</label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
                       <input
                         type="password"
                         value={senha}
                         onChange={(e) => setSenha(e.target.value)}
                         placeholder="••••••••••••"
                         required
-                        className="w-full bg-white/5 border border-white/5 group-focus-within:border-primary/50 group-focus-within:bg-white/10 rounded-[1.25rem] pl-12 pr-4 py-4 text-sm text-white placeholder-gray-600 outline-none transition-all"
+                        className="w-full bg-white/5 border border-white/5 group-focus-within:border-primary/50 group-focus-within:bg-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-gray-600 outline-none transition-all"
                       />
                     </div>
                   </div>
