@@ -280,7 +280,7 @@ const Usuarios: React.FC = () => {
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">E-mail / Login</label>
                 <input 
-                  type="email" 
+                  type="text" 
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value.toLowerCase()})}

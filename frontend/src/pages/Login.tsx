@@ -111,10 +111,10 @@ const Login: React.FC = () => {
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
                       <input
-                        type="email"
+                        type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="nome.sobrenome@pmpa.pa.gov.br"
+                        placeholder="E-mail ou Usuário"
                         required
                         className="w-full bg-white/5 border border-white/5 group-focus-within:border-primary/50 group-focus-within:bg-white/10 rounded-[1.25rem] pl-12 pr-4 py-4 text-sm text-white placeholder-gray-600 outline-none transition-all"
                       />
