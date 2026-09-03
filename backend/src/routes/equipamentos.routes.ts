@@ -8,12 +8,14 @@ const prisma = new PrismaClient();
 
 // Listar todos os equipamentos (Rádios) com filtro opcional por status
 router.get('/', async (req: Request, res: Response) => {
-  const { status } = req.query;
+  const { status, tipo } = req.query;
   try {
+    const whereClause: any = {};
+    if (status) whereClause.status = status as StatusEquipamento;
+    if (tipo) whereClause.tipo = tipo;
+
     const equipamentos = await prisma.equipamento.findMany({
-      where: status ? {
-        status: status as StatusEquipamento
-      } : {},
+      where: whereClause,
       include: {
         unidade: true,
       }
@@ -27,7 +29,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Criar equipamento
 router.post('/', async (req, res) => {
   const { 
-    rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId,
+    rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId, tipo,
     problema, solicitante, paeNumero, analiseTecnica, laudoTecnico, tecnicoResp, dataEntradaLaudo, dataSaidaLaudo
   } = req.body;
   try {
@@ -38,6 +40,7 @@ router.post('/', async (req, res) => {
         idRadio,
         marca,
         modelo,
+        tipo: tipo || 'RADIO',
         status: status || 'OPERACIONAL',
         garantia: garantia || 'Não',
         unidadeId: unidadeId ? unidadeId : null,
@@ -67,7 +70,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const { id } = req.params as { id: string };
   const { 
-    rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId,
+    rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId, tipo,
     problema, solicitante, paeNumero, analiseTecnica, laudoTecnico, tecnicoResp, dataEntradaLaudo, dataSaidaLaudo
   } = req.body;
   try {
@@ -79,6 +82,7 @@ router.put('/:id', async (req, res) => {
         idRadio,
         marca,
         modelo,
+        tipo,
         status,
         garantia,
         unidadeId: unidadeId ? unidadeId : null,

@@ -6,6 +6,7 @@ import { Menu, Radio } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Equipamentos from './pages/Equipamentos';
+import EquipamentosDiversos from './pages/EquipamentosDiversos';
 import Militares from './pages/Militares';
 import Unidades from './pages/Unidades';
 import Cautelas from './pages/Cautelas';
@@ -141,6 +142,7 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/equipamentos" element={<Equipamentos />} />
+                <Route path="/equipamentos-diversos" element={<EquipamentosDiversos />} />
                 <Route path="/militares" element={<Militares />} />
                 <Route path="/unidades" element={<Unidades />} />
                 <Route path="/cautelas" element={<Cautelas />} />

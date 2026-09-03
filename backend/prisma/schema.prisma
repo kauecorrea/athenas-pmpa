@@ -38,6 +38,11 @@ model Militar {
   transferencias Transferencia[]
 }
 
+enum TipoEquipamento {
+  RADIO
+  DIVERSO
+}
+
 model Equipamento {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   idRadio     String?   // "ID do Rádio" (não é mais único para aceitar vários vazios)
@@ -47,6 +52,7 @@ model Equipamento {
   modelo      String?   // APX 900, APX 2000, TP9400, TP9100
   garantia    String    @default("Não")
   status      StatusEquipamento @default(OPERACIONAL)
+  tipo        TipoEquipamento   @default(RADIO)
   
   // Campos de Laudo Técnico vinculados ao rádio
   problema       String?

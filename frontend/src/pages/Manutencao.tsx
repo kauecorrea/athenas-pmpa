@@ -35,6 +35,7 @@ interface EquipamentoDisponivel {
   rp: string;
   numSerie: string;
   idRadio: string;
+  tipo?: string;
 }
 
 const Manutencao: React.FC = () => {
@@ -64,6 +65,7 @@ const Manutencao: React.FC = () => {
   const [solicitante, setSolicitante] = useState('');
   const [paeNumero, setPaeNumero] = useState('');
   const [buscaRadioModal, setBuscaRadioModal] = useState('');
+  const [tipoBusca, setTipoBusca] = useState('RADIO');
   const [activeTab, setActiveTab] = useState<'identificacao' | 'laudo'>('identificacao');
 
   useEffect(() => {
@@ -412,6 +414,7 @@ const Manutencao: React.FC = () => {
 
   const radiosDisponiveisFiltrados = useMemo(() => {
     return radiosDisponiveis.filter(radio => {
+      if ((radio.tipo || 'RADIO') !== tipoBusca) return false;
       if (!buscaRadioModal.trim()) return true;
       const term = buscaRadioModal.toLowerCase();
       return (
@@ -487,17 +490,23 @@ const Manutencao: React.FC = () => {
               <div className="space-y-4">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">1. Selecionar Equipamento</label>
                 <div className={`border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#0b101a] rounded-xl overflow-hidden flex flex-col ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
-                  <div className="p-3 border-b border-gray-200 dark:border-[#374151] bg-white dark:bg-[#1f2937]">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                      <input 
-                        type="text"
-                        placeholder="Buscar por Série, RP, ID..."
-                        value={buscaRadioModal}
-                        onChange={e => setBuscaRadioModal(e.target.value)}
-                        className="w-full bg-transparent text-sm text-gray-900 dark:text-white pl-9 pr-3 py-2 focus:outline-none"
-                      />
-                    </div>
+                  <div className="flex gap-2 p-2 border-b border-gray-100 dark:border-[#1f2937]">
+                    <select 
+                      value={tipoBusca} 
+                      onChange={(e) => setTipoBusca(e.target.value)}
+                      className="bg-transparent text-sm text-gray-900 dark:text-white px-2 focus:outline-none border-r border-gray-200 dark:border-gray-700"
+                    >
+                      <option value="RADIO">Rádios</option>
+                      <option value="DIVERSO">Equipamentos</option>
+                    </select>
+                    <Search className="text-gray-400 ml-2" size={16} />
+                    <input 
+                      type="text"
+                      placeholder="Buscar por Série, RP, ID..."
+                      value={buscaRadioModal}
+                      onChange={e => setBuscaRadioModal(e.target.value)}
+                      className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white px-2 focus:outline-none"
+                    />
                   </div>
                   <div className="max-h-60 overflow-y-auto p-2 space-y-1">
                     {radiosDisponiveisFiltrados.length === 0 ? (

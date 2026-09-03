@@ -6,8 +6,7 @@ import jsPDF from 'jspdf';
 
 interface Equipamento {
   id: string;
-  idRadio: string;
-  rp: string;
+    rp: string;
   numSerie: string;
   marca: string;
   modelo: string;
@@ -34,7 +33,7 @@ interface Unidade {
   nome: string;
 }
 
-const Equipamentos: React.FC = () => {
+const EquipamentosDiversos: React.FC = () => {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
 
@@ -55,10 +54,9 @@ const Equipamentos: React.FC = () => {
   const [novoEquip, setNovoEquip] = useState({
     id: "",
     numSerie: "",
-    idRadio: "",
     rp: "",
-    marca: "Motorola",
-    modelo: "APX 900",
+    marca: "",
+    modelo: "",
     status: "OPERACIONAL",
     garantia: "Não",
     unidadeId: "",
@@ -89,7 +87,7 @@ const Equipamentos: React.FC = () => {
 
   const fetchEquipamentos = async () => {
     try {
-      const res = await axios.get("/api/equipamentos?tipo=RADIO");
+      const res = await axios.get("/api/equipamentos?tipo=DIVERSO");
       setEquipamentos(res.data);
     } catch (e) {
       console.error(
@@ -105,10 +103,9 @@ const Equipamentos: React.FC = () => {
     setNovoEquip({
       id: "",
       numSerie: "",
-      idRadio: "",
       rp: "",
-      marca: "Motorola",
-      modelo: "APX 900",
+      marca: "",
+      modelo: "",
       status: "OPERACIONAL",
       garantia: "Não",
       unidadeId: "",
@@ -130,10 +127,9 @@ const Equipamentos: React.FC = () => {
     setNovoEquip({
       id: eq.id,
       numSerie: eq.numSerie,
-      idRadio: eq.idRadio || "",
       rp: eq.rp || "",
-      marca: eq.marca || "Motorola",
-      modelo: eq.modelo || "APX 900",
+      marca: eq.marca || "",
+      modelo: eq.modelo || "",
       status: eq.status,
       garantia: eq.garantia || "Não",
       unidadeId: eq.unidadeId || "",
@@ -198,7 +194,7 @@ const Equipamentos: React.FC = () => {
 
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.text(`Nº: ${m.idRadio ? String(m.idRadio).toUpperCase() : ''}`, 10, 39 + offsetY);
+      doc.text(`Nº: ${m.rp ? String(m.rp).toUpperCase() : ''}`, 10, 39 + offsetY);
       doc.text(`Suporte: ${m.marca || ''} ${m.modelo || ''}`, 60, 39 + offsetY);
       doc.text(`Telecom: Rádio HT`, 130, 39 + offsetY);
 
@@ -292,16 +288,15 @@ const Equipamentos: React.FC = () => {
         );
         setViewMode("list");
       } else {
-        const res = await axios.post("/api/equipamentos", { ...novoEquip, tipo: "RADIO" });
+        const res = await axios.post("/api/equipamentos", { ...novoEquip, tipo: "DIVERSO" });
         setEquipamentos([...equipamentos, res.data]);
         alert("Equipamento cadastrado com sucesso!");
         setNovoEquip({
           id: "",
           numSerie: "",
-          idRadio: "",
           rp: "",
-          marca: "Motorola",
-          modelo: "APX 900",
+          marca: "",
+          modelo: "",
           status: "OPERACIONAL",
           garantia: "Não",
           unidadeId: "",
@@ -385,8 +380,7 @@ const Equipamentos: React.FC = () => {
       const term = busca.toLowerCase();
       const matchBusca =
         (eq.numSerie && eq.numSerie.toLowerCase().includes(term)) ||
-        (eq.rp && eq.rp.toLowerCase().includes(term)) ||
-        (eq.idRadio && eq.idRadio.toLowerCase().includes(term));
+        (eq.rp && eq.rp.toLowerCase().includes(term));
       if (!matchBusca) match = false;
     }
 
@@ -628,9 +622,7 @@ const Equipamentos: React.FC = () => {
                     key={eq.id}
                     className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors"
                   >
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
-                      {eq.idRadio || "-"}
-                    </td>
+
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                       {eq.numSerie}
                     </td>
@@ -711,20 +703,6 @@ const Equipamentos: React.FC = () => {
           <div className="p-6 overflow-y-auto flex-1">
             {activeTab === 'identificacao' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Nº (Opcional)
-                </label>
-                <input
-                  type="text"
-                  value={novoEquip.idRadio}
-                  onChange={(e) =>
-                    setNovoEquip({ ...novoEquip, idRadio: e.target.value })
-                  }
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Número de Série
@@ -978,4 +956,4 @@ const Equipamentos: React.FC = () => {
   );
 };
 
-export default Equipamentos;
+export default EquipamentosDiversos;

@@ -26,6 +26,7 @@ interface Equipamento {
   marca: string;
   modelo: string;
   status: string;
+  tipo?: string;
 }
 
 interface Militar {
@@ -83,6 +84,7 @@ const Cautelas: React.FC = () => {
   const [recebedorContato, setRecebedorContato] = useState('');
 
   const [buscaRadio, setBuscaRadio] = useState('');
+  const [tipoBusca, setTipoBusca] = useState('RADIO');
   const [isRadioListOpen, setIsRadioListOpen] = useState(false);
 
   const [showReportModal, setShowReportModal] = useState(false);
@@ -447,7 +449,7 @@ const Cautelas: React.FC = () => {
     const termo = buscaRadio.toLowerCase();
     if (!termo) return [];
 
-    return (equipamentosDisponiveis || [])
+    return (equipamentosDisponiveis || []).filter(eq => (eq.tipo || 'RADIO') === tipoBusca)
       .filter(eq => 
         eq.status === 'OPERACIONAL' && (
           (eq.idRadio || '').toLowerCase().includes(termo) ||
@@ -816,16 +818,26 @@ const Cautelas: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Rádios para Cautela</label>
                 
                 <div className="relative">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input 
-                      type="text" 
-                      placeholder="Pesquisar por RP ou Série..." 
-                      value={buscaRadio}
-                      onChange={(e) => { setBuscaRadio(e.target.value); setIsRadioListOpen(true); }}
-                      onFocus={() => setIsRadioListOpen(true)}
-                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-primary"
-                    />
+                  <div className="flex gap-3">
+                    <select 
+                      value={tipoBusca} 
+                      onChange={(e) => setTipoBusca(e.target.value)}
+                      className="bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary text-gray-900 dark:text-white"
+                    >
+                      <option value="RADIO">Rádios</option>
+                      <option value="DIVERSO">Equipamentos</option>
+                    </select>
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Pesquisar por RP ou Série..." 
+                        value={buscaRadio}
+                        onChange={(e) => { setBuscaRadio(e.target.value); setIsRadioListOpen(true); }}
+                        onFocus={() => setIsRadioListOpen(true)}
+                        className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-primary text-gray-900 dark:text-white"
+                      />
+                    </div>
                   </div>
 
                   {isRadioListOpen && buscaRadio.length > 0 && (

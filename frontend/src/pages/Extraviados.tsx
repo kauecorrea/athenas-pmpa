@@ -23,6 +23,7 @@ interface Equipamento {
   idRadio: string;
   marca: string;
   modelo: string;
+  tipo?: string;
 }
 
 interface Militar {
@@ -62,6 +63,7 @@ const Extraviados: React.FC = () => {
   const [busca, setBusca] = useState('');
   const [buscaUnidade, setBuscaUnidade] = useState('');
   const [buscaEquipamento, setBuscaEquipamento] = useState('');
+  const [tipoBusca, setTipoBusca] = useState('RADIO');
 
   // Form state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -277,6 +279,7 @@ const Extraviados: React.FC = () => {
 
   const equipamentosFiltrados = useMemo(() => {
     return equipamentos.filter(eq => {
+      if ((eq.tipo || 'RADIO') !== tipoBusca) return false;
       const term = buscaEquipamento.toLowerCase();
       return (
         (eq.idRadio && eq.idRadio.toLowerCase().includes(term)) ||
@@ -532,15 +535,25 @@ const Extraviados: React.FC = () => {
                   2. Equipamento Extraviado
                 </label>
                 <div className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <input 
-                      type="text" 
-                      placeholder="Pesquisar por Patrimônio ou Nº..." 
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary outline-none transition-all"
-                      value={buscaEquipamento}
-                      onChange={(e) => setBuscaEquipamento(e.target.value)}
-                    />
+                  <div className="flex gap-2">
+                    <select 
+                      value={tipoBusca} 
+                      onChange={(e) => setTipoBusca(e.target.value)}
+                      className="bg-white dark:bg-surface border border-gray-300 dark:border-[#374151] rounded-lg px-2 py-2 text-sm focus:border-primary outline-none transition-all"
+                    >
+                      <option value="RADIO">Rádios</option>
+                      <option value="DIVERSO">Equipamentos</option>
+                    </select>
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input 
+                        type="text" 
+                        placeholder="Pesquisar por Patrimônio ou Nº..." 
+                        className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-9 pr-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                        value={buscaEquipamento}
+                        onChange={(e) => setBuscaEquipamento(e.target.value)}
+                      />
+                    </div>
                   </div>
                   <div className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg h-48 overflow-y-auto p-1 space-y-1">
                     {equipamentosFiltrados.map(eq => {
