@@ -677,8 +677,8 @@ const EquipamentosDiversos: React.FC = () => {
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {isEditing
-                ? "Atualize as informações do rádio."
-                : "Preencha as informações abaixo para cadastrar um novo rádio no sistema."}
+                ? "Atualize as informações do equipamento."
+                : "Preencha as informações abaixo para cadastrar um novo equipamento no sistema."}
             </p>
             {isEditing && (
               <div className="flex gap-6 mt-4 border-t border-gray-200 dark:border-[#1f2937] pt-4">
@@ -735,34 +735,30 @@ const EquipamentosDiversos: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Marca
                 </label>
-                <select
+                <input
+                  type="text"
+                  placeholder="Ex: Motorola, Cisco, Ubiquiti..."
                   value={novoEquip.marca}
                   onChange={(e) =>
                     setNovoEquip({ ...novoEquip, marca: e.target.value })
                   }
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                >
-                  <option value="Motorola">Motorola</option>
-                  <option value="Tait">Tait</option>
-                </select>
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Modelo
                 </label>
-                <select
+                <input
+                  type="text"
+                  placeholder="Ex: APX 900, Catalyst 2960..."
                   value={novoEquip.modelo}
                   onChange={(e) =>
                     setNovoEquip({ ...novoEquip, modelo: e.target.value })
                   }
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
-                >
-                  <option value="APX 900">APX 900</option>
-                  <option value="APX 2000">APX 2000</option>
-                  <option value="TP9400">TP9400</option>
-                  <option value="TP9100">TP9100</option>
-                </select>
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                />
               </div>
 
               <div>
