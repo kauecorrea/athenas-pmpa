@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./assets/banner.jpg" alt="Athenas PMPA Banner" style="border-radius: 10px; width: 100%; max-width: 800px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+  <img src="./frontend/public/brasao_pmpa.png" alt="Brasão PMPA" width="180">
 
   <br />
   <br />
