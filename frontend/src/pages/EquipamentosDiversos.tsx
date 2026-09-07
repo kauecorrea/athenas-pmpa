@@ -1,3 +1,10 @@
+/**
+ * @file EquipamentosDiversos.tsx
+ * @description Componente de Cadastro de Equipamentos Não-Rádios (Fontes, Carregadores, Baterias). Similar aos rádios, mas focado em periféricos de telecomunicação.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Plus, Search, Trash2, Edit2, ChevronDown, List, ClipboardCheck } from "lucide-react";

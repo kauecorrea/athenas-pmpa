@@ -1,3 +1,9 @@
+/**
+ * @file auditoria.routes.ts
+ * @description Rotas de Consulta do Livro de Auditoria. Acesso exclusivo de Leitura (GET) aos logs imutáveis gerados pelo sistema.
+ * Operações padrão de Criação, Leitura, Atualização e Exclusão (CRUD).
+ */
+
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 

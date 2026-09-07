@@ -1,3 +1,10 @@
+/**
+ * @file Unidades.tsx
+ * @description Componente de Unidades (OPMs). Cria as bases, batalhões e CIPMs para organização regional do inventário.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 

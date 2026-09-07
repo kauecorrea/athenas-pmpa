@@ -1,3 +1,9 @@
+/**
+ * @file unidades.routes.ts
+ * @description Rotas de Gerenciamento de Unidades (OPM). Controla as unidades da corporação para vinculação de militares e equipamentos.
+ * Operações padrão de Criação, Leitura, Atualização e Exclusão (CRUD).
+ */
+
 import { Router } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';

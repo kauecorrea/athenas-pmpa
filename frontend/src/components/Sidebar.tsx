@@ -1,3 +1,14 @@
+/**
+ * @file Sidebar.tsx
+ * @description Componente de Navegação Principal do Sistema.
+ * Apresenta o menu lateral que permite transitar entre as telas (Dashboard, Cautelas, Militares, etc.).
+ * Implementa controle de estado para Colapso (Menu Minificado) e Tema (Dark/Light Mode).
+ * 
+ * Regra de Negócio PMPA: 
+ * - O menu "Administração" (Usuários e Auditoria) só é exibido se o usuário 
+ *   tiver a permissão "Administrador".
+ */
+
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -21,10 +32,11 @@ import {
 } from 'lucide-react';
 
 interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean; // Controla se o menu hambúrguer está aberto no Mobile
+  onClose: () => void; // Função para fechar o menu no Mobile
 }
 
+// Configuração estática do Menu de Operadores Padrão
 const menuPrincipal = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Radio, label: 'Rádios', path: '/equipamentos' },
@@ -38,6 +50,7 @@ const menuPrincipal = [
   { icon: AlertTriangle, label: 'Extraviados', path: '/extraviados' },
 ];
 
+// Configuração estática do Menu de Administradores
 const menuAdmin = [
   { icon: Users, label: 'Usuários', path: '/usuarios' },
   { icon: Activity, label: 'Auditoria', path: '/auditoria' },
@@ -46,17 +59,23 @@ const menuAdmin = [
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Estados para gerenciar as credenciais logadas e o visual do usuário
   const [usuario, setUsuario] = React.useState<any>(null);
   const [avatar, setAvatar] = React.useState<string | null>(null);
 
+  // Estado para injetar a classe 'dark' no HTML
   const [isDarkMode, setIsDarkMode] = React.useState<boolean>(() => {
     return document.documentElement.className.includes('dark');
   });
 
+  // Estado de Colapso persistido no LocalStorage para que o usuário não tenha que 
+  // encolher a barra toda vez que der F5 na página
   const [isCollapsed, setIsCollapsed] = React.useState<boolean>(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
 
+  // useEffect para carregar o perfil do usuário logo no carregamento do componente
   React.useEffect(() => {
     let currentUser: any = null;
     const userStr = localStorage.getItem('usuario');
@@ -68,6 +87,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       if (savedAvatar) setAvatar(savedAvatar);
     }
 
+    // Escuta eventos personalizados disparados pela tela "Perfil"
+    // para atualizar a fotinha da sidebar em tempo real sem precisar de F5
     const handleAvatarUpdate = () => {
       if (currentUser) {
         const updatedAvatar = localStorage.getItem(`avatar_${currentUser.id}`);
@@ -80,12 +101,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const isAdmin = usuario?.permissao === 'Administrador';
 
+  // Função para Matar a Sessão
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
     navigate('/login');
   };
 
+  // Alterna as classes do CSS Global
   const toggleTheme = () => {
     const nextTheme = !isDarkMode;
     setIsDarkMode(nextTheme);
@@ -104,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Overlay escuro para mobile quando o menu está aberto */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300"
@@ -112,12 +135,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
 
+      {/* 
+        Container Principal da Sidebar 
+        Utiliza classes mágicas do Tailwind para lidar com largura dinâmica baseada no estado isCollapsed
+      */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 bg-white/90 dark:bg-surface/80 border-r border-gray-200/50 dark:border-white/5 backdrop-blur-xl flex flex-col h-full transition-all duration-300 ease-in-out md:relative md:translate-x-0 md:z-auto
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:flex'}
         ${isCollapsed ? 'w-72 md:w-20' : 'w-72 md:w-72'}
       `}>
-        {/* Toggle Collapse Button for Desktop */}
+        {/* Botão Flutuante (Desktop) para Recolher/Expandir */}
         <button
           onClick={toggleCollapse}
           title={isCollapsed ? "Expandir Menu" : "Recolher Menu"}
@@ -126,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
 
-        {/* Logo/Header */}
+        {/* Logo PMPA / Cabeçalho */}
         <div className={`h-20 flex items-center border-b border-gray-200/50 dark:border-white/5 transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'justify-between px-6'}`}>
           <div className="flex items-center gap-3">
             <img src="/brasao_pmpa.png" alt="PMPA Logo" className="w-10 h-10 object-contain drop-shadow-sm transition-transform duration-500 hover:rotate-[360deg] shrink-0" />
@@ -138,7 +165,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             )}
           </div>
           
-          {/* Close button for mobile */}
+          {/* Botão de Fechar no Mobile (X) */}
           <button 
             onClick={onClose}
             className="p-2 -mr-2 text-gray-500 hover:text-gray-900 dark:hover:text-white md:hidden"
@@ -147,6 +174,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
+        {/* Corpo Rolável com os Menus */}
         <div className="flex-1 overflow-y-auto py-6">
           {!isCollapsed ? (
             <h2 className="px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 animate-fade-in-fast">
@@ -156,6 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <div className="mx-4 my-2 border-b border-gray-200/30 dark:border-white/5" />
           )}
           
+          {/* Renderização do Menu Público */}
           <nav className="space-y-1 px-2">
             {menuPrincipal.map((item) => (
               <NavLink
@@ -179,6 +208,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             ))}
           </nav>
 
+          {/* Renderização Condicional do Menu de Administração */}
           {isAdmin && (
             <>
               {!isCollapsed ? (
@@ -215,9 +245,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        {/* User Area & Theme Toggle */}
+        {/* Rodapé da Sidebar: Tema e Perfil */}
         <div className="p-3 border-t border-gray-200/50 dark:border-white/5">
-          {/* Theme Toggle */}
+          {/* Botão Alternar Tema Escuro */}
           <button 
             onClick={toggleTheme}
             title={isCollapsed ? (isDarkMode ? 'Modo Claro' : 'Modo Escuro') : undefined}
@@ -229,6 +259,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {!isCollapsed && <span className="font-medium animate-fade-in-fast whitespace-nowrap">{isDarkMode ? 'Modo Claro' : 'Modo Escuro'}</span>}
           </button>
 
+          {/* Atalho para o Perfil do Usuário */}
           <NavLink 
             to="/perfil" 
             title={isCollapsed ? (usuario?.nomeGuerra || 'Perfil') : undefined}
@@ -253,6 +284,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
           </NavLink>
           
+          {/* Logout */}
           <button 
             onClick={handleLogout} 
             title={isCollapsed ? 'Sair do Sistema' : undefined}

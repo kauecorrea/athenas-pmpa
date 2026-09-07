@@ -1,3 +1,10 @@
+/**
+ * @file Auditoria.tsx
+ * @description Componente do Livro de Auditoria. Tela Read-Only para Administradores verificarem o histórico imutável (logs) de quem fez o quê no sistema.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Activity, CalendarDays, User } from 'lucide-react';

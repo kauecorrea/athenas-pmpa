@@ -1,3 +1,10 @@
+/**
+ * @file Manutencao.tsx
+ * @description Componente de Gestão de Oficina/Manutenção. Lida com o fluxo de envio de equipamentos quebrados, laudos técnicos, orçamentos e devolução, com opção de impressão de Ordens de Serviço (OS).
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Plus, Wrench, FileText, CheckCircle, Search, List, Edit3, Trash2, Check, ClipboardCheck } from 'lucide-react';

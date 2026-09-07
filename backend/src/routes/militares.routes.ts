@@ -1,3 +1,9 @@
+/**
+ * @file militares.routes.ts
+ * @description Rotas de Gerenciamento de Efetivo (Militares). Gerencia o cadastro do efetivo da PMPA apto a acautelar equipamentos.
+ * Operações padrão de Criação, Leitura, Atualização e Exclusão (CRUD).
+ */
+
 import { Router } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';

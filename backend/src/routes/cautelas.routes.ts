@@ -1,3 +1,10 @@
+/**
+ * @file cautelas.routes.ts
+ * @description Rotas de Cautelas (Empréstimos de Equipamentos).
+ * Gerencia o ciclo de vida do empréstimo de rádios e outros equipamentos para os militares ou unidades.
+ * Uma cautela pode conter múltiplos equipamentos (Lote).
+ */
+
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';
@@ -6,18 +13,23 @@ import { registrarAuditoria } from '../utils/auditoria';
 const router = Router();
 const prisma = new PrismaClient();
 
-// Listar cautelas
+/**
+ * @route GET /api/cautelas
+ * @description Lista todas as cautelas do sistema.
+ * Antes de retornar, realiza uma checagem varrendo o banco de dados para verificar se alguma
+ * Cautela ATIVA ultrapassou a `dataPrevista` e, se sim, altera seu status para VENCIDA.
+ */
 // @ts-ignore
 router.get('/', async (req: Request, res: Response) => {
   try {
     const now = new Date();
 
-    // 1. Atualizar automaticamente para VENCIDA itens que passaram do prazo
+    // 1. Job Interno: Atualizar automaticamente para VENCIDA itens que passaram do prazo de devolução
     await prisma.cautela.updateMany({
       where: {
         status: 'ATIVA',
         dataPrevista: {
-          lt: now
+          lt: now // lt = less than (menor que agora)
         }
       },
       data: {
@@ -25,11 +37,14 @@ router.get('/', async (req: Request, res: Response) => {
       }
     });
 
-    // 2. Sincronizar Status dos Equipamentos (Garantir que os rádios fiquem como CAUTELADOS)
+    // 2. Job Interno: Sincronização de segurança
+    // Garante que todos os equipamentos atrelados a uma Cautela ATIVA estejam com o status de CAUTELADO.
+    // Isso previne que um rádio "fuja" do status cautelado por alguma inconsistência.
     const cautelasAtivas = await prisma.cautela.findMany({
       where: { status: 'ATIVA' },
       select: { equipamentoIds: true }
     });
+    
     for (const c of cautelasAtivas) {
       await prisma.equipamento.updateMany({
         where: { id: { in: (c.equipamentoIds as string[]) } },
@@ -37,7 +52,7 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Buscar cautelas (agora com status atualizados no banco)
+    // 3. Busca das cautelas com seus relacionamentos (Populate / JOIN)
     const cautelas = await prisma.cautela.findMany({
       include: {
         equipamentos: true,
@@ -54,20 +69,27 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Emprestar Rádi(os) (Criar Cautelas em Lote M:N)
+/**
+ * @route POST /api/cautelas
+ * @description Registra uma nova Cautela (Empréstimo). 
+ * Pode incluir múltiplos equipamentos na mesma requisição.
+ * @body { equipamentosIds, militarId, unidadeId, dataPrevista, missao, ... }
+ */
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
   const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
   
+  // Validação: Exige pelo menos um equipamento para criar a Cautela
   if (!equipamentosIds || !Array.isArray(equipamentosIds) || equipamentosIds.length === 0) {
-    return res.status(400).json({ error: 'Nenhum equipamento fornecido.' });
+    return res.status(400).json({ error: 'Nenhum equipamento fornecido. Cautela abortada.' });
   }
 
   try {
-    // Usando transaction para garantir a consistência
+    // Usando $transaction (Transação de Banco de Dados)
+    // Garante que a Cautela e o Status dos Rádios sejam salvos JUNTOS. Se um falhar, o outro desfaz (Rollback).
     const cautelaRealizada = await prisma.$transaction(async (tx) => {
       
-      // Pegar o último número sequencial para incrementar
+      // Busca o último número sequencial para gerar o novo número (Ex: Cautela Nº 15)
       const ultimaCautela = await (tx.cautela as any).findFirst({
         orderBy: { numeroSequencial: 'desc' },
         select: { numeroSequencial: true }
@@ -75,7 +97,7 @@ router.post('/', async (req: Request, res: Response) => {
       
       const proximoNumero = (ultimaCautela?.numeroSequencial || 0) + 1;
 
-      // 1. Criar a Cautela Única com Amarração M:N
+      // 1. Cria o registro principal da Cautela amarrando (connect) aos IDs dos equipamentos (M:N)
       const cautela = await (tx.cautela as any).create({
         data: {
           numeroSequencial: proximoNumero,
@@ -97,7 +119,7 @@ router.post('/', async (req: Request, res: Response) => {
         include: { equipamentos: true }
       });
 
-      // 2. Atualizar todos os equipamentos para CAUTELADO de uma vez
+      // 2. Altera imediatamente o status de todos os equipamentos para CAUTELADO
       await tx.equipamento.updateMany({
         where: { id: { in: equipamentosIds as string[] } },
         data: { status: 'CAUTELADO' }
@@ -106,16 +128,20 @@ router.post('/', async (req: Request, res: Response) => {
       return cautela;
     });
 
-    registrarAuditoria(req, `Criou Lote de Cautela`, `Cautelou ${equipamentosIds.length} rádio(s).`);
+    // Registra a ação no Livro de Auditoria para transparência institucional
+    registrarAuditoria(req, `Criou Lote de Cautela`, `Cautelou ${equipamentosIds.length} equipamento(s).`);
 
     res.status(201).json(cautelaRealizada);
   } catch (error) {
     console.error('Erro ao Criar Cautela:', (error as Error).message);
-    res.status(500).json({ error: 'Erro ao criar as cautelas em lote' });
+    res.status(500).json({ error: 'Erro ao criar as cautelas em lote. O banco desfez a ação.' });
   }
 });
 
-// Editar Cautela Base
+/**
+ * @route PUT /api/cautelas/:id
+ * @description Atualiza os dados textuais de uma cautela já existente (como missão, recebedor, nova data prevista).
+ */
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
@@ -132,10 +158,13 @@ router.put('/:id', async (req: Request, res: Response) => {
       recebedorContato: recebedorContato || null,
     };
     
+    // Regra de Negócio: Se a cautela estava VENCIDA, mas o usuário editou empurrando a data prevista para o futuro, 
+    // a cautela volta ao status de ATIVA.
     const cautelaExistente = await prisma.cautela.findUnique({ where: { id: id as string } });
     if (cautelaExistente && cautelaExistente.status === 'VENCIDA' && updateData.dataPrevista && updateData.dataPrevista > new Date()) {
       updateData.status = 'ATIVA';
     }
+    
     if (dataInicio) {
       updateData.dataRetirada = new Date(dataInicio);
     }
@@ -144,6 +173,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       where: { id: id as string },
       data: updateData
     });
+    
     registrarAuditoria(req, 'Editou Lote de Cautela', `Cautela ID: ${id}`);
     res.json(cautela);
   } catch (error) {
@@ -151,11 +181,16 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Devolver Lote (Baixa Total)
+/**
+ * @route PUT /api/cautelas/:id/devolver
+ * @description Encerra a cautela por completo (Devolução).
+ * Muda o status da Cautela para DEVOLVIDA e devolve os equipamentos ao status OPERACIONAL.
+ */
 // @ts-ignore
 router.put('/:id/devolver', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   try {
+    // 1. Marca a Cautela como DEVOLVIDA e salva a data atual
     const cautela = await prisma.cautela.update({
       where: { id: id as string },
       data: {
@@ -165,7 +200,10 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
       include: { equipamentos: true }
     });
 
+    // 2. Localiza os equipamentos no array (MongoDB suporta queries in arrays)
     const idsRadios = cautela.equipamentoIds as string[];
+    
+    // 3. Libera os rádios no estoque (Voltam a ser OPERACIONAL)
     await prisma.equipamento.updateMany({
       where: { id: { in: idsRadios } },
       data: { status: 'OPERACIONAL' }
@@ -175,27 +213,34 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
 
     res.json(cautela);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao devolver equipamento' });
+    res.status(500).json({ error: 'Erro interno ao processar a devolução.' });
   }
 });
 
-// Excluir Lote
+/**
+ * @route DELETE /api/cautelas/:id
+ * @description Exclusão Definitiva de uma cautela (Apenas Administradores).
+ * Apaga o histórico da cautela e libera os equipamentos.
+ */
 // @ts-ignore
 router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   try {
     const cautela = await prisma.cautela.findUnique({ where: { id: id as string }, include: { equipamentos: true } });
-    if(cautela) {
+    if (cautela) {
+       // Libera os equipamentos antes de apagar a amarração
        await prisma.equipamento.updateMany({
          where: { id: { in: cautela.equipamentos.map(e => e.id) } },
          data: { status: 'OPERACIONAL' }
        });
+       
+       // Exclui a cautela do banco
        await prisma.cautela.delete({ where: { id: id as string }});
-       registrarAuditoria(req, 'Apagou Cautela Definitivamente', `Cautela Apagada ID: ${id}`);
+       registrarAuditoria(req, 'Apagou Cautela Definitivamente', `Registro de cautela destruído. ID: ${id}`);
     }
     res.status(204).send();
   } catch(error) { 
-    res.status(500).json({error: 'Erro'}); 
+    res.status(500).json({error: 'Erro grave ao tentar excluir a Cautela.'}); 
   }
 });
 

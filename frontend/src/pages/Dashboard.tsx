@@ -1,3 +1,10 @@
+/**
+ * @file Dashboard.tsx
+ * @description Componente da Tela Inicial. Exibe estatísticas, cards de contagem, e gráficos (Fluxo Semanal) para fornecer um resumo da situação patrimonial.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 

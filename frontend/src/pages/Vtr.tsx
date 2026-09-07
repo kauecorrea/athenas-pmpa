@@ -1,3 +1,10 @@
+/**
+ * @file Vtr.tsx
+ * @description Componente de Viaturas (Rádios Móveis). Gerencia a amarração entre as viaturas da frota e os rádios móveis (veiculares) instalados nelas.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 

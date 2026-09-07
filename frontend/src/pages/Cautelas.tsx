@@ -1,3 +1,10 @@
+/**
+ * @file Cautelas.tsx
+ * @description Componente de Gerenciamento de Cautelas. Controla o empréstimo de rádios, incluindo formulários complexos M:N e a pesada lógica de geração de PDFs de Cautela e Termos de Responsabilidade usando jspdf e autotable.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';

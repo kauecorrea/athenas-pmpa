@@ -1,3 +1,9 @@
+/**
+ * @file equipamentos.routes.ts
+ * @description Rotas de Gerenciamento de Equipamentos e Rádios. Lida com o CRUD básico do inventário físico e filtros por tipo (Rádio/Diversos).
+ * Operações padrão de Criação, Leitura, Atualização e Exclusão (CRUD).
+ */
+
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient, StatusEquipamento } from '@prisma/client';

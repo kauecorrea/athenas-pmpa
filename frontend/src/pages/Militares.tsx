@@ -1,3 +1,10 @@
+/**
+ * @file Militares.tsx
+ * @description Componente de Cadastro de Efetivo. Registra a tropa PMPA autorizada a receber equipamentos, atrelando patentes, RGs e lotação.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 

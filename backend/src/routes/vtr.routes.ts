@@ -1,3 +1,9 @@
+/**
+ * @file vtr.routes.ts
+ * @description Rotas de Gerenciamento de Viaturas (VTR). Lida com a vinculação de rádios móveis instalados nos carros da corporação.
+ * Operações padrão de Criação, Leitura, Atualização e Exclusão (CRUD).
+ */
+
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';

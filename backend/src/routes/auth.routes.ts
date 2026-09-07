@@ -1,37 +1,50 @@
+/**
+ * @file auth.routes.ts
+ * @description Rotas de Autenticação.
+ * Lida com a validação de login (email/matrícula + senha), comparação de hashes (Bcrypt) e emissão de Tokens JWT.
+ */
+
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-
 const router = Router();
 const prisma = new PrismaClient();
+
+// Chave secreta para assinar os tokens. Mantida igual ao middleware.
 const JWT_SECRET = process.env.JWT_SECRET || 'super-senha-secreta-athenas-dev-local';
 
-
-
+/**
+ * @route POST /api/auth/login
+ * @description Realiza o login do usuário, gerando um token JWT caso as credenciais sejam válidas.
+ * @access Público
+ * @body { email, senha }
+ */
 router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, senha } = req.body;
 
-    // Procura o usuário
+    // 1. Busca o usuário no banco de dados através da matrícula/email
     const usuario = await prisma.usuario.findUnique({
       where: { email },
     });
 
+    // Se o usuário não existir, interrompe o fluxo com erro genérico por segurança
     if (!usuario) {
       res.status(401).json({ error: 'Credenciais inválidas' });
       return;
     }
 
-    // Verifica a senha
+    // 2. Compara a senha informada no frontend com o hash guardado no banco de dados
     const isPasswordValid = await bcrypt.compare(senha, usuario.senha);
     if (!isPasswordValid) {
       res.status(401).json({ error: 'Credenciais inválidas' });
       return;
     }
 
-    // Gera o token JWT
+    // 3. Gera o Token JWT contendo os metadados principais.
+    // Expiração configurada para 24 horas (exigirá login novamente amanhã)
     const token = jwt.sign(
       { 
         id: usuario.id, 
@@ -43,7 +56,8 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       { expiresIn: '24h' }
     );
 
-    // Auditoria de Logon manual
+    // 4. Auditoria Obrigatória
+    // Registra imediatamente no histórico geral do sistema que o usuário realizou o acesso
     await prisma.auditoria.create({
       data: {
         usuario: `${usuario.posto} ${usuario.nomeGuerra}`,
@@ -52,7 +66,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       }
     });
 
-    // Retorna Token + Informações do Sessão do Usuário
+    // 5. Retorna o Token e as propriedades públicas do usuário para o Frontend montar a sessão
     res.json({
       token,
       usuario: {

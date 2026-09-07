@@ -1,3 +1,9 @@
+/**
+ * @file index.ts
+ * @description Arquivo principal de inicialização do Backend do Sistema Athenas (PMPA).
+ * Configura o servidor Express, middlewares de segurança, limites de requisição e rotas da API.
+ */
+
 import express from 'express';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
@@ -9,6 +15,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 
 import { authMiddleware } from './middlewares/auth.middleware';
 
+// Importação das rotas
 import unidadesRoutes from './routes/unidades.routes';
 import equipamentosRoutes from './routes/equipamentos.routes';
 import cautelasRoutes from './routes/cautelas.routes';
@@ -28,13 +35,22 @@ const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 3333;
 
+/**
+ * Lista de origens permitidas (CORS).
+ * Evita que domínios não autorizados façam requisições para nossa API.
+ */
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.FRONTEND_URL || 'http://localhost:3000'
 ];
 
+/**
+ * Middleware: CORS (Cross-Origin Resource Sharing)
+ * Configurado restritamente para permitir apenas os domínios mapeados em allowedOrigins.
+ */
 app.use(cors({
   origin: (origin, callback) => {
+    // Permite conexões locais (sem origin) ou de domínios explicitamente na lista
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -43,7 +59,11 @@ app.use(cors({
   }
 }));
 
-// Proteção de Headers HTTP (Configuração explícita para SAST/njsscan)
+/**
+ * Middleware: Helmet
+ * Proteção de Headers HTTP (Configuração explícita focada em conformidade com SAST e boas práticas).
+ * Previne XSS, Clickjacking, MIME sniffing, entre outras vulnerabilidades comuns.
+ */
 app.use(helmet.dnsPrefetchControl());
 app.use(helmet.hidePoweredBy());
 app.use(helmet.hsts());
@@ -52,10 +72,16 @@ app.use(helmet.noSniff());
 app.use(helmet.xssFilter());
 app.use(helmet.frameguard());
 
-// Limite de payload JSON contra lentidão (DoS)
+/**
+ * Middleware: Body Parser com limite restrito
+ * Limita o payload JSON a 100kb para proteger o servidor contra ataques de negação de serviço (DoS).
+ */
 app.use(express.json({ limit: '100kb' }));
 
-// Proteção contra injeção NoSQL (Customizado para compatibilidade com Express 5)
+/**
+ * Middleware: Mongo Sanitize
+ * Remove chaves que contêm '$' ou '.' das requisições para evitar injeções NoSQL maliciosas.
+ */
 app.use((req, res, next) => {
   ['body', 'params', 'headers', 'query'].forEach((k) => {
     if ((req as any)[k]) {
@@ -65,21 +91,37 @@ app.use((req, res, next) => {
   next();
 });
 
-// Proteção contra Poluição de Parâmetros HTTP
+/**
+ * Middleware: HPP (HTTP Parameter Pollution)
+ * Impede a manipulação maliciosa de URLs que duplicam parâmetros (ex: ?status=A&status=B).
+ */
 app.use(hpp());
 
-// Rate Limiter Global contra DDoS
+/**
+ * Middleware: Rate Limiter
+ * Limita cada IP a 300 requisições a cada 15 minutos para bloquear ataques de força bruta ou DDoS.
+ */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 300, // limite original restaurado após importação massiva
+  max: 300, 
   message: { error: 'Muitas requisições. Tente novamente mais tarde.' },
 });
 app.use('/api', limiter);
 
-// Rota de Autenticação (Aberta)
+// ==========================================
+// REGISTRO DE ROTAS
+// ==========================================
+
+/**
+ * Rota de Autenticação
+ * Rota pública onde ocorre a verificação de credenciais e geração do JWT.
+ */
 app.use('/api/auth', authRoutes);
 
-// Rotas da API (Protegidas)
+/**
+ * Rotas da API (Protegidas)
+ * Todas estas rotas exigem a presença de um token JWT válido verificado pelo authMiddleware.
+ */
 app.use('/api/unidades', authMiddleware, unidadesRoutes);
 app.use('/api/equipamentos', authMiddleware, equipamentosRoutes);
 app.use('/api/cautelas', authMiddleware, cautelasRoutes);
@@ -92,21 +134,30 @@ app.use('/api/transferencias', authMiddleware, transferenciasRoutes);
 app.use('/api/auditoria', authMiddleware, auditoriaRoutes);
 app.use('/api/vtr', authMiddleware, vtrRoutes);
 
-// Rota inicial / Teste
+/**
+ * Endpoint raiz / Status
+ * Fornece uma rápida confirmação no navegador se a API base está operante.
+ */
 app.get('/', (req: express.Request, res: express.Response) => {
   res.send('API Controle Patrimonial PMPA v1.0.0 está online!');
 });
 
-// Endpoint de Keep-Alive para monitoramento externo
+/**
+ * Endpoint: Keep-Alive / Health Check
+ * Usado internamente ou por plataformas de monitoramento para garantir a estabilidade do container.
+ */
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'UP', timestamp: new Date() });
 });
 
-// Inicia o servidor
+/**
+ * Inicialização do Servidor
+ * Inicia a escuta da porta e o loop de pings internos (se hospedado em infraestruturas serverless que "dormem").
+ */
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 
-  // Lógica de Keep-Alive (Ping a cada 10 minutos)
+  // Lógica de Keep-Alive (Ping a cada 10 minutos para evitar cold-start)
   const URL_SISTEMA = process.env.RENDER_EXTERNAL_URL;
   if (URL_SISTEMA) {
     const https = require('https');

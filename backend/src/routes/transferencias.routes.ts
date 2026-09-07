@@ -1,3 +1,9 @@
+/**
+ * @file transferencias.routes.ts
+ * @description Rotas de Transferência de Equipamentos. Registra movimentações de patrimônio entre diferentes Unidades (OPMs).
+ * Operações padrão de Criação, Leitura, Atualização e Exclusão (CRUD).
+ */
+
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import { PrismaClient } from '@prisma/client';

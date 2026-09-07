@@ -1,3 +1,10 @@
+/**
+ * @file Extraviados.tsx
+ * @description Componente de Extravios (Perdas/Furtos). Gerencia inquéritos, dados de B.O., responsabilização de militares e baixa contábil de equipamentos.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { 

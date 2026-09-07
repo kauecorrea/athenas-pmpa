@@ -1,3 +1,10 @@
+/**
+ * @file Usuarios.tsx
+ * @description Componente de Controle de Acesso (Contas). Tela administrativa para criar contas de operadores/administradores do Athenas.
+ * Contém lógicas de controle de estado (useState), chamadas à API backend (Axios/useEffect)
+ * e renderização de tabelas e modais.
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { 
