@@ -1,20 +1,20 @@
 # Guia de Arquitetura e Handoff Técnico - ATHENAS
 
-Este documento é destinado à equipe de **Engenharia de Software e TI da Polícia Militar do Pará (PMPA)**. Ele reflete o estado atual, real e testado da aplicação após auditoria de segurança rigorosa, delimitando claramente o que está protegido e o que precisa ser assumido como dívida técnica ou pauta gerencial pela corporação.
+Este documento é destinado à equipe de **Engenharia de Software e TI da Polícia Militar do Pará (PMPA)**. Ele reflete o estado atual do código após revisão estática e verificações de compilação, delimitando claramente o que está protegido e o que precisa ser assumido como dívida técnica ou pauta gerencial pela corporação.
 
 ---
 
 ## 1. Stack Tecnológica Base
 
 ### 1.1. Frontend
-* **Core:** React 19 via Vite.
+* **Core:** React 19 via Vite. (Requer Node.js >=22.12.0 ou ^20.19.0).
 * **Linguagem:** TypeScript (Strict Mode).
 * **Estilização:** Tailwind CSS (Dark Mode nativo).
 * **Comunicação:** `axios` com injeção automática de Token JWT via Interceptors. O Token fica alocado no `localStorage`.
 * **Geração de Relatórios:** Totalmente Client-Side via `jspdf` e `jspdf-autotable`.
 
 ### 1.2. Backend
-* **Core:** Node.js (v18+) com Express.
+* **Core:** Node.js (Requer Node.js >=22.12.0 ou ^20.19.0) com Express.
 * **Linguagem:** TypeScript.
 * **Banco de Dados:** MongoDB (Requer Replica Set ativado para Transações).
 * **ORM:** Prisma Client.
@@ -59,8 +59,9 @@ As seguintes vulnerabilidades críticas foram rastreadas e bloqueadas no código
 1. **Auto-Promoção e Alteração Funcional:** A rota `/api/usuarios/me` ignora completamente qualquer tentativa de alteração de *Posto* e *Unidade*. No frontend (`Perfil.tsx`), os campos estão visualmente desativados incondicionalmente para todos.
 2. **Fallback Conservador de Privilégios:** O modelo de banco de dados (`schema.prisma`) e a rota de criação de usuários foram atualizados para atribuir `Operador` como permissão padrão caso a requisição falhe em explicitar o nível de acesso.
 3. **Deleções Acidentais / Cascata Oculta:** O destrutivo efeito-colateral da rota `GET /api/transferencias` foi completamente removido. O sistema não exclui mais dados patrimoniais de forma automatizada e autônoma, garantindo que o histórico permaneça intacto.
-4. **Vazamento Involuntário de JWT Secret:** Variáveis de ambiente configuradas na primeira linha de carregamento, e remoção de chaves falsas em middlewares, prevenindo que o sistema inicie "inseguro por padrão".
-5. **Interceptação de E-mails Duplicados:** O Backend captura erros únicos do Prisma (`P2002`) em atualizações e criações, retornando `Status 400` amigável em vez de colapso genérico `500`.
+4. **Vazamento Involuntário de JWT Secret:** Importação configurada rigorosamente no arquivo de entrada.
+5. **Interceptação de E-mails Duplicados:** O Backend captura erros únicos do Prisma (`P2002`) nas rotas de Perfil, Criação (`POST`) e Atualização (`PUT`), retornando `Status 409 Conflict` de forma amigável e segura.
+6. **Hardcoded Admin Password Removida:** Os scripts de seed `seed.ts`, `seed.js` e `seed_native.js` foram reescritos e deletados para exigir que a primeira senha administrativa seja provida via variáveis de ambiente globais (`ADMIN_EMAIL` e `ADMIN_PASSWORD`), blindando o repositório contra invasões óbvias.
 
 ---
 
@@ -68,23 +69,23 @@ As seguintes vulnerabilidades críticas foram rastreadas e bloqueadas no código
 
 A equipe técnica que assumir a manutenção deve planejar atuar nos seguintes vetores de código:
 
-1. **Tokens JWT Expostos (LocalStorage):** Atualmente o Access Token reside em formato aberto no `localStorage` do navegador do usuário, vulnerável a XSS. Recomenda-se migrar para Cookies `HttpOnly / Secure`.
-2. **Ausência de Revogação de Sessões:** Como a sessão é Stateless, um JWT ativo é válido por 24h. Um admin rebaixado para operador mantém poderes por algumas horas até o token expirar. Não existe um "Kill-Switch" de sessões (`tokenVersion`).
-3. **Validação de Mass Assignment (VTR):** O módulo de Viatura (OS) propaga expansões diretas de payload (`...req.body`). Recomenda-se adotar imediatamente `Zod` ou `Joi` em todos os Controllers.
-4. **Colisão de Numeração Sequencial:** Ordens de Serviço leem a última numeração e somam `+1`. Dois usuários clicando "Salvar" no exato mesmo milissegundo podem gerar OS com numerações repetidas.
-5. **Auditoria Fragilizada:** A auditoria atual salva Strings (nomes amigáveis) e não força dependências duras na transação de banco. Um log de deleção não guarda o JSON/Snapshot do dado deletado, impossibilitando um rollback forense puro.
-6. **Ausência de Testes Automatizados:** O repositório carece integralmente de scripts `Jest`, `Cypress` ou `Playwright`.
+1. **Tokens JWT Expostos (LocalStorage):** Atualmente o Access Token reside em formato aberto no `localStorage` do navegador do usuário. Embora configurado em SPA, ele é vulnerável a XSS (Cross-Site Scripting). Recomenda-se migrar para Cookies `HttpOnly / Secure`.
+2. **Ausência de Revogação de Sessões:** Como a sessão é Stateless, um JWT ativo é válido por 24h. Um admin rebaixado para operador mantém poderes por algumas horas até o token expirar. Não existe um "Kill-Switch" de sessões limitadas (como `tokenVersion`).
+3. **Validação de Mass Assignment (VTR):** O módulo de Viatura (OS) propaga expansões diretas de payload (`...req.body`). O sistema permite envio de campos espúrios. Recomenda-se adotar imediatamente uma biblioteca de validação esquemática como `Zod` ou `Joi` em todos os Controllers.
+4. **Colisão de Numeração Sequencial:** Ordens de Serviço leem a última numeração e somam `+1`. Duas chamadas simultâneas podem gerar OS com numerações repetidas. Necessita de contador atômico.
+5. **Auditoria Sensível:** A auditoria salva dados, mas não é estritamente imutável (pode ser editada no MongoDB via terminal) nem atrelada duramente em transações multi-stage, impossibilitando rollbacks forenses automáticos (Event Sourcing puro).
+6. **Ausência de Testes Automatizados:** O repositório carece integralmente de scripts `Jest`, `Cypress` ou `Playwright` para validar as regras de negócio de ponta a ponta, dependendo unicamente do compilador do TypeScript.
 
 ---
 
 ## 5. Decisões Estratégicas Dependentes da PMPA
 
-Os pontos abaixo não são problemas de código, mas sim de **Política de Acesso Corporativo**. A DITEL precisará mapeá-los antes de exigir mudanças técnicas:
+Os pontos abaixo não são problemas de código, mas sim de **Política de Acesso Corporativo**. A corporação precisará mapeá-los antes de exigir mudanças técnicas:
 
-1. **Matriz de Permissões Oficial (RBAC):** Hoje o Operador consegue cadastrar e editar diversos patrimônios livremente. Se a política exigir que "Somente Administrador cria Equipamentos", os controladores precisam ser alterados.
-2. **Isolamento de Visibilidade (Filtros Regionais):** A consulta patrimonial atual é Estadual. Qualquer operador vê a listagem de qualquer unidade. Para isolar o quartel X do quartel Y, é necessário plugar o ID da OPM na cláusula `WHERE` global de cada Rota GET.
+1. **Matriz de Permissões Oficial (RBAC):** Hoje o Operador consegue cadastrar e editar diversos patrimônios livremente. É necessária uma documentação formal de autorização antes de reescrever as rotas de backend.
+2. **Isolamento de Visibilidade (Filtros Regionais):** A consulta patrimonial atual é Estadual. Qualquer operador vê a listagem de qualquer unidade. Para isolar por batalhão, é necessário plugar o ID da OPM na cláusula `WHERE` global de cada Rota GET.
 3. **Políticas de Retenção de LOGs (LGPD):** É necessário definir por quanto tempo a tabela de Auditoria deve guardar informações.
-4. **Validação e Fluxo do Rádio na Viatura:** O vínculo atual entre Rádio e VTR é temporal e flexível, exigindo definições institucionais se isso deve virar um bloqueio fixo no modelo relacional.
+4. **Backup e Desastres (DRP):** É obrigatório estruturar uma política de Dumps MongoDB em repositório externo, testando scripts de reidratação de banco.
 
 ---
 
@@ -92,8 +93,25 @@ Os pontos abaixo não são problemas de código, mas sim de **Política de Acess
 
 ⚠️ **Atenção: Não coloque o ATHENAS no ar sem antes aplicar o Checklist:**
 
-- [ ] **Bootstrap do Administrador Primário:** A rota de criação de usuários é protegida por `adminMiddleware`. Em um banco recém formatado/zerado, é impossível usar a UI. Será necessário que o DBA rode um *Seed Script* no servidor ou injete o primeiro usuário via interface de linha de comando.
-- [ ] **Replica Set no MongoDB:** O Prisma necessita de Replica Sets para executar transações seguras (como o rollback de transferências). Se o MongoDB da PMPA for apenas Node Standalone, a aplicação irá crashear nas rotas de Cautelas/Devoluções.
-- [ ] **Cofre de Segredos:** Retirar a senha do banco (`DATABASE_URL`) e `JWT_SECRET` de arquivos abertos `.env` e gerenciar via Docker Secrets ou AWS Secrets Manager.
-- [ ] **Política de Backups a Quente:** Programar snapshots do Atlas, cronjobs de Dump diários e validá-los em ambiente de SandBox trimestralmente.
-- [ ] **Pipeline CI/CD:** Instaurar Github Actions/Gitlab CI que rode Linting estrito e barragem de PRs contendo senhas vazadas.
+- [ ] **Bootstrap Seguro do Admin:** Ao rodar `npx prisma db seed`, injete no ambiente hospedeiro do servidor Node as variáveis `ADMIN_EMAIL` e `ADMIN_PASSWORD` (mínimo de 10 caracteres). O sistema se recusará a subir o Seed caso elas não existam ou a senha seja fraca.
+- [ ] **Replica Set no MongoDB:** As operações que dependem de transações falharão caso o Mongo rode em Standalone. Transações de Cautela e Transferências exibirão erro 500 sem persistência. Habilite Replica Sets no cluster.
+- [ ] **Cofre Institucional de Segredos:** Retirar a senha do banco (`DATABASE_URL`) e `JWT_SECRET` de arquivos `.env` soltos e passar o gerenciamento para Docker Secrets, HashiCorp Vault ou equivalente homologado pela TI da PMPA.
+- [ ] **Rede HTTPS/TLS Habilitada:** Proibido tráfego de senhas em HTTP puro.
+- [ ] **CORS e Rate Limiting Restritos:** Especificar domínio da PMPA nas flags do CORS e afinar os limiters.
+
+---
+
+## 7. Guia de Resolução de Problemas e Inicialização (Troubleshooting)
+
+### Inicializando do Zero (Ambiente Limpo)
+1. Certifique-se de usar `Node 22 LTS` (Requisito rígido do Vite).
+2. Na pasta `/backend`, crie o `.env` com a sua `DATABASE_URL` do ReplicaSet, e as chaves de bootstrap (`ADMIN_EMAIL` e `ADMIN_PASSWORD`).
+3. Rode `npm install`, depois `npx prisma generate` e por fim `npx prisma db seed` para ejetar o primeiro Administrador oficial no banco.
+4. Na pasta `/frontend`, instale as dependências via `npm install`, crie o `.env` especificando `VITE_API_URL` (para a API rodando na porta 3333) e execute `npm run dev`.
+
+### Problema: "Frontend não conecta no Backend (Network Error)"
+* **Causa:** O sistema foi levado para Produção e o `.env` do Frontend não foi injetado, tentando forçar `localhost`.
+* **Solução:** Especifique `VITE_API_URL` com a rota oficial do servidor reverso NGINX.
+
+### Rollback e Restauração de Banco
+* **Solução:** Como o sistema é NoSQL, o Prisma não manipula `down migrations`. O Rollback se baseia primariamente na restauração do último Snapshot do MongoAtlas ou dump criptografado hospedado pela TI Institucional.
