@@ -4,6 +4,7 @@ import { Upload, Shield, Mail, Lock, User } from 'lucide-react';
 
 const Perfil: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
+  const [permissao, setPermissao] = useState<string>('');
 
   // Basico
   const [nomeCompleto, setNomeCompleto] = useState('');
@@ -34,6 +35,7 @@ const Perfil: React.FC = () => {
       setPosto(u.posto || '');
       setUnidade(u.unidade || 'DITEL');
       setEmailAtual(u.email || '');
+      setPermissao(u.permissao || '');
       
       // Recuperar avatar (UI Local)
       const savedAvatar = localStorage.getItem(`avatar_${u.id}`);
@@ -214,12 +216,16 @@ const Perfil: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Posto/Graduação</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Posto/Graduação
+                {permissao !== 'Administrador' && <span className="text-[10px] bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 px-2 py-0.5 rounded-full">Somente Admin</span>}
+              </label>
               <div className="relative">
                 <select 
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                  className={`w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none ${permissao !== 'Administrador' ? 'opacity-60 cursor-not-allowed' : ''}`}
                   value={posto}
                   onChange={(e) => setPosto(e.target.value)}
+                  disabled={permissao !== 'Administrador'}
                 >
                   <option value="">Selecione...</option>
                   <option value="Coronel PM">Coronel PM</option>
@@ -242,12 +248,16 @@ const Perfil: React.FC = () => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unidade Principal</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Unidade Principal
+                {permissao !== 'Administrador' && <span className="text-[10px] bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 px-2 py-0.5 rounded-full">Somente Admin</span>}
+              </label>
               <div className="relative">
                 <select 
-                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                  className={`w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none ${permissao !== 'Administrador' ? 'opacity-60 cursor-not-allowed' : ''}`}
                   value={unidade}
                   onChange={(e) => setUnidade(e.target.value)}
+                  disabled={permissao !== 'Administrador'}
                 >
                   <option value="DITEL">DITEL</option>
                   <option value="CIEPAS">CIEPAS</option>

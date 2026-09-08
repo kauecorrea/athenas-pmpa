@@ -94,10 +94,25 @@ router.get('/', adminMiddleware, async (req: Request, res: Response): Promise<vo
 router.put('/me', async (req: any, res: Response): Promise<void> => {
   try {
     const id = req.usuario.id;
-    const { nomeCompleto, nomeGuerra, posto, unidade, senha, email } = req.body;
+    // Removido 'posto' e 'unidade'. O Operador só pode alterar seu nome e credenciais.
+    const { nomeCompleto, nomeGuerra, senha, email } = req.body;
 
+    // Validação de e-mail básico
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        res.status(400).json({ error: 'Formato de e-mail inválido.' });
+        return;
+      }
+    }
+
+    // Validação de senha
     let hashedPassword;
     if (senha) {
+      if (senha.length < 6) {
+        res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+        return;
+      }
       const salt = await bcrypt.genSalt(10);
       hashedPassword = await bcrypt.hash(senha, salt);
     }
@@ -108,9 +123,6 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
         nomeCompleto,
         nomeGuerra,
         email,
-        posto,
-        unidade,
-        // NÃO recebe 'permissao'
         ...(hashedPassword && { senha: hashedPassword })
       },
       select: {
@@ -126,7 +138,11 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
     });
 
     res.json(usuario);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
+      res.status(400).json({ error: 'Este e-mail já está em uso por outro usuário.' });
+      return;
+    }
     res.status(500).json({ error: 'Erro ao atualizar seu próprio perfil.' });
   }
 });

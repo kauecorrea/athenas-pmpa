@@ -4,10 +4,10 @@
  * Configura o servidor Express, middlewares de segurança, limites de requisição e rotas da API.
  */
 
+import 'dotenv/config';
 import prisma from './prisma';
 import express from 'express';
 import cors from 'cors';
-import 'dotenv/config';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
