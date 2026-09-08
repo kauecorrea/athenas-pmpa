@@ -60,8 +60,8 @@ As seguintes vulnerabilidades críticas foram rastreadas e bloqueadas no código
 2. **Fallback Conservador de Privilégios:** O modelo de banco de dados (`schema.prisma`) e a rota de criação de usuários foram atualizados para atribuir `Operador` como permissão padrão caso a requisição falhe em explicitar o nível de acesso.
 3. **Deleções Acidentais / Cascata Oculta:** O destrutivo efeito-colateral da rota `GET /api/transferencias` foi completamente removido. O sistema não exclui mais dados patrimoniais de forma automatizada e autônoma, garantindo que o histórico permaneça intacto.
 4. **Vazamento Involuntário de JWT Secret:** Importação configurada rigorosamente no arquivo de entrada.
-5. **Interceptação de E-mails Duplicados:** O Backend captura erros únicos do Prisma (`P2002`) nas rotas de Perfil, Criação (`POST`) e Atualização (`PUT`), retornando `Status 409 Conflict` de forma amigável e segura.
-6. **Hardcoded Admin Password Removida:** Os scripts de seed `seed.ts`, `seed.js` e `seed_native.js` foram reescritos e deletados para exigir que a primeira senha administrativa seja provida via variáveis de ambiente globais (`ADMIN_EMAIL` e `ADMIN_PASSWORD`), blindando o repositório contra invasões óbvias.
+5. **Interceptação de E-mails Duplicados:** O Backend captura erros únicos do Prisma (`P2002`) nas rotas de Perfil (`/me`), Criação (`POST`) e Atualização (`PUT`), retornando padronizadamente o `Status 409 Conflict` de forma amigável e segura.
+6. **Hardcoded Admin Password Removida:** Os scripts JavaScript legados foram excluídos, e o seed TypeScript (`seed.ts`) foi reescrito para exigir que as credenciais administrativas sejam providas via variáveis de ambiente globais (`ADMIN_EMAIL` e `ADMIN_PASSWORD`), blindando o repositório contra invasões óbvias.
 
 ---
 
@@ -75,6 +75,7 @@ A equipe técnica que assumir a manutenção deve planejar atuar nos seguintes v
 4. **Colisão de Numeração Sequencial:** Ordens de Serviço leem a última numeração e somam `+1`. Duas chamadas simultâneas podem gerar OS com numerações repetidas. Necessita de contador atômico.
 5. **Auditoria Sensível:** A auditoria salva dados, mas não é estritamente imutável (pode ser editada no MongoDB via terminal) nem atrelada duramente em transações multi-stage, impossibilitando rollbacks forenses automáticos (Event Sourcing puro).
 6. **Ausência de Testes Automatizados:** O repositório carece integralmente de scripts `Jest`, `Cypress` ou `Playwright` para validar as regras de negócio de ponta a ponta, dependendo unicamente do compilador do TypeScript.
+7. **Troca Obrigatória de Senha Inicial:** Atualmente, a senha injetada via Seed pode permanecer indefinidamente. Recomenda-se adicionar o booleano `deveTrocarSenha` no Prisma, forçando o Administrador a alterar sua credencial no primeiro login.
 
 ---
 
@@ -93,7 +94,7 @@ Os pontos abaixo não são problemas de código, mas sim de **Política de Acess
 
 ⚠️ **Atenção: Não coloque o ATHENAS no ar sem antes aplicar o Checklist:**
 
-- [ ] **Bootstrap Seguro do Admin:** Ao rodar `npx prisma db seed`, injete no ambiente hospedeiro do servidor Node as variáveis `ADMIN_EMAIL` e `ADMIN_PASSWORD` (mínimo de 10 caracteres). O sistema se recusará a subir o Seed caso elas não existam ou a senha seja fraca.
+- [ ] **Bootstrap Seguro do Admin:** Ao rodar `npx prisma db seed`, injete no ambiente hospedeiro do servidor Node as variáveis `ADMIN_EMAIL` e `ADMIN_PASSWORD`. O sistema se recusará a subir o Seed caso elas não existam ou a senha contenha menos de 10 caracteres (Nota: o tamanho mínimo não garante força criptográfica, recomenda-se adicionar complexidade no futuro).
 - [ ] **Replica Set no MongoDB:** As operações que dependem de transações falharão caso o Mongo rode em Standalone. Transações de Cautela e Transferências exibirão erro 500 sem persistência. Habilite Replica Sets no cluster.
 - [ ] **Cofre Institucional de Segredos:** Retirar a senha do banco (`DATABASE_URL`) e `JWT_SECRET` de arquivos `.env` soltos e passar o gerenciamento para Docker Secrets, HashiCorp Vault ou equivalente homologado pela TI da PMPA.
 - [ ] **Rede HTTPS/TLS Habilitada:** Proibido tráfego de senhas em HTTP puro.

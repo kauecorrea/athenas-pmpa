@@ -18,12 +18,25 @@ async function main() {
     process.exit(1);
   }
 
+  // Criar uma Unidade inicial
+  const unidade = await prisma.unidade.upsert({
+    where: { nome: 'DITEL' },
+    update: {},
+    create: {
+      nome: 'DITEL',
+      sigla: 'DITEL',
+      localizacao: 'Quartel General',
+    }
+  })
+
+  console.log('Seed: Unidade inicial criada/atualizada:', unidade.nome)
+
   const existingAdmin = await prisma.usuario.findFirst({
     where: { permissao: 'Administrador' }
   });
 
   if (existingAdmin) {
-    console.log('Seed: Administrador ja existente. Bootstrap abortado por seguranca.');
+    console.log('Seed: Administrador ja existente. Pulo da criacao do admin de bootstrap.');
     return;
   }
 
@@ -44,18 +57,7 @@ async function main() {
 
   console.log('Seed: Usuário Admin Bootstrap criado com sucesso.');
 
-  // Criar uma Unidade inicial
-  const unidade = await prisma.unidade.upsert({
-    where: { nome: 'DITEL' },
-    update: {},
-    create: {
-      nome: 'DITEL',
-      sigla: 'DITEL',
-      localizacao: 'Quartel General',
-    }
-  })
 
-  console.log('Seed: Unidade inicial criada/atualizada:', unidade.nome)
 }
 
 main()

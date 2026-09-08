@@ -144,7 +144,7 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
     res.json(usuario);
   } catch (error: any) {
     if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
-      res.status(400).json({ error: 'Este e-mail já está em uso por outro usuário.' });
+      res.status(409).json({ error: 'Este e-mail já está em uso por outro usuário.' });
       return;
     }
     res.status(500).json({ error: 'Erro ao atualizar seu próprio perfil.' });
