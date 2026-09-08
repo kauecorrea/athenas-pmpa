@@ -61,7 +61,7 @@ As seguintes vulnerabilidades críticas foram rastreadas e bloqueadas no código
 3. **Deleções Acidentais / Cascata Oculta:** O destrutivo efeito-colateral da rota `GET /api/transferencias` foi completamente removido. O sistema não exclui mais dados patrimoniais de forma automatizada e autônoma, garantindo que o histórico permaneça intacto.
 4. **Vazamento Involuntário de JWT Secret:** Importação configurada rigorosamente no arquivo de entrada.
 5. **Interceptação de E-mails Duplicados:** O Backend captura erros únicos do Prisma (`P2002`) nas rotas de Perfil (`/me`), Criação (`POST`) e Atualização (`PUT`), retornando padronizadamente o `Status 409 Conflict` de forma amigável e segura.
-6. **Hardcoded Admin Password Removida:** Os scripts JavaScript legados foram excluídos, e o seed TypeScript (`seed.ts`) foi reescrito para exigir que as credenciais administrativas sejam providas via variáveis de ambiente globais (`ADMIN_EMAIL` e `ADMIN_PASSWORD`), blindando o repositório contra invasões óbvias.
+6. **Hardcoded Admin Password Removida:** Os scripts JavaScript legados foram excluídos, e o seed TypeScript (`seed.ts`) foi reescrito para exigir que as credenciais administrativas sejam providas via variáveis de ambiente globais (`ADMIN_LOGIN` e `ADMIN_PASSWORD`), blindando o repositório contra invasões óbvias.
 
 ---
 
@@ -94,7 +94,7 @@ Os pontos abaixo não são problemas de código, mas sim de **Política de Acess
 
 ⚠️ **Atenção: Não coloque o ATHENAS no ar sem antes aplicar o Checklist:**
 
-- [ ] **Bootstrap Seguro do Admin:** Ao rodar `npx prisma db seed`, injete no ambiente hospedeiro do servidor Node as variáveis `ADMIN_EMAIL` e `ADMIN_PASSWORD`. O sistema se recusará a subir o Seed caso elas não existam ou a senha contenha menos de 10 caracteres (Nota: o tamanho mínimo não garante força criptográfica, recomenda-se adicionar complexidade no futuro).
+- [ ] **Bootstrap Seguro do Admin:** Ao rodar `npx prisma db seed`, injete no ambiente hospedeiro do servidor Node as variáveis `ADMIN_LOGIN` e `ADMIN_PASSWORD`. O sistema se recusará a subir o Seed caso elas não existam ou a senha contenha menos de 10 caracteres (Nota: o tamanho mínimo não garante força criptográfica, recomenda-se adicionar complexidade no futuro).
 - [ ] **Replica Set no MongoDB:** As operações que dependem de transações falharão caso o Mongo rode em Standalone. Transações de Cautela e Transferências exibirão erro 500 sem persistência. Habilite Replica Sets no cluster.
 - [ ] **Cofre Institucional de Segredos:** Retirar a senha do banco (`DATABASE_URL`) e `JWT_SECRET` de arquivos `.env` soltos e passar o gerenciamento para Docker Secrets, HashiCorp Vault ou equivalente homologado pela TI da PMPA.
 - [ ] **Rede HTTPS/TLS Habilitada:** Proibido tráfego de senhas em HTTP puro.
@@ -106,7 +106,7 @@ Os pontos abaixo não são problemas de código, mas sim de **Política de Acess
 
 ### Inicializando do Zero (Ambiente Limpo)
 1. Certifique-se de usar `Node 22 LTS` (Requisito rígido do Vite).
-2. Na pasta `/backend`, crie o `.env` com a sua `DATABASE_URL` do ReplicaSet, e as chaves de bootstrap (`ADMIN_EMAIL` e `ADMIN_PASSWORD`).
+2. Na pasta `/backend`, crie o `.env` com a sua `DATABASE_URL` do ReplicaSet, e as chaves de bootstrap (`ADMIN_LOGIN` e `ADMIN_PASSWORD`).
 3. Rode `npm install`, depois `npx prisma generate` e por fim `npx prisma db seed` para ejetar o primeiro Administrador oficial no banco.
 4. Na pasta `/frontend`, instale as dependências via `npm install`, crie o `.env` especificando `VITE_API_URL` (para a API rodando na porta 3333) e execute `npm run dev`.
 

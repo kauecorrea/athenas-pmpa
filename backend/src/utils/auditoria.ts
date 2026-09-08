@@ -10,8 +10,8 @@ export const registrarAuditoria = async (req: any, acao: string, detalhes?: stri
     const nomeGuerra = req.usuario.nomeGuerra || '';
     if (posto || nomeGuerra) {
       usuarioNome = `${posto}${nomeGuerra}`.trim();
-    } else if (req.usuario.email) {
-      usuarioNome = req.usuario.email;
+    } else if (req.usuario.login) {
+      usuarioNome = req.usuario.login;
     }
   } else {
     usuarioNome = req.headers['x-usuario-nome'] as string || 'Operador Local / Indefinido';

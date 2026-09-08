@@ -20,10 +20,15 @@ const router = Router();
  */
 router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nomeCompleto, nomeGuerra, email, senha, posto, unidade, permissao } = req.body;
+    const { nomeCompleto, nomeGuerra, login, email, senha, posto, unidade, permissao } = req.body;
 
-    // 1. Verifica se a matrícula/email de login já existe para evitar duplicidade
-    const userExists = await prisma.usuario.findUnique({ where: { email } });
+    if (!login) {
+      res.status(400).json({ error: 'O identificador de login é obrigatório.' });
+      return;
+    }
+
+    // 1. Verifica se a matrícula/login já existe para evitar duplicidade
+    const userExists = await prisma.usuario.findUnique({ where: { login } });
     if (userExists) {
       res.status(400).json({ error: 'Usuário/Matrícula já cadastrado no sistema.' });
       return;
@@ -38,6 +43,7 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
       data: {
         nomeCompleto,
         nomeGuerra,
+        login,
         email,
         senha: hashedPassword,
         posto,
@@ -51,12 +57,13 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
       id: usuario.id, 
       nomeCompleto: usuario.nomeCompleto, 
       nomeGuerra: usuario.nomeGuerra,
+      login: usuario.login,
       email: usuario.email,
       permissao: usuario.permissao 
     });
   } catch (error: any) {
     if (error.code === 'P2002') {
-      res.status(409).json({ error: 'Usuário/Matrícula já cadastrado no sistema (Conflito).' });
+      res.status(409).json({ error: 'Identificador de acesso já utilizado no sistema (Conflito).' });
       return;
     }
     res.status(500).json({ error: 'Erro interno ao criar usuário.' });
@@ -99,15 +106,11 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
   try {
     const id = req.usuario.id;
     // Removido 'posto' e 'unidade'. O Operador só pode alterar seu nome e credenciais.
-    const { nomeCompleto, nomeGuerra, senha, email } = req.body;
+    const { nomeCompleto, nomeGuerra, senha, login, email } = req.body;
 
-    // Validação de e-mail básico
-    if (email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        res.status(400).json({ error: 'Formato de e-mail inválido.' });
-        return;
-      }
+    if (!login) {
+      res.status(400).json({ error: 'O identificador de login é obrigatório.' });
+      return;
     }
 
     // Validação de senha
@@ -126,6 +129,7 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
       data: {
         nomeCompleto,
         nomeGuerra,
+        login,
         email,
         ...(hashedPassword && { senha: hashedPassword })
       },
@@ -143,8 +147,8 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
 
     res.json(usuario);
   } catch (error: any) {
-    if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
-      res.status(409).json({ error: 'Este e-mail já está em uso por outro usuário.' });
+    if (error.code === 'P2002' && (error.meta?.target?.includes('email') || error.meta?.target?.includes('login'))) {
+      res.status(409).json({ error: 'Identificador de acesso já utilizado no sistema.' });
       return;
     }
     res.status(500).json({ error: 'Erro ao atualizar seu próprio perfil.' });
@@ -159,7 +163,12 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
 router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params as { id: string };
-    const { nomeCompleto, nomeGuerra, posto, unidade, permissao, senha, email } = req.body;
+    const { nomeCompleto, nomeGuerra, posto, unidade, permissao, senha, login, email } = req.body;
+
+    if (!login) {
+      res.status(400).json({ error: 'O identificador de login é obrigatório.' });
+      return;
+    }
 
     // 1. Trata a troca de senha se solicitada
     let hashedPassword;
@@ -175,6 +184,7 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
       data: {
         nomeCompleto,
         nomeGuerra,
+        login,
         email,
         posto,
         unidade,
@@ -185,6 +195,7 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
         id: true,
         nomeCompleto: true,
         nomeGuerra: true,
+        login: true,
         email: true,
         posto: true,
         unidade: true,
@@ -196,7 +207,7 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
     res.json(usuario);
   } catch (error: any) {
     if (error.code === 'P2002') {
-      res.status(409).json({ error: 'Usuário/Matrícula já cadastrado no sistema (Conflito).' });
+      res.status(409).json({ error: 'Identificador de acesso já utilizado no sistema (Conflito).' });
       return;
     }
     res.status(500).json({ error: 'Erro ao atualizar dados do usuário.' });

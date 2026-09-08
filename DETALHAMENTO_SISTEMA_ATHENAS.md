@@ -23,7 +23,7 @@
 
 O ATHENAS foi desenvolvido para substituir planilhas manuais na gestão de telecomunicações e logística da PMPA. Ele permite que o operador tenha controle total sobre o ciclo de vida dos equipamentos de rádio (HT e Móvel), do momento em que chegam à unidade até a sua eventual quebra, extravio ou acautelamento nas mãos da tropa.
 
-A navegação ocorre por um menu lateral esquerdo (Sidebar), acessível após o Login com E-mail (embora visualmente a tela possa dizer "E-mail/Matrícula", o sistema processa estritamente por e-mail) e Senha.
+A navegação ocorre por um menu lateral esquerdo (Sidebar), acessível após o Login com seu Identificador de Acesso (que pode ser matrícula, e-mail ou nome de usuário, dependendo da configuração administrativa) e Senha.
 
 ---
 

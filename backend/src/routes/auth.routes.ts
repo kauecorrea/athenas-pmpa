@@ -21,15 +21,15 @@ if (!JWT_SECRET) {
  * @route POST /api/auth/login
  * @description Realiza o login do usuário, gerando um token JWT caso as credenciais sejam válidas.
  * @access Público
- * @body { email, senha }
+ * @body { login, senha }
  */
 router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, senha } = req.body;
+    const { login, senha } = req.body;
 
-    // 1. Busca o usuário no banco de dados através da matrícula/email
+    // 1. Busca o usuário no banco de dados através do identificador de acesso (login)
     const usuario = await prisma.usuario.findUnique({
-      where: { email },
+      where: { login },
     });
 
     // Se o usuário não existir, interrompe o fluxo com erro genérico por segurança

@@ -24,7 +24,8 @@ interface Usuario {
   id: string;
   nomeCompleto: string;
   nomeGuerra: string;
-  email: string;
+  login: string;
+  email?: string;
   permissao: string;
   posto?: string;
   unidade?: string;
@@ -41,6 +42,7 @@ const Usuarios: React.FC = () => {
     id: '',
     nomeCompleto: '',
     nomeGuerra: '',
+    login: '',
     email: '',
     senha: '',
     permissao: 'Operador',
@@ -92,6 +94,7 @@ const Usuarios: React.FC = () => {
       id: '', 
       nomeCompleto: '', 
       nomeGuerra: '', 
+      login: '', 
       email: '', 
       senha: '', 
       permissao: 'Operador',
@@ -106,7 +109,8 @@ const Usuarios: React.FC = () => {
       id: u.id,
       nomeCompleto: u.nomeCompleto,
       nomeGuerra: u.nomeGuerra,
-      email: u.email,
+      login: u.login,
+      email: u.email || '',
       permissao: u.permissao,
       posto: u.posto || '',
       unidade: u.unidade || 'DITEL',
@@ -132,7 +136,8 @@ const Usuarios: React.FC = () => {
     return usuarios.filter(u => 
       u.nomeCompleto.toLowerCase().includes(busca.toLowerCase()) || 
       u.nomeGuerra.toLowerCase().includes(busca.toLowerCase()) ||
-      u.email.toLowerCase().includes(busca.toLowerCase())
+      u.login.toLowerCase().includes(busca.toLowerCase()) ||
+      (u.email && u.email.toLowerCase().includes(busca.toLowerCase()))
     );
   }, [usuarios, busca]);
 
@@ -188,7 +193,7 @@ const Usuarios: React.FC = () => {
                 <tr>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Operador</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Posto / Unidade</th>
-                  <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">E-mail / Login</th>
+                  <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">E-mail</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nível</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
                 </tr>
@@ -214,7 +219,10 @@ const Usuarios: React.FC = () => {
                          <span className="text-gray-600 dark:text-gray-400 font-medium">{u.posto || '-'}</span>
                          <span className="block text-[10px] text-gray-400 italic">{u.unidade || 'POLÍCIA MILITAR'}</span>
                       </td>
-                      <td className="px-6 py-4 text-xs font-mono text-gray-500">{u.email}</td>
+                      <td className="px-6 py-4 text-xs font-mono text-gray-500">
+                        <span className="block text-primary font-bold mb-1">{u.login}</span>
+                        {u.email || '-'}
+                      </td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 text-[10px] font-bold tracking-wider rounded-full border flex items-center gap-1 w-fit ${
                           u.permissao === 'Administrador' ? 'bg-danger/10 text-danger border-danger/20' : 'bg-success/10 text-success border-success/20'
@@ -285,10 +293,20 @@ const Usuarios: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">E-mail / Login</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Identificador de Acesso (Login)</label>
                 <input 
                   type="text" 
                   required
+                  value={formData.login}
+                  onChange={(e) => setFormData({...formData, login: e.target.value.toLowerCase()})}
+                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">E-mail (Opcional)</label>
+                <input 
+                  type="text" 
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value.toLowerCase()})}
                   className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"

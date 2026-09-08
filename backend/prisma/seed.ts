@@ -4,11 +4,11 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminLogin = process.env.ADMIN_LOGIN;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (!adminEmail || !adminPassword) {
-    console.error('ERRO CRITICO: Variaveis ADMIN_EMAIL e ADMIN_PASSWORD nao fornecidas no ambiente.');
+  if (!adminLogin || !adminPassword) {
+    console.error('ERRO CRITICO: Variaveis ADMIN_LOGIN e ADMIN_PASSWORD nao fornecidas no ambiente.');
     console.error('Por medidas de seguranca, o bootstrap foi abortado.');
     process.exit(1);
   }
@@ -45,7 +45,7 @@ async function main() {
   // Criar Usuário Admin Inicial
   const admin = await prisma.usuario.create({
     data: {
-      email: adminEmail,
+      login: adminLogin,
       senha: hashedPassword,
       nomeCompleto: 'Administrador Bootstrap',
       nomeGuerra: 'ADMIN',

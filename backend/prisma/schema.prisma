@@ -123,10 +123,11 @@ enum StatusCautela {
 
 model Usuario {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  login        String   @unique
+  email        String?
+  senha        String
   nomeCompleto String
   nomeGuerra   String
-  email        String   @unique
-  senha        String
   posto        String?  // Ex: 1º Sargento
   unidade      String?  // Ex: DITEL (Texto livre por enquanto)
   permissao    String   @default("Operador") 

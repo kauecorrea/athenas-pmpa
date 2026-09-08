@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Radio, Lock, Mail } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +19,7 @@ const Login: React.FC = () => {
 
     try {
       const response = await axios.post('/api/auth/login', {
-        email,
+        login,
         senha
       });
 
@@ -107,14 +107,14 @@ const Login: React.FC = () => {
 
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div className="relative group">
-                    <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1 group-focus-within:text-primary transition-colors">E-mail / Usuário</label>
+                    <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1 group-focus-within:text-primary transition-colors">Identificador de Acesso</label>
                     <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-primary transition-colors" size={18} />
                       <input
                         type="text"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="E-mail ou Usuário"
+                        value={login}
+                        onChange={(e) => setLogin(e.target.value)}
+                        placeholder="Matrícula, Nome ou E-mail"
                         required
                         className="w-full bg-white/5 border border-white/5 group-focus-within:border-primary/50 group-focus-within:bg-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder-gray-600 outline-none transition-all"
                       />

@@ -11,9 +11,10 @@ const Perfil: React.FC = () => {
   const [posto, setPosto] = useState('');
   const [unidade, setUnidade] = useState('DITEL');
 
-  // Email
-  const [emailAtual, setEmailAtual] = useState('');
-  const [novoEmail, setNovoEmail] = useState('');
+  // Autenticação
+  const [loginAtual, setLoginAtual] = useState('');
+  const [novoLogin, setNovoLogin] = useState('');
+  const [emailContato, setEmailContato] = useState('');
 
   // Senha
   const [novaSenha, setNovaSenha] = useState('');
@@ -33,7 +34,8 @@ const Perfil: React.FC = () => {
       setNomeGuerra(u.nomeGuerra || '');
       setPosto(u.posto || '');
       setUnidade(u.unidade || 'DITEL');
-      setEmailAtual(u.email || '');
+      setLoginAtual(u.login || '');
+      setEmailContato(u.email || '');
       
       // Recuperar avatar (UI Local)
       const savedAvatar = localStorage.getItem(`avatar_${u.id}`);
@@ -93,22 +95,22 @@ const Perfil: React.FC = () => {
     }
   };
 
-  const handleSalvarEmail = async () => {
-    if (!userId || !novoEmail) {
-      alert("Preencha o novo email.");
+  const handleSalvarAutenticacao = async () => {
+    if (!userId || !novoLogin) {
+      alert("Preencha o identificador de login.");
       return;
     }
     try {
       await axios.put(`/api/usuarios/me`, {
-        email: novoEmail
+        login: novoLogin,
+        email: emailContato
       });
-      syncLocalUsuario({ email: novoEmail });
-      setEmailAtual(novoEmail);
-      setNovoEmail('');
-      alert("Email atualizado com sucesso!");
-    } catch (err) {
+      syncLocalUsuario({ login: novoLogin, email: emailContato });
+      setLoginAtual(novoLogin);
+      alert("Autenticação atualizada com sucesso!");
+    } catch (err: any) {
       console.error(err);
-      alert("Erro ao alterar o email.");
+      alert(err.response?.data?.error || "Erro ao alterar autenticação.");
     }
   };
 
@@ -274,29 +276,39 @@ const Perfil: React.FC = () => {
           </button>
         </div>
 
-        {/* CARD ALTERAR EMAIL */}
+        {/* CARD ALTERAR AUTENTICAÇÃO */}
         <div className="bg-white dark:bg-surface border border-gray-200 dark:border-[#1f2937] rounded-xl p-6 transition-colors">
           <div className="flex items-center gap-2 mb-2">
-            <Mail className="text-gray-400 dark:text-gray-500" size={20} />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Autenticação (Email/Login)</h2>
+            <Lock className="text-gray-400 dark:text-gray-500" size={20} />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Autenticação (Login)</h2>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">Email atual: <span className="text-primary">{emailAtual || 'Carregando...'}</span></p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">Login atual: <span className="text-primary">{loginAtual || 'Carregando...'}</span></p>
           
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Novo Email</label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Novo Identificador de Login</label>
             <input 
-              type="email" 
-              value={novoEmail}
-              onChange={(e) => setNovoEmail(e.target.value)}
-              placeholder="Digite o novo email / PMPA"
+              type="text" 
+              value={novoLogin}
+              onChange={(e) => setNovoLogin(e.target.value.toLowerCase())}
+              placeholder="Digite o novo login (ex: matrícula)"
+              className="w-full md:w-1/2 min-w-[300px] bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail de Contato (Opcional)</label>
+            <input 
+              type="text" 
+              value={emailContato}
+              onChange={(e) => setEmailContato(e.target.value.toLowerCase())}
+              placeholder="E-mail opcional"
               className="w-full md:w-1/2 min-w-[300px] bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
             />
           </div>
           <button 
-            onClick={handleSalvarEmail}
+            onClick={handleSalvarAutenticacao}
             className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-lg shadow-blue-600/20"
           >
-            Alterar Email
+            Salvar Autenticação
           </button>
         </div>
 
