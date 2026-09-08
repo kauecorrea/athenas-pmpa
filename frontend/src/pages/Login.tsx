@@ -23,11 +23,12 @@ const Login: React.FC = () => {
       setIsLoading(false);
       return;
     }
-    if (!senha || senha.length < 10) {
-      setError('Senha deve ter ao menos 10 caracteres.');
+    if (!senha) {
+      setError('Informe a senha.');
       setIsLoading(false);
       return;
     }
+    // Password length validation removed – legacy passwords allowed at login
 
     try {
       const response = await axios.post('/api/auth/login', {

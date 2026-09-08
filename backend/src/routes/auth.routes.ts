@@ -30,7 +30,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
     const normalizedLogin = normalizeLogin(login);
     if (!normalizedLogin) {
-      res.status(400).json({ error: 'Identificador de acesso obrigatório.' });
+      res.status(400).json({ error: 'Identificador de acesso inválido. Informe entre 3 e 64 caracteres.' });
       return;
     }
 

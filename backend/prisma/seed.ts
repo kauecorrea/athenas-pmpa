@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { normalizeLogin } from '../src/utils/validation'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -34,7 +35,8 @@ async function main() {
     process.exit(1);
   }
 
-  const adminLogin = rawAdminLogin.trim().toLowerCase();
+  const adminLogin = normalizeLogin(rawAdminLogin);
+  if (!adminLogin) { console.error('ERRO CRITICO: login admin inválido ou fora do padrão.'); process.exit(1); }
 
   if (adminPassword.length < 10) {
     console.error('ERRO CRITICO: A senha do administrador deve ter pelo menos 10 caracteres.');
