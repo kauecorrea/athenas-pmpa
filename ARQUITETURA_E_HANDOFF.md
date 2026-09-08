@@ -55,8 +55,6 @@ athenas-pmpa/
 │   ├── .env.example              # VITE_API_URL (Aponta para o Backend)
 │   ├── tailwind.config.js        # Tokens de design do Tailwind
 │   └── package.json
-│
-└── INICIAR_SISTEMA.bat           # Script Windows para subir o ambiente local para testes rápidos.
 ```
 
 ---

@@ -68,7 +68,6 @@ athenas-pmpa/
 │   ├── public/         # Ativos estáticos e Fontes base para o PDF
 │   ├── src/pages/      # Páginas da aplicação (Dashboard, Cautelas, Manutenção, etc.)
 │   └── .env.example    # Configuração de espelho da API para Produção
-└── INICIAR_SISTEMA.bat # Orquestrador local para subir o projeto no Windows
 ```
 
 ---
@@ -111,9 +110,6 @@ npm install
 npm run dev
 ```
 A plataforma visual ficará disponível no seu navegador em `http://localhost:5173`.
-
-> 💡 **Usuários Windows:** 
-> Você pode dar um simples duplo-clique no arquivo `INICIAR_SISTEMA.bat` na raiz do projeto para subir simultaneamente o Back e o Front!
 
 ---
 
