@@ -81,7 +81,7 @@ const Perfil: React.FC = () => {
   const handleSalvarBasico = async () => {
     if (!userId) return;
     try {
-      await axios.put(`/api/usuarios/${userId}`, {
+      await axios.put(`/api/usuarios/me`, {
         nomeCompleto,
         nomeGuerra,
         posto,
@@ -101,7 +101,7 @@ const Perfil: React.FC = () => {
       return;
     }
     try {
-      await axios.put(`/api/usuarios/${userId}`, {
+      await axios.put(`/api/usuarios/me`, {
         email: novoEmail
       });
       syncLocalUsuario({ email: novoEmail });
@@ -125,7 +125,7 @@ const Perfil: React.FC = () => {
       return;
     }
     try {
-      await axios.put(`/api/usuarios/${userId}`, {
+      await axios.put(`/api/usuarios/me`, {
         senha: novaSenha
       });
       setNovaSenha('');

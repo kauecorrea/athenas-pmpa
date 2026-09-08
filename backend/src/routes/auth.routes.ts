@@ -12,9 +12,11 @@ import jwt from 'jsonwebtoken';
 const router = Router();
 
 
-// Chave secreta para assinar os tokens. Mantida igual ao middleware.
-const JWT_SECRET = process.env.JWT_SECRET || 'super-senha-secreta-athenas-dev-local';
-
+// ATENÇÃO PMPA: Esta chave deve ser configurada obrigatoriamente no arquivo .env
+const JWT_SECRET = process.env.JWT_SECRET as string;
+if (!JWT_SECRET) {
+  throw new Error("FATAL ERROR: A variável de ambiente JWT_SECRET não está definida. O sistema não pode iniciar com segurança.");
+}
 /**
  * @route POST /api/auth/login
  * @description Realiza o login do usuário, gerando um token JWT caso as credenciais sejam válidas.

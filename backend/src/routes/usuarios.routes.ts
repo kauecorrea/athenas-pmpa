@@ -86,6 +86,52 @@ router.get('/', adminMiddleware, async (req: Request, res: Response): Promise<vo
 });
 
 /**
+ * @route PUT /api/usuarios/me
+ * @description Atualiza os dados do próprio usuário logado (Meu Perfil).
+ * Essa rota NÃO exige adminMiddleware, pois o Operador pode atualizar a si mesmo.
+ * Ela usa o req.usuario.id do token (blindado) e ignora a propriedade 'permissao'.
+ */
+router.put('/me', async (req: any, res: Response): Promise<void> => {
+  try {
+    const id = req.usuario.id;
+    const { nomeCompleto, nomeGuerra, posto, unidade, senha, email } = req.body;
+
+    let hashedPassword;
+    if (senha) {
+      const salt = await bcrypt.genSalt(10);
+      hashedPassword = await bcrypt.hash(senha, salt);
+    }
+
+    const usuario = await prisma.usuario.update({
+      where: { id: id as string },
+      data: {
+        nomeCompleto,
+        nomeGuerra,
+        email,
+        posto,
+        unidade,
+        // NÃO recebe 'permissao'
+        ...(hashedPassword && { senha: hashedPassword })
+      },
+      select: {
+        id: true,
+        nomeCompleto: true,
+        nomeGuerra: true,
+        email: true,
+        posto: true,
+        unidade: true,
+        permissao: true,
+        dataCadastro: true,
+      }
+    });
+
+    res.json(usuario);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao atualizar seu próprio perfil.' });
+  }
+});
+
+/**
  * @route PUT /api/usuarios/:id
  * @description Atualiza os dados de um usuário (Perfil).
  * Se o campo "senha" for enviado preenchido, ele será criptografado antes de ser salvo.

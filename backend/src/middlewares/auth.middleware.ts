@@ -8,10 +8,11 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-// Chave secreta usada para assinar e verificar os tokens JWT.
-// ATENÇÃO PMPA: Esta chave deve ser alterada no ambiente de produção usando a variável JWT_SECRET no arquivo .env
-const JWT_SECRET = process.env.JWT_SECRET || 'super-senha-secreta-athenas-dev-local';
-
+// ATENÇÃO PMPA: Esta chave deve ser configurada obrigatoriamente no arquivo .env
+const JWT_SECRET = process.env.JWT_SECRET as string;
+if (!JWT_SECRET) {
+  throw new Error("FATAL ERROR: A variável de ambiente JWT_SECRET não está definida. O sistema não pode iniciar com segurança.");
+}
 /**
  * Interface estendendo o Request padrão do Express para tipar a injeção do usuário logado.
  * Isso permite que qualquer rota que utilize este middleware acesse `req.usuario.id`, `req.usuario.permissao`, etc.
