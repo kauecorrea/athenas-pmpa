@@ -4,24 +4,45 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  const hashedPassword = await bcrypt.hash('admin123', 10)
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
-  // Criar Usuário Admin
-  const admin = await prisma.usuario.upsert({
-    where: { email: 'admin@pmpa.pa.gov.br' },
-    update: {},
-    create: {
-      email: 'admin@pmpa.pa.gov.br',
+  if (!adminEmail || !adminPassword) {
+    console.error('ERRO CRITICO: Variaveis ADMIN_EMAIL e ADMIN_PASSWORD nao fornecidas no ambiente.');
+    console.error('Por medidas de seguranca, o bootstrap foi abortado.');
+    process.exit(1);
+  }
+
+  if (adminPassword.length < 10) {
+    console.error('ERRO CRITICO: A senha do administrador deve ter pelo menos 10 caracteres.');
+    process.exit(1);
+  }
+
+  const existingAdmin = await prisma.usuario.findFirst({
+    where: { permissao: 'Administrador' }
+  });
+
+  if (existingAdmin) {
+    console.log('Seed: Administrador ja existente. Bootstrap abortado por seguranca.');
+    return;
+  }
+
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+  // Criar Usuário Admin Inicial
+  const admin = await prisma.usuario.create({
+    data: {
+      email: adminEmail,
       senha: hashedPassword,
-      nomeCompleto: 'Administrador do Sistema',
+      nomeCompleto: 'Administrador Bootstrap',
       nomeGuerra: 'ADMIN',
-      posto: 'Maj QOPM',
+      posto: 'Não Informado',
       unidade: 'DITEL',
       permissao: 'Administrador'
     },
   })
 
-  console.log('Seed: Usuário Admin criado/atualizado:', admin.email)
+  console.log('Seed: Usuário Admin Bootstrap criado com sucesso.');
 
   // Criar uma Unidade inicial
   const unidade = await prisma.unidade.upsert({

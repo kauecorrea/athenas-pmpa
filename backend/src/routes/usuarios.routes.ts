@@ -54,7 +54,11 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
       email: usuario.email,
       permissao: usuario.permissao 
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      res.status(409).json({ error: 'Usuário/Matrícula já cadastrado no sistema (Conflito).' });
+      return;
+    }
     res.status(500).json({ error: 'Erro interno ao criar usuário.' });
   }
 });
@@ -190,7 +194,11 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
     });
 
     res.json(usuario);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      res.status(409).json({ error: 'Usuário/Matrícula já cadastrado no sistema (Conflito).' });
+      return;
+    }
     res.status(500).json({ error: 'Erro ao atualizar dados do usuário.' });
   }
 });
