@@ -84,7 +84,10 @@ Para não sobrecarregar o servidor Node.js com processamento binário ou depende
 A equipe que assumir o sistema deve estar ciente das seguintes características/limitações da V1:
 
 1. **Separação por Unidade (OPM):** O banco de dados salva a unidade dos equipamentos e usuários, mas as Consultas (GET) atuais no backend trazem dados globais. Ou seja, um operador do Batalhão X consegue visualizar a lista de rádios do Batalhão Y. Caso o Comando decida por um isolamento regional estrito, será necessário alterar as queries do Prisma nos arquivos `.routes.ts` para filtrar usando o `req.usuario.unidade`.
-2. **Botões de Exclusão "Fantasmas":** Em algumas telas do Frontend, o botão de lixeira (excluir) pode aparecer para contas nível "Operador". Se ele clicar, o Frontend envia a requisição, mas o Backend bloqueia (retorna `403/401`) e a tela exibe um aviso de erro. A trava de segurança é infalível (o dado não é apagado), mas a experiência visual (UX) pode ser melhorada escondendo a coluna de ações se o `usuario.permissao !== 'Administrador'`.
+2. **Backlog Institucional (Aprovação Superior Necessária):**
+   - **Matriz de Permissões:** Hoje a regra é simples (Operador faz quase tudo operacionalmente, Admin exclui e gerencia contas). Para um controle mais granular, a corporação precisa elaborar a "Matriz Oficial de Acesso" e implementar as amarras nas respectivas rotas de Controller.
+   - **Bateria de Testes:** Não há testes E2E (`Cypress`/`Playwright`) ou unitários (`Jest`) automatizados na CI/CD do sistema.
+   - **Políticas de Retenção de LOG:** Há a tabela `auditoria`, mas ainda não existe um processo em lote agendado para arquivá-los a longo prazo ou varrer itens deletados de acordo com a LGPD/Protocolo PMPA.
 3. **Módulo VTR sem Vínculo Permanente:** O banco de dados trata a VTR como uma ordem de serviço (registro de instalação temporal), e não como uma entidade rígida (Carro -> Rádio). Isso facilita a flexibilidade, mas impede relatórios de frota a longo prazo.
 
 ---
