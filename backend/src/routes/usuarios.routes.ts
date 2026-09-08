@@ -9,6 +9,7 @@ import prisma from '../prisma';
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import bcrypt from 'bcryptjs';
+import { normalizeLogin, validatePassword } from '../utils/validation';
 
 const router = Router();
 
@@ -22,11 +23,11 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
   try {
     const { nomeCompleto, nomeGuerra, login, email, senha, posto, unidade, permissao } = req.body;
 
-    if (!login) {
-      res.status(400).json({ error: 'O identificador de login é obrigatório.' });
+    const normalizedLogin = normalizeLogin(login);
+    if (normalizedLogin === null) {
+      res.status(400).json({ error: 'Identificador de acesso inválido.' });
       return;
     }
-    const normalizedLogin = login.trim().toLowerCase();
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       res.status(400).json({ error: 'Formato de e-mail inválido.' });
@@ -36,18 +37,19 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
     // 1. Verifica se a matrícula/login já existe para evitar duplicidade
     const userExists = await prisma.usuario.findUnique({ where: { login: normalizedLogin } });
     if (userExists) {
-      res.status(400).json({ error: 'Usuário/Matrícula já cadastrado no sistema.' });
+      res.status(409).json({ error: 'Usuário/Matrícula já cadastrado no sistema.' });
       return;
     }
 
-    if (!senha || senha.length < 10) {
-      res.status(400).json({ error: 'A senha deve ter pelo menos 10 caracteres.' });
+    const validatedPassword = validatePassword(senha);
+    if (validatedPassword === null) {
+      res.status(400).json({ error: 'Senha inválida.' });
       return;
     }
 
     // 2. Criptografia Segura da Senha
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(senha, salt);
+    const hashedPassword = await bcrypt.hash(validatedPassword, salt);
 
     // 3. Salva no Banco de Dados
     const usuario = await prisma.usuario.create({
@@ -130,12 +132,13 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
     // Validação de senha
     let hashedPassword;
     if (senha) {
-      if (senha.length < 10) {
-        res.status(400).json({ error: 'A senha deve ter pelo menos 10 caracteres.' });
+      const validatedPassword = validatePassword(senha);
+      if (validatedPassword === null) {
+        res.status(400).json({ error: 'Senha inválida.' });
         return;
       }
       const salt = await bcrypt.genSalt(10);
-      hashedPassword = await bcrypt.hash(senha, salt);
+      hashedPassword = await bcrypt.hash(validatedPassword, salt);
     }
 
     const usuario = await prisma.usuario.update({
@@ -181,11 +184,11 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
     const { id } = req.params as { id: string };
     const { nomeCompleto, nomeGuerra, posto, unidade, permissao, senha, login, email } = req.body;
 
-    if (!login) {
-      res.status(400).json({ error: 'O identificador de login é obrigatório.' });
+    const normalizedLogin = normalizeLogin(login);
+    if (normalizedLogin === null) {
+      res.status(400).json({ error: 'Identificador de acesso inválido.' });
       return;
     }
-    const normalizedLogin = login.trim().toLowerCase();
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       res.status(400).json({ error: 'Formato de e-mail inválido.' });
@@ -195,12 +198,13 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
     // 1. Trata a troca de senha se solicitada
     let hashedPassword;
     if (senha) {
-      if (senha.length < 10) {
-        res.status(400).json({ error: 'A senha deve ter pelo menos 10 caracteres.' });
+      const validatedPassword = validatePassword(senha);
+      if (validatedPassword === null) {
+        res.status(400).json({ error: 'Senha inválida.' });
         return;
       }
       const salt = await bcrypt.genSalt(10);
-      hashedPassword = await bcrypt.hash(senha, salt);
+      hashedPassword = await bcrypt.hash(validatedPassword, salt);
     }
 
     // 2. Atualiza os dados. Utiliza spread operator dinâmico para injetar a senha
