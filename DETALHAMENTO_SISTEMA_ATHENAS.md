@@ -37,7 +37,7 @@ A tela de entrada do sistema. Oferece uma visão panorâmica e imediata do patri
 ### 3.2. Módulo de Cadastros Base
 Antes de emitir uma Cautela, o sistema exige que os "atores" existam no banco de dados.
 * **Unidades:** Tela para cadastrar as OPMs (Ex: 1º BPM, 2º BPM, Coint). Possui campos de Nome da Unidade e Sigla.
-* **Militares:** Tela para cadastrar a tropa que irá levar os equipamentos para a rua. Exige o preenchimento do Nome Completo, Nome de Guerra, Posto/Graduação (Soldado, Cabo, Sargento, etc.), RG e Unidade de Lotação.
+* **Militares:** Tela para cadastrar a tropa que irá levar os equipamentos para a rua. Exige o preenchimento de Nome Completo, Posto/Graduação (Soldado, Cabo, Sargento, etc.), RG, CPF, Contato e Unidade de Lotação.
 
 ### 3.3. Módulo de Patrimônio
 Gerencia a inclusão e visualização de bens físicos da corporação.
@@ -68,7 +68,7 @@ Usado quando um equipamento quebra, apresenta falha na bateria ou erro de softwa
 #### Extraviados (Furto, Roubo ou Perda)
 Usado nos piores cenários, quando o rádio "desaparece". É uma ferramenta de extrema importância legal.
 * **Fluxo:** O operador lança o equipamento como extraviado. O equipamento muda de status.
-* **Dados Exigidos:** O sistema cobra o registro do Boletim de Ocorrência (Número do B.O), a Data do Ocorrido, uma descrição detalhada do fato e, crucialmente, qual foi o "Militar Responsável" (quem perdeu o equipamento).
+* **Dados Registrados:** Podem ser registrados o Boletim de Ocorrência (Número do B.O), a Data do Ocorrido, uma descrição detalhada do fato e, de preferência, qual foi o "Militar Responsável" (quem perdeu o equipamento). Alguns desses dados são opcionais para o fechamento do registro.
 * **Fim do Ciclo:** Um extravio pode ser finalizado de duas formas: como `Recuperado` (o equipamento volta a ficar `OPERACIONAL` no inventário) ou como `Baixado` (se decreta a perda permanente).
 
 ---
@@ -78,7 +78,7 @@ Para todos os cadastros acima, o fluxo do operador é similar:
 1. **Listagem Inicial:** Ao abrir a aba (Ex: Rádios), ele vê cartões ou tabelas resumidas dos registros existentes.
 2. **Consultar Registros:** Um botão/modal para visualizar todos os itens em uma grande tabela. Tabelas sempre possuem filtros de busca (Ex: Buscar por número de série ou nome do militar).
 3. **Botão de Cadastrar/Novo:** Abre um formulário moderno flutuante no meio da tela pedindo os dados necessários.
-4. **Edição e Exclusão:** Ícones de Lápis (Editar) e Lixeira (Excluir) acompanham os registros. *(Aviso ao redator: O botão de Exclusão pode aparecer visualmente para o Operador, mas o sistema bloqueia no servidor caso ele não seja Administrador ou caso o item tenha histórico de movimentação. Exclusões reais são papel da Administração)*.
+4. **Edição e Exclusão:** Ícones de Lápis (Editar) e Lixeira (Excluir) acompanham os registros. *(Aviso ao redator: O botão de Exclusão pode aparecer visualmente para o Operador em algumas tabelas, mas o sistema possui uma trava técnica no servidor que exige permissão de Administrador para confirmar a exclusão. Portanto, exclusões reais são papel exclusivo da Administração e devem ficar de fora das instruções operacionais)*.
 
 ---
 
