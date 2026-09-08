@@ -84,9 +84,25 @@ axios.interceptors.response.use(
  */
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
+  const usuarioInfo = localStorage.getItem('usuario');
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
+
+  if (usuarioInfo) {
+    try {
+      const usuarioObj = JSON.parse(usuarioInfo);
+      if (usuarioObj.permissao !== 'Administrador') {
+        document.body.classList.add('hide-admin-actions');
+      } else {
+        document.body.classList.remove('hide-admin-actions');
+      }
+    } catch (e) {
+      console.error("Erro ao ler usuário", e);
+    }
+  }
+
   return children;
 };
 

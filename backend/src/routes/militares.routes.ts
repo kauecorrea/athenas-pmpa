@@ -4,12 +4,11 @@
  * Operações padrão de Criação, Leitura, Atualização e Exclusão (CRUD).
  */
 
+import prisma from '../prisma';
 import { Router } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
-import { PrismaClient } from '@prisma/client';
-
 const router = Router();
-const prisma = new PrismaClient();
+
 
 // Listar todos os militares
 router.get('/', async (req, res) => {

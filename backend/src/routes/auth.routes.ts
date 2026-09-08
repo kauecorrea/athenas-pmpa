@@ -4,13 +4,13 @@
  * Lida com a validação de login (email/matrícula + senha), comparação de hashes (Bcrypt) e emissão de Tokens JWT.
  */
 
+import prisma from '../prisma';
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 // Chave secreta para assinar os tokens. Mantida igual ao middleware.
 const JWT_SECRET = process.env.JWT_SECRET || 'super-senha-secreta-athenas-dev-local';

@@ -4,11 +4,11 @@
  * Configura o servidor Express, middlewares de segurança, limites de requisição e rotas da API.
  */
 
+import prisma from './prisma';
 import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import rateLimit from 'express-rate-limit';
-import { PrismaClient } from '@prisma/client';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import mongoSanitize from 'express-mongo-sanitize';
@@ -32,7 +32,7 @@ import vtrRoutes from './routes/vtr.routes';
 
 
 const app = express();
-const prisma = new PrismaClient();
+
 const port = process.env.PORT || 3333;
 
 /**
@@ -146,8 +146,13 @@ app.get('/', (req: express.Request, res: express.Response) => {
  * Endpoint: Keep-Alive / Health Check
  * Usado internamente ou por plataformas de monitoramento para garantir a estabilidade do container.
  */
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'UP', timestamp: new Date() });
+app.get('/api/health', async (req, res) => {
+  try {
+    await prisma.$runCommandRaw({ ping: 1 });
+    res.status(200).json({ status: 'UP', database: 'CONNECTED', timestamp: new Date() });
+  } catch (error) {
+    res.status(503).json({ status: 'DOWN', database: 'DISCONNECTED', timestamp: new Date() });
+  }
 });
 
 /**

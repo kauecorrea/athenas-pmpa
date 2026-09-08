@@ -1,7 +1,6 @@
+import prisma from '../prisma';
 import { Request } from 'express';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 export const registrarAuditoria = async (req: any, acao: string, detalhes?: string) => {
   let usuarioNome = 'Operador Local / Indefinido';

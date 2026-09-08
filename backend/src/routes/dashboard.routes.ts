@@ -4,11 +4,10 @@
  * Realiza agregações e contagens em tempo real no banco de dados.
  */
 
+import prisma from '../prisma';
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-
 const router = Router();
-const prisma = new PrismaClient();
+
 
 /**
  * @route GET /api/dashboard/stats

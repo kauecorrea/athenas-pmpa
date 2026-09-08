@@ -4,13 +4,13 @@
  * Operações padrão de Criação, Leitura, Atualização e Exclusão (CRUD).
  */
 
+import prisma from '../prisma';
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
-import { PrismaClient } from '@prisma/client';
 import { registrarAuditoria } from '../utils/auditoria';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 // Listar relatórios de Transferências
 // @ts-ignore

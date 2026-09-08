@@ -5,13 +5,13 @@
  * registrando datas de laudos, orçamentos, números de PAE e devolução.
  */
 
+import prisma from '../prisma';
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
-import { PrismaClient } from '@prisma/client';
 import { registrarAuditoria } from '../utils/auditoria';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 /**
  * @route GET /api/manutencoes

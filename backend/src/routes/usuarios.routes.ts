@@ -5,13 +5,13 @@
  * e exclusão de contas que operam o sistema Athenas.
  */
 
+import prisma from '../prisma';
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 /**
  * @route POST /api/usuarios

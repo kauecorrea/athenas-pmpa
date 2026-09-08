@@ -72,3 +72,11 @@
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* 
+ * Oculta globalmente ações destrutivas (Exclusão) no frontend para 
+ * usuários que não possuem o perfil de "Administrador". 
+ * Ativado via injeção da classe 'hide-admin-actions' no App.tsx
+ */
+body.hide-admin-actions button:has(svg.lucide-trash-2) {
+  display: none !important;
+}
