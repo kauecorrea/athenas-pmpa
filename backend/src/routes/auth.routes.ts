@@ -27,9 +27,16 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const { login, senha } = req.body;
 
+    if (typeof login !== 'string' || !login.trim()) {
+      res.status(400).json({ error: 'Identificador de acesso obrigatório.' });
+      return;
+    }
+
+    const normalizedLogin = login.trim().toLowerCase();
+
     // 1. Busca o usuário no banco de dados através do identificador de acesso (login)
     const usuario = await prisma.usuario.findUnique({
-      where: { login },
+      where: { login: normalizedLogin },
     });
 
     // Se o usuário não existir, interrompe o fluxo com erro genérico por segurança

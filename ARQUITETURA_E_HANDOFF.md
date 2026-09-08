@@ -113,8 +113,8 @@ Os pontos abaixo não são problemas de código, mas sim de **Política de Acess
 ### Migração de Dados Legados (E-mail para Login Genérico)
 Caso exista um banco MongoDB de versões anteriores cujos usuários possuem `email` mas não `login`, não rode a aplicação Node imediatamente. Execute os seguintes passos:
 1. Realize o **Backup Completo** (Dump) do banco antes de iniciar.
-2. Acesse o mongosh e execute a renomeação bruta do campo para não violar as restrições rígidas do Prisma: `db.Usuario.updateMany({}, { $rename: { "email": "login" } })`
-3. Normalize os identificadores se necessário.
+2. Acesse o mongosh e execute a migração preservando o e-mail: `db.Usuario.updateMany({ login: { $exists: false } }, [{ $set: { login: { $toLower: { $trim: { input: "$email" } } } } }])`
+3. Normalize os identificadores se necessário e exclua e-mails nulos do índice caso causem duplicidade.
 4. Rode `npx prisma db push` para que o Prisma sincronize os índices únicos (`@unique`) no banco de dados e delete o índice antigo de e-mail.
 
 ### Problema: "Frontend não conecta no Backend (Network Error)"

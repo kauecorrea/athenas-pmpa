@@ -40,6 +40,11 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
       return;
     }
 
+    if (!senha || senha.length < 10) {
+      res.status(400).json({ error: 'A senha deve ter pelo menos 10 caracteres.' });
+      return;
+    }
+
     // 2. Criptografia Segura da Senha
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(senha, salt);
@@ -50,7 +55,9 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
         nomeCompleto,
         nomeGuerra,
         login: normalizedLogin,
-        email: email ? email.trim().toLowerCase() : null,
+        ...(email !== undefined && { 
+          email: typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null 
+        }),
         senha: hashedPassword,
         posto,
         unidade,
@@ -123,8 +130,8 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
     // Validação de senha
     let hashedPassword;
     if (senha) {
-      if (senha.length < 6) {
-        res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+      if (senha.length < 10) {
+        res.status(400).json({ error: 'A senha deve ter pelo menos 10 caracteres.' });
         return;
       }
       const salt = await bcrypt.genSalt(10);
@@ -136,7 +143,9 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
       data: {
         nomeCompleto,
         nomeGuerra,
-        email: email ? email.trim().toLowerCase() : null,
+        ...(email !== undefined && { 
+          email: typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null 
+        }),
         ...(hashedPassword && { senha: hashedPassword })
       },
       select: {
@@ -186,6 +195,10 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
     // 1. Trata a troca de senha se solicitada
     let hashedPassword;
     if (senha) {
+      if (senha.length < 10) {
+        res.status(400).json({ error: 'A senha deve ter pelo menos 10 caracteres.' });
+        return;
+      }
       const salt = await bcrypt.genSalt(10);
       hashedPassword = await bcrypt.hash(senha, salt);
     }
@@ -198,7 +211,9 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
         nomeCompleto,
         nomeGuerra,
         login: normalizedLogin,
-        email: email ? email.trim().toLowerCase() : null,
+        ...(email !== undefined && { 
+          email: typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null 
+        }),
         posto,
         unidade,
         permissao,

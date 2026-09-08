@@ -4,6 +4,27 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
+  // Criar uma Unidade inicial
+  const unidade = await prisma.unidade.upsert({
+    where: { nome: 'DITEL' },
+    update: {},
+    create: {
+      nome: 'DITEL',
+      sigla: 'DITEL',
+      localizacao: 'Quartel General',
+    }
+  });
+  console.log('Seed: Unidade inicial criada/atualizada:', unidade.nome);
+
+  const existingAdmin = await prisma.usuario.findFirst({
+    where: { permissao: 'Administrador' }
+  });
+
+  if (existingAdmin) {
+    console.log('Seed: Administrador ja existente. Pulo da criacao do admin de bootstrap.');
+    return;
+  }
+
   const rawAdminLogin = process.env.ADMIN_LOGIN;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
@@ -20,27 +41,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Criar uma Unidade inicial
-  const unidade = await prisma.unidade.upsert({
-    where: { nome: 'DITEL' },
-    update: {},
-    create: {
-      nome: 'DITEL',
-      sigla: 'DITEL',
-      localizacao: 'Quartel General',
-    }
-  })
 
-  console.log('Seed: Unidade inicial criada/atualizada:', unidade.nome)
-
-  const existingAdmin = await prisma.usuario.findFirst({
-    where: { permissao: 'Administrador' }
-  });
-
-  if (existingAdmin) {
-    console.log('Seed: Administrador ja existente. Pulo da criacao do admin de bootstrap.');
-    return;
-  }
 
   const hashedPassword = await bcrypt.hash(adminPassword, 10);
 

@@ -71,6 +71,10 @@ const Usuarios: React.FC = () => {
 
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.senha && formData.senha.length < 10) {
+      alert("A senha deve ter no mínimo 10 caracteres.");
+      return;
+    }
     try {
       if (isEditing) {
         await axios.put(`/api/usuarios/${formData.id}`, formData);

@@ -111,8 +111,8 @@ const Perfil: React.FC = () => {
 
   const handleAlterarSenha = async () => {
     if (!userId) return;
-    if (novaSenha.length < 6) {
-      alert("A senha deve ter no mínimo 6 caracteres.");
+    if (novaSenha.length < 10) {
+      alert("A senha deve ter no mínimo 10 caracteres.");
       return;
     }
     if (novaSenha !== confirmarSenha) {
