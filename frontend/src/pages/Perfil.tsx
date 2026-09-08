@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Upload, Shield, Mail, Lock, User } from 'lucide-react';
+import { Upload, Shield, Lock, User } from 'lucide-react';
 
 const Perfil: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);

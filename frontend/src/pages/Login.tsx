@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Radio, Lock, Mail } from 'lucide-react';
+import { Radio, Lock } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [login, setLogin] = useState('');
@@ -16,6 +16,18 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
+    // Frontend validation
+    if (!login.trim() || login.trim().length < 3) {
+      setError('Identificador deve ter ao menos 3 caracteres.');
+      setIsLoading(false);
+      return;
+    }
+    if (!senha || senha.length < 10) {
+      setError('Senha deve ter ao menos 10 caracteres.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await axios.post('/api/auth/login', {

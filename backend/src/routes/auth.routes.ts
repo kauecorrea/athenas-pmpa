@@ -8,6 +8,7 @@ import prisma from '../prisma';
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { normalizeLogin } from '../utils/validation';
 
 const router = Router();
 
@@ -27,12 +28,11 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const { login, senha } = req.body;
 
-    if (typeof login !== 'string' || !login.trim()) {
+    const normalizedLogin = normalizeLogin(login);
+    if (!normalizedLogin) {
       res.status(400).json({ error: 'Identificador de acesso obrigatório.' });
       return;
     }
-
-    const normalizedLogin = login.trim().toLowerCase();
 
     // 1. Busca o usuário no banco de dados através do identificador de acesso (login)
     const usuario = await prisma.usuario.findUnique({
