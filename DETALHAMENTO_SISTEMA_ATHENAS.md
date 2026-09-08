@@ -23,7 +23,7 @@
 
 O ATHENAS foi desenvolvido para substituir planilhas manuais na gestão de telecomunicações e logística da PMPA. Ele permite que o operador tenha controle total sobre o ciclo de vida dos equipamentos de rádio (HT e Móvel), do momento em que chegam à unidade até a sua eventual quebra, extravio ou acautelamento nas mãos da tropa.
 
-A navegação ocorre por um menu lateral esquerdo (Sidebar), acessível após o Login com E-mail/Matrícula e Senha.
+A navegação ocorre por um menu lateral esquerdo (Sidebar), acessível após o Login com E-mail (embora visualmente a tela possa dizer "E-mail/Matrícula", o sistema processa estritamente por e-mail) e Senha.
 
 ---
 
@@ -41,9 +41,9 @@ Antes de emitir uma Cautela, o sistema exige que os "atores" existam no banco de
 
 ### 3.3. Módulo de Patrimônio
 Gerencia a inclusão e visualização de bens físicos da corporação.
-* **Rádios:** Destinado exclusivamente a Rádios Transceptores (Portáteis/HT ou Móveis/Veiculares). O operador preenche campos padronizados: Número de Série, RP (Registro de Patrimônio), Modelo (ex: APX 2000), Marca, Data de Aquisição, ID Virtual (Alias) e se o rádio possui GPS.
-* **Equipamentos:** Aba genérica para periféricos de telecomunicação, como Carregadores, Fontes de Alimentação, Antenas e Estações Base. Diferente da aba de rádios, a Marca e o Modelo são digitados livremente pelo operador.
-* **VTR (Viaturas):** Aba dedicada para atrelar rádios do tipo "Móvel" a uma viatura da frota. O operador cadastra a Placa e o Prefixo do veículo e seleciona no sistema qual Rádio Móvel foi instalado nela.
+* **Rádios:** Destinado exclusivamente a Rádios Transceptores (Portáteis/HT ou Móveis/Veiculares). O operador preenche campos padronizados: Número de Série, RP (Registro de Patrimônio), Modelo (ex: APX 2000), Marca e ID Virtual (Alias). O status padrão é `OPERACIONAL`.
+* **Equipamentos:** Aba para equipamentos diversos (novo tipo `DIVERSO`). O operador preenche Número de Série, RP (Registro de Patrimônio), Marca, Modelo, Status, Garantia e Unidade. Também compartilha campos técnicos como Análise, Serviço e Laudo. Ambos os tipos (Rádio e Diverso) habitam o mesmo inventário global.
+* **VTR (Viaturas):** Aba dedicada a ser um **controle de ordens de serviço em viaturas**, registrando os serviços e manutenções técnicas de radiocomunicação feitas nos veículos, contendo o Prefixo e Placa. Não é um cadastro permanente da viatura no banco de dados.
 
 ### 3.4. Módulo de Movimentação e Operação Legal
 As funções mais importantes do dia a dia logístico da PMPA.
@@ -55,21 +55,21 @@ As funções mais importantes do dia a dia logístico da PMPA.
 * **Geração de PDF (Termo de Responsabilidade):** Após criar a cautela, o operador possui um botão de "Imprimir". O sistema gera um documento oficial da PMPA, em PDF, listando tudo que o militar pegou. Esse termo é assinado fisicamente ou digitalmente pelo militar, assumindo a responsabilidade financeira e penal pelos itens.
 
 #### Transferências (Movimentação entre Bases)
-* **Como Funciona:** Usado quando um lote de rádios é transferido definitivamente da Unidade "A" para a Unidade "B". O operador seleciona os equipamentos, informa a OPM de Origem, a OPM de Destino e um documento de referência (Ex: número do memorando).
+* **Como Funciona:** Usado quando um lote de rádios/equipamentos é transferido definitivamente de uma unidade para outra. O operador seleciona os equipamentos (A Unidade de Origem é inferida e bloqueada automaticamente com base no primeiro equipamento selecionado), informa a OPM de Destino e um documento de referência (Ex: número do memorando).
 
 ### 3.5. Módulo de Baixas (Danos e Perdas)
 
 #### Manutenção (Oficina)
 Usado quando um equipamento quebra, apresenta falha na bateria ou erro de software.
 * **Fluxo:** O operador retira o equipamento do status "Operacional" e joga na aba de Manutenção.
-* **Dados:** O operador preenche o defeito relatado. Se o equipamento for enviado para uma empresa terceirizada, ele registra a "Empresa/Oficina", o "Número da O.S (Ordem de Serviço)" e o "Valor do Orçamento".
-* **Retorno:** Quando consertado, o operador dá baixa na manutenção e o rádio volta ao cofre "Operacional". O sistema guarda o laudo técnico do conserto no histórico.
+* **Dados:** O operador preenche os campos `Solicitante`, `PAE`, as datas do fluxo, o `Problema` relatado, a `Análise` técnica, o `Laudo` e o `Técnico Responsável`.
+* **Retorno:** Quando consertado, o operador dá baixa na manutenção e o rádio volta ao status "Operacional".
 
 #### Extraviados (Furto, Roubo ou Perda)
 Usado nos piores cenários, quando o rádio "desaparece". É uma ferramenta de extrema importância legal.
-* **Fluxo:** O operador lança o equipamento como extraviado. O rádio sai do inventário ativo e fica eternamente isolado na aba de Extravios.
+* **Fluxo:** O operador lança o equipamento como extraviado. O equipamento muda de status.
 * **Dados Exigidos:** O sistema cobra o registro do Boletim de Ocorrência (Número do B.O), a Data do Ocorrido, uma descrição detalhada do fato e, crucialmente, qual foi o "Militar Responsável" (quem perdeu o equipamento).
-* **Inquérito:** Fica registrado também o número do Inquérito Policial Militar (IPM) ou sindicância aberta para apurar o caso. O status do extravio pode ser "Em Apuração" ou "Concluído" (caso o militar tenha pago o valor do bem, por exemplo).
+* **Fim do Ciclo:** Um extravio pode ser finalizado de duas formas: como `Recuperado` (o equipamento volta a ficar `OPERACIONAL` no inventário) ou como `Baixado` (se decreta a perda permanente).
 
 ---
 
@@ -78,7 +78,12 @@ Para todos os cadastros acima, o fluxo do operador é similar:
 1. **Listagem Inicial:** Ao abrir a aba (Ex: Rádios), ele vê cartões ou tabelas resumidas dos registros existentes.
 2. **Consultar Registros:** Um botão/modal para visualizar todos os itens em uma grande tabela. Tabelas sempre possuem filtros de busca (Ex: Buscar por número de série ou nome do militar).
 3. **Botão de Cadastrar/Novo:** Abre um formulário moderno flutuante no meio da tela pedindo os dados necessários.
-4. **Edição e Exclusão:** Ícones de Lápis (Editar) e Lixeira (Excluir) acompanham os registros. *(Aviso ao redator: a exclusão pode ser bloqueada caso o rádio já esteja cautelado)*.
+4. **Edição e Exclusão:** Ícones de Lápis (Editar) e Lixeira (Excluir) acompanham os registros. *(Aviso ao redator: O botão de Exclusão pode aparecer visualmente para o Operador, mas o sistema bloqueia no servidor caso ele não seja Administrador ou caso o item tenha histórico de movimentação. Exclusões reais são papel da Administração)*.
+
+---
+
+## 5. Avisos Técnicos de Isolamento
+No estado atual, as listagens do sistema (Tabelas) não efetuam o isolamento regional rígido. Ou seja, ao abrir a tabela, o sistema exibe os equipamentos globais da PMPA, e não restritos apenas à OPM logada. Isso permite uma gestão logística mais centralizada.
 
 ---
 **FIM DO DOCUMENTO BASE**
