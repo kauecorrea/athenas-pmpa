@@ -4,14 +4,16 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  const adminLogin = process.env.ADMIN_LOGIN;
+  const rawAdminLogin = process.env.ADMIN_LOGIN;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (!adminLogin || !adminPassword) {
+  if (!rawAdminLogin || !adminPassword) {
     console.error('ERRO CRITICO: Variaveis ADMIN_LOGIN e ADMIN_PASSWORD nao fornecidas no ambiente.');
     console.error('Por medidas de seguranca, o bootstrap foi abortado.');
     process.exit(1);
   }
+
+  const adminLogin = rawAdminLogin.trim().toLowerCase();
 
   if (adminPassword.length < 10) {
     console.error('ERRO CRITICO: A senha do administrador deve ter pelo menos 10 caracteres.');

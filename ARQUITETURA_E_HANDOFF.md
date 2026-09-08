@@ -110,6 +110,13 @@ Os pontos abaixo não são problemas de código, mas sim de **Política de Acess
 3. Rode `npm install`, depois `npx prisma generate` e por fim `npx prisma db seed` para ejetar o primeiro Administrador oficial no banco.
 4. Na pasta `/frontend`, instale as dependências via `npm install`, crie o `.env` especificando `VITE_API_URL` (para a API rodando na porta 3333) e execute `npm run dev`.
 
+### Migração de Dados Legados (E-mail para Login Genérico)
+Caso exista um banco MongoDB de versões anteriores cujos usuários possuem `email` mas não `login`, não rode a aplicação Node imediatamente. Execute os seguintes passos:
+1. Realize o **Backup Completo** (Dump) do banco antes de iniciar.
+2. Acesse o mongosh e execute a renomeação bruta do campo para não violar as restrições rígidas do Prisma: `db.Usuario.updateMany({}, { $rename: { "email": "login" } })`
+3. Normalize os identificadores se necessário.
+4. Rode `npx prisma db push` para que o Prisma sincronize os índices únicos (`@unique`) no banco de dados e delete o índice antigo de e-mail.
+
 ### Problema: "Frontend não conecta no Backend (Network Error)"
 * **Causa:** O sistema foi levado para Produção e o `.env` do Frontend não foi injetado, tentando forçar `localhost`.
 * **Solução:** Especifique `VITE_API_URL` com a rota oficial do servidor reverso NGINX.

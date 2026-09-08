@@ -13,7 +13,6 @@ const Perfil: React.FC = () => {
 
   // Autenticação
   const [loginAtual, setLoginAtual] = useState('');
-  const [novoLogin, setNovoLogin] = useState('');
   const [emailContato, setEmailContato] = useState('');
 
   // Senha
@@ -96,17 +95,13 @@ const Perfil: React.FC = () => {
   };
 
   const handleSalvarAutenticacao = async () => {
-    if (!userId || !novoLogin) {
-      alert("Preencha o identificador de login.");
-      return;
-    }
+    if (!userId) return;
+    
     try {
       await axios.put(`/api/usuarios/me`, {
-        login: novoLogin,
         email: emailContato
       });
-      syncLocalUsuario({ login: novoLogin, email: emailContato });
-      setLoginAtual(novoLogin);
+      syncLocalUsuario({ email: emailContato });
       alert("Autenticação atualizada com sucesso!");
     } catch (err: any) {
       console.error(err);
@@ -285,14 +280,15 @@ const Perfil: React.FC = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">Login atual: <span className="text-primary">{loginAtual || 'Carregando...'}</span></p>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Novo Identificador de Login</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Identificador de Login</label>
             <input 
               type="text" 
-              value={novoLogin}
-              onChange={(e) => setNovoLogin(e.target.value.toLowerCase())}
-              placeholder="Digite o novo login (ex: matrícula)"
-              className="w-full md:w-1/2 min-w-[300px] bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              value={loginAtual}
+              disabled
+              title="Para alterar sua matrícula/login, solicite à Administração."
+              className="w-full md:w-1/2 min-w-[300px] bg-gray-100 dark:bg-[#111827]/50 border border-gray-200 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed outline-none"
             />
+            <p className="text-xs text-gray-400 mt-1">O login não pode ser alterado por motivos de segurança.</p>
           </div>
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">E-mail de Contato (Opcional)</label>

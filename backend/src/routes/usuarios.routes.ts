@@ -26,9 +26,15 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
       res.status(400).json({ error: 'O identificador de login é obrigatório.' });
       return;
     }
+    const normalizedLogin = login.trim().toLowerCase();
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: 'Formato de e-mail inválido.' });
+      return;
+    }
 
     // 1. Verifica se a matrícula/login já existe para evitar duplicidade
-    const userExists = await prisma.usuario.findUnique({ where: { login } });
+    const userExists = await prisma.usuario.findUnique({ where: { login: normalizedLogin } });
     if (userExists) {
       res.status(400).json({ error: 'Usuário/Matrícula já cadastrado no sistema.' });
       return;
@@ -43,8 +49,8 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
       data: {
         nomeCompleto,
         nomeGuerra,
-        login,
-        email,
+        login: normalizedLogin,
+        email: email ? email.trim().toLowerCase() : null,
         senha: hashedPassword,
         posto,
         unidade,
@@ -83,6 +89,7 @@ router.get('/', adminMiddleware, async (req: Request, res: Response): Promise<vo
         id: true,
         nomeCompleto: true,
         nomeGuerra: true,
+        login: true,
         email: true,
         posto: true,
         unidade: true,
@@ -105,11 +112,11 @@ router.get('/', adminMiddleware, async (req: Request, res: Response): Promise<vo
 router.put('/me', async (req: any, res: Response): Promise<void> => {
   try {
     const id = req.usuario.id;
-    // Removido 'posto' e 'unidade'. O Operador só pode alterar seu nome e credenciais.
-    const { nomeCompleto, nomeGuerra, senha, login, email } = req.body;
+    // Removido 'posto', 'unidade' e 'login'. O Operador só pode alterar seu nome e credenciais.
+    const { nomeCompleto, nomeGuerra, senha, email } = req.body;
 
-    if (!login) {
-      res.status(400).json({ error: 'O identificador de login é obrigatório.' });
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: 'Formato de e-mail inválido.' });
       return;
     }
 
@@ -129,14 +136,14 @@ router.put('/me', async (req: any, res: Response): Promise<void> => {
       data: {
         nomeCompleto,
         nomeGuerra,
-        login,
-        email,
+        email: email ? email.trim().toLowerCase() : null,
         ...(hashedPassword && { senha: hashedPassword })
       },
       select: {
         id: true,
         nomeCompleto: true,
         nomeGuerra: true,
+        login: true,
         email: true,
         posto: true,
         unidade: true,
@@ -169,6 +176,12 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
       res.status(400).json({ error: 'O identificador de login é obrigatório.' });
       return;
     }
+    const normalizedLogin = login.trim().toLowerCase();
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: 'Formato de e-mail inválido.' });
+      return;
+    }
 
     // 1. Trata a troca de senha se solicitada
     let hashedPassword;
@@ -184,8 +197,8 @@ router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise
       data: {
         nomeCompleto,
         nomeGuerra,
-        login,
-        email,
+        login: normalizedLogin,
+        email: email ? email.trim().toLowerCase() : null,
         posto,
         unidade,
         permissao,

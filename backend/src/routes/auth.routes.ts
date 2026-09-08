@@ -50,6 +50,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const token = jwt.sign(
       { 
         id: usuario.id, 
+        login: usuario.login,
         email: usuario.email, 
         permissao: usuario.permissao,
         nomeGuerra: usuario.nomeGuerra
@@ -73,6 +74,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       token,
       usuario: {
         id: usuario.id,
+        login: usuario.login,
         nomeCompleto: usuario.nomeCompleto,
         nomeGuerra: usuario.nomeGuerra,
         email: usuario.email,
