@@ -129,7 +129,7 @@ model Usuario {
   senha        String
   posto        String?  // Ex: 1º Sargento
   unidade      String?  // Ex: DITEL (Texto livre por enquanto)
-  permissao    String   @default("Administrador") 
+  permissao    String   @default("Operador") 
   dataCadastro DateTime @default(now())
 }
 

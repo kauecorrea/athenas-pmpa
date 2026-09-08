@@ -18,27 +18,8 @@ const router = Router();
 // @ts-ignore
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // Lógica de exclusão definitiva após 30 dias (Lazy Delete)
-    const trintaDiasAtras = new Date();
-    trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
-
-    const transferenciasVencidas = await prisma.transferencia.findMany({
-      where: { dataTransferencia: { lte: trintaDiasAtras } },
-      select: { equipamentoIds: true }
-    });
-    
-    if (transferenciasVencidas.length > 0) {
-      const idsParaDeletar = transferenciasVencidas.flatMap(t => t.equipamentoIds);
-      if (idsParaDeletar.length > 0) {
-        // Exclui definitivamente do sistema apenas se ainda estiverem como TRANSFERIDO
-        await prisma.equipamento.deleteMany({
-          where: { 
-            id: { in: idsParaDeletar },
-            status: 'TRANSFERIDO'
-          }
-        });
-      }
-    }
+    // A exclusão automática de patrimônio em consultas GET foi removida.
+    // Patrimônios transferidos não devem ser destruídos do banco sem auditoria.
 
     const transferencias = await prisma.transferencia.findMany({
       include: {
