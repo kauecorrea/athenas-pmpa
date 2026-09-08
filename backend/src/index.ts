@@ -6,7 +6,7 @@
 
 import express from 'express';
 import cors from 'cors';
-import * as dotenv from 'dotenv';
+import 'dotenv/config';
 import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
 import helmet from 'helmet';
@@ -29,7 +29,7 @@ import transferenciasRoutes from './routes/transferencias.routes';
 import auditoriaRoutes from './routes/auditoria.routes';
 import vtrRoutes from './routes/vtr.routes';
 
-dotenv.config();
+
 
 const app = express();
 const prisma = new PrismaClient();

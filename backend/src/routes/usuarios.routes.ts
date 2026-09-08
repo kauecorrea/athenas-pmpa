@@ -18,7 +18,7 @@ const prisma = new PrismaClient();
  * @description Cadastra um novo operador/administrador no sistema.
  * Antes de salvar no banco, a senha é criptografada usando Bcrypt com salt de 10 rounds.
  */
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { nomeCompleto, nomeGuerra, email, senha, posto, unidade, permissao } = req.body;
 
@@ -65,7 +65,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  * Oculta propositalmente a coluna `senha` usando a cláusula `select` do Prisma
  * para garantir que hashes não circulem na rede desnecessariamente.
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const usuarios = await prisma.usuario.findMany({
       select: {
@@ -90,7 +90,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  * @description Atualiza os dados de um usuário (Perfil).
  * Se o campo "senha" for enviado preenchido, ele será criptografado antes de ser salvo.
  */
-router.put('/:id', async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', adminMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params as { id: string };
     const { nomeCompleto, nomeGuerra, posto, unidade, permissao, senha, email } = req.body;
