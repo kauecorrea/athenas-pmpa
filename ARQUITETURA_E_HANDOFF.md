@@ -1,119 +1,99 @@
 # Guia de Arquitetura e Handoff Técnico - ATHENAS
 
-Este documento é destinado exclusivamente à equipe de **Engenharia de Software e TI da Polícia Militar do Pará (PMPA)**. Ele descreve a arquitetura, as decisões de design, a estrutura de pastas e fornece um guia de resolução de problemas (Troubleshooting) para facilitar a manutenção e evolução do código-fonte do Sistema ATHENAS.
+Este documento é destinado à equipe de **Engenharia de Software e TI da Polícia Militar do Pará (PMPA)**. Ele reflete o estado atual, real e testado da aplicação após auditoria de segurança rigorosa, delimitando claramente o que está protegido e o que precisa ser assumido como dívida técnica ou pauta gerencial pela corporação.
 
 ---
 
 ## 1. Stack Tecnológica Base
 
 ### 1.1. Frontend
-* **Core:** React 19 executado via Vite.
-* **Linguagem:** TypeScript (Strict Mode ativado).
-* **Estilização:** Tailwind CSS (focado no padrão Dark Mode e Glassmorphism).
-* **Roteamento:** `react-router-dom` (SPA).
-* **Comunicação de Rede:** `axios` com uso de Interceptors para injeção de Token JWT.
-* **Geração de Relatórios:** `jspdf` e `jspdf-autotable` (Processamento totalmente Client-Side).
-* **Ícones e Gráficos:** `lucide-react` e `recharts`.
+* **Core:** React 19 via Vite.
+* **Linguagem:** TypeScript (Strict Mode).
+* **Estilização:** Tailwind CSS (Dark Mode nativo).
+* **Comunicação:** `axios` com injeção automática de Token JWT via Interceptors. O Token fica alocado no `localStorage`.
+* **Geração de Relatórios:** Totalmente Client-Side via `jspdf` e `jspdf-autotable`.
 
 ### 1.2. Backend
 * **Core:** Node.js (v18+) com Express.
-* **Linguagem:** TypeScript (compilado via `tsc`).
-* **Banco de Dados:** MongoDB (NoSQL).
-* **ORM:** Prisma Client (`prisma` e `@prisma/client`).
-* **Segurança:** 
-  * `bcryptjs` para Hash de senhas (salt 10 rounds).
-  * `jsonwebtoken` para controle de sessão sem estado (Stateless).
-  * `express-rate-limit` contra ataques de força bruta.
-  * `helmet` e `express-mongo-sanitize` na raiz para proteção de cabeçalhos e injeções NoSQL.
+* **Linguagem:** TypeScript.
+* **Banco de Dados:** MongoDB (Requer Replica Set ativado para Transações).
+* **ORM:** Prisma Client.
+* **Segurança Base:** 
+  * `bcryptjs` (salt 10) para Hash.
+  * JWT Stateless (24h de duração) para sessões.
+  * `express-rate-limit`, `helmet` e `express-mongo-sanitize`.
 
 ---
 
 ## 2. Topologia do Monorepo
 
-O projeto está configurado como um monorepo simples contendo duas aplicações principais isoladas:
-
 ```text
 athenas-pmpa/
 ├── backend/
 │   ├── prisma/
-│   │   └── schema.prisma         # Modelagem central do Banco de Dados. ÚNICA fonte de verdade.
+│   │   └── schema.prisma         # Modelagem do DB. Default fallback = Operador.
 │   ├── src/
-│   │   ├── middlewares/          # auth.middleware.ts (Verifica JWT) e admin.middleware.ts (Nível de Acesso)
-│   │   ├── routes/               # Controladores CRUD (separados por domínio: equipamentos, usuários, etc.)
-│   │   ├── utils/                # Utilitários globais (Ex: auditoria.ts para logs imutáveis)
-│   │   └── index.ts              # Ponto de entrada do Express (Configuração de CORS, Helmet e inicialização)
-│   ├── .env.example              # Chaves necessárias (DATABASE_URL, JWT_SECRET)
+│   │   ├── middlewares/          # auth.middleware.ts e admin.middleware.ts
+│   │   ├── routes/               # Controladores CRUD isolados por domínio
+│   │   ├── utils/                # Utilitários (Ex: log em tabela de auditoria)
+│   │   └── index.ts              # Ponto de entrada (Dotenv configurado na Linha 1)
+│   ├── .env.example
 │   └── package.json
 │
 ├── frontend/
-│   ├── public/                   # Imagens base, Brasão da PMPA, fontes.
+│   ├── public/
 │   ├── src/
-│   │   ├── components/           # Componentes reutilizáveis (Sidebar, Modal, Toast)
-│   │   ├── pages/                # Telas completas roteáveis (Ex: Cautelas.tsx, Dashboard.tsx)
-│   │   ├── App.tsx               # Entrypoint do roteador e Interceptor Global do Axios
-│   │   └── main.tsx              # Ponto de montagem no DOM
-│   ├── .env.example              # VITE_API_URL (Aponta para o Backend)
-│   ├── tailwind.config.js        # Tokens de design do Tailwind
+│   │   ├── components/
+│   │   ├── pages/                # Telas UI (Ex: Perfil.tsx com blindagem de edição)
+│   │   └── App.tsx               # Roteador e Interceptor de Autenticação
+│   ├── tailwind.config.js
 │   └── package.json
 ```
 
 ---
 
-## 3. Padrões de Arquitetura e Decisões de Design
+## 3. Riscos de Segurança Corrigidos (V1 Stable)
 
-### 3.1. Autenticação e Interceptação (Frontend)
-A autenticação não utiliza cookies. Em vez disso, o token JWT recebido no login é salvo no `localStorage`.
-**Como funciona:** O arquivo `App.tsx` possui um interceptor global do Axios. **Todas** as requisições que saem do frontend automaticamente ganham o cabeçalho `Authorization: Bearer <token>`.
-Se o backend responder com Status `401 Unauthorized` (ex: o token expirou), o interceptor captura o erro centralizadamente, apaga o cache local e joga o usuário brutalmente para a tela `/login`.
+As seguintes vulnerabilidades críticas foram rastreadas e bloqueadas no código-fonte atual:
 
-### 3.2. Middleware de Proteção (Backend)
-Toda rota que exige login no Express (`backend/src/routes`) passa pela `auth.middleware.ts`. 
-Esta middleware extrai o JWT, verifica a validade criptográfica e injeta o `req.usuario` contendo o ID e Permissão do policial. Rotas destrutivas (ex: `router.delete`) passam por uma segunda camada, a `admin.middleware.ts`, que interrompe a requisição se a permissão não for "Administrador".
-
-### 3.3. Log de Auditoria Imutável
-A rastreabilidade não depende do frontend. O backend utiliza um serviço em `backend/src/utils/auditoria.ts`.
-Toda vez que uma rota de Criação, Atualização ou Exclusão (CUD) é disparada com sucesso, esse script lê o ID do usuário direto do token validado (`req.usuario`) e salva no MongoDB um registro imutável com Ação, Alvo e Timestamp. *Nunca confie no frontend para dizer "quem" está fazendo a ação.*
-
-### 3.4. Geração de PDF no Cliente
-Para não sobrecarregar o servidor Node.js com processamento binário ou depender de bibliotecas como o Puppeteer (que consomem muita RAM), todo o processo de gerar **Termos de Responsabilidade** foi transferido para o navegador do cliente usando a biblioteca `jspdf`. As funções de desenho (`gerarPDF`) ficam embutidas nas páginas React (Ex: `Cautelas.tsx`).
+1. **Auto-Promoção e Alteração Funcional:** A rota `/api/usuarios/me` ignora completamente qualquer tentativa de alteração de *Posto* e *Unidade*. No frontend (`Perfil.tsx`), os campos estão visualmente desativados incondicionalmente para todos.
+2. **Fallback Conservador de Privilégios:** O modelo de banco de dados (`schema.prisma`) e a rota de criação de usuários foram atualizados para atribuir `Operador` como permissão padrão caso a requisição falhe em explicitar o nível de acesso.
+3. **Deleções Acidentais / Cascata Oculta:** O destrutivo efeito-colateral da rota `GET /api/transferencias` foi completamente removido. O sistema não exclui mais dados patrimoniais de forma automatizada e autônoma, garantindo que o histórico permaneça intacto.
+4. **Vazamento Involuntário de JWT Secret:** Variáveis de ambiente configuradas na primeira linha de carregamento, e remoção de chaves falsas em middlewares, prevenindo que o sistema inicie "inseguro por padrão".
+5. **Interceptação de E-mails Duplicados:** O Backend captura erros únicos do Prisma (`P2002`) em atualizações e criações, retornando `Status 400` amigável em vez de colapso genérico `500`.
 
 ---
 
-## 4. Dívida Técnica Mapeada e Limitações Atuais
+## 4. Riscos Técnicos Pendentes (Engenharia)
 
-A equipe que assumir o sistema deve estar ciente das seguintes características/limitações da V1:
+A equipe técnica que assumir a manutenção deve planejar atuar nos seguintes vetores de código:
 
-1. **Separação por Unidade (OPM):** O banco de dados salva a unidade dos equipamentos e usuários, mas as Consultas (GET) atuais no backend trazem dados globais. Ou seja, um operador do Batalhão X consegue visualizar a lista de rádios do Batalhão Y. Caso o Comando decida por um isolamento regional estrito, será necessário alterar as queries do Prisma nos arquivos `.routes.ts` para filtrar usando o `req.usuario.unidade`.
-2. **Backlog Institucional (Aprovação Superior Necessária):**
-   - **Matriz de Permissões:** Hoje a regra é simples (Operador faz quase tudo operacionalmente, Admin exclui e gerencia contas). Para um controle mais granular, a corporação precisa elaborar a "Matriz Oficial de Acesso" e implementar as amarras nas respectivas rotas de Controller.
-   - **Bateria de Testes:** Não há testes E2E (`Cypress`/`Playwright`) ou unitários (`Jest`) automatizados na CI/CD do sistema.
-   - **Políticas de Retenção de LOG:** Há a tabela `auditoria`, mas ainda não existe um processo em lote agendado para arquivá-los a longo prazo ou varrer itens deletados de acordo com a LGPD/Protocolo PMPA.
-3. **Módulo VTR sem Vínculo Permanente:** O banco de dados trata a VTR como uma ordem de serviço (registro de instalação temporal), e não como uma entidade rígida (Carro -> Rádio). Isso facilita a flexibilidade, mas impede relatórios de frota a longo prazo.
-
----
-
-## 5. Guia de Resolução de Problemas (Troubleshooting)
-
-### Problema: "Erro de Prisma / Não encontra Modelos"
-* **Causa:** O schema do MongoDB foi alterado (adicionado um campo novo) e o Prisma Client que roda dentro de `node_modules` está desatualizado.
-* **Solução:** Acesse a pasta `/backend` e rode:
-  ```bash
-  npx prisma generate
-  ```
-
-### Problema: "Frontend não conecta no Backend (Network Error)"
-* **Causa:** O Vite está tentando bater em `localhost:3333` mas o Node.js caiu, ou o sistema foi levado para Produção e o `.env` do Frontend não foi atualizado.
-* **Solução:** Crie o arquivo `frontend/.env` e especifique a variável `VITE_API_URL="http://IP-DO-SERVIDOR-AQUI"`. Recompile o frontend (`npm run build`).
-
-### Problema: "Migrações e Limpeza Geral do Banco"
-Como o MongoDB é NoSQL, o Prisma não usa comandos tradicionais de `migrate`. Se você precisar "limpar" o banco (Drop) durante o desenvolvimento para recomeçar do zero:
-* **Solução:** Entre no MongoDB Compass, acesse o banco `athenas`, selecione todas as coleções e clique no ícone de lixeira. Reinicie a aplicação backend e crie um usuário via Postman na rota `POST /api/usuarios` para ter o primeiro admin.
+1. **Tokens JWT Expostos (LocalStorage):** Atualmente o Access Token reside em formato aberto no `localStorage` do navegador do usuário, vulnerável a XSS. Recomenda-se migrar para Cookies `HttpOnly / Secure`.
+2. **Ausência de Revogação de Sessões:** Como a sessão é Stateless, um JWT ativo é válido por 24h. Um admin rebaixado para operador mantém poderes por algumas horas até o token expirar. Não existe um "Kill-Switch" de sessões (`tokenVersion`).
+3. **Validação de Mass Assignment (VTR):** O módulo de Viatura (OS) propaga expansões diretas de payload (`...req.body`). Recomenda-se adotar imediatamente `Zod` ou `Joi` em todos os Controllers.
+4. **Colisão de Numeração Sequencial:** Ordens de Serviço leem a última numeração e somam `+1`. Dois usuários clicando "Salvar" no exato mesmo milissegundo podem gerar OS com numerações repetidas.
+5. **Auditoria Fragilizada:** A auditoria atual salva Strings (nomes amigáveis) e não força dependências duras na transação de banco. Um log de deleção não guarda o JSON/Snapshot do dado deletado, impossibilitando um rollback forense puro.
+6. **Ausência de Testes Automatizados:** O repositório carece integralmente de scripts `Jest`, `Cypress` ou `Playwright`.
 
 ---
 
-## 6. Fluxo de Publicação (Deploy)
+## 5. Decisões Estratégicas Dependentes da PMPA
 
-Recomendações para hospedar o Athenas:
-1. **Banco de Dados:** Utilizar o MongoDB Atlas (Cloud) ou um cluster Docker interno da PM.
-2. **Backend:** Subir a pasta `backend` através de um container Docker ou usar um gerenciador de processos como `PM2` (Ex: `pm2 start dist/index.js --name athenas-api`).
-3. **Frontend:** Compilar os arquivos estáticos (`npm run build` dentro da pasta frontend) e hospedar o conteúdo gerado na pasta `dist/` usando o NGINX, Apache, ou enviá-los para um serviço como Vercel/Netlify. Não use `npm run dev` em produção!
+Os pontos abaixo não são problemas de código, mas sim de **Política de Acesso Corporativo**. A DITEL precisará mapeá-los antes de exigir mudanças técnicas:
+
+1. **Matriz de Permissões Oficial (RBAC):** Hoje o Operador consegue cadastrar e editar diversos patrimônios livremente. Se a política exigir que "Somente Administrador cria Equipamentos", os controladores precisam ser alterados.
+2. **Isolamento de Visibilidade (Filtros Regionais):** A consulta patrimonial atual é Estadual. Qualquer operador vê a listagem de qualquer unidade. Para isolar o quartel X do quartel Y, é necessário plugar o ID da OPM na cláusula `WHERE` global de cada Rota GET.
+3. **Políticas de Retenção de LOGs (LGPD):** É necessário definir por quanto tempo a tabela de Auditoria deve guardar informações.
+4. **Validação e Fluxo do Rádio na Viatura:** O vínculo atual entre Rádio e VTR é temporal e flexível, exigindo definições institucionais se isso deve virar um bloqueio fixo no modelo relacional.
+
+---
+
+## 6. Critérios Obrigatórios Antes de Entrar em Produção
+
+⚠️ **Atenção: Não coloque o ATHENAS no ar sem antes aplicar o Checklist:**
+
+- [ ] **Bootstrap do Administrador Primário:** A rota de criação de usuários é protegida por `adminMiddleware`. Em um banco recém formatado/zerado, é impossível usar a UI. Será necessário que o DBA rode um *Seed Script* no servidor ou injete o primeiro usuário via interface de linha de comando.
+- [ ] **Replica Set no MongoDB:** O Prisma necessita de Replica Sets para executar transações seguras (como o rollback de transferências). Se o MongoDB da PMPA for apenas Node Standalone, a aplicação irá crashear nas rotas de Cautelas/Devoluções.
+- [ ] **Cofre de Segredos:** Retirar a senha do banco (`DATABASE_URL`) e `JWT_SECRET` de arquivos abertos `.env` e gerenciar via Docker Secrets ou AWS Secrets Manager.
+- [ ] **Política de Backups a Quente:** Programar snapshots do Atlas, cronjobs de Dump diários e validá-los em ambiente de SandBox trimestralmente.
+- [ ] **Pipeline CI/CD:** Instaurar Github Actions/Gitlab CI que rode Linting estrito e barragem de PRs contendo senhas vazadas.
