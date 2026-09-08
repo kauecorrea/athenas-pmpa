@@ -42,7 +42,7 @@ router.post('/', adminMiddleware, async (req: Request, res: Response): Promise<v
         senha: hashedPassword,
         posto,
         unidade,
-        permissao: permissao || 'Administrador', // Default fallback para contingência
+        permissao: permissao || 'Operador', // Default fallback seguro (Princípio do Menor Privilégio)
       },
     });
 
