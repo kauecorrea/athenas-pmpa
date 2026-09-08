@@ -4,7 +4,6 @@ import { Upload, Shield, Mail, Lock, User } from 'lucide-react';
 
 const Perfil: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
-  const [permissao, setPermissao] = useState<string>('');
 
   // Basico
   const [nomeCompleto, setNomeCompleto] = useState('');
@@ -35,7 +34,6 @@ const Perfil: React.FC = () => {
       setPosto(u.posto || '');
       setUnidade(u.unidade || 'DITEL');
       setEmailAtual(u.email || '');
-      setPermissao(u.permissao || '');
       
       // Recuperar avatar (UI Local)
       const savedAvatar = localStorage.getItem(`avatar_${u.id}`);
@@ -85,11 +83,9 @@ const Perfil: React.FC = () => {
     try {
       await axios.put(`/api/usuarios/me`, {
         nomeCompleto,
-        nomeGuerra,
-        posto,
-        unidade
+        nomeGuerra
       });
-      syncLocalUsuario({ nomeCompleto, nomeGuerra, posto, unidade });
+      syncLocalUsuario({ nomeCompleto, nomeGuerra });
       alert("Informações atualizadas com sucesso!");
     } catch (err) {
       console.error(err);
