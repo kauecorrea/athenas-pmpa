@@ -615,7 +615,7 @@ const Cautelas: React.FC = () => {
             <tbody className="divide-y divide-gray-100 dark:divide-[#1f2937]">
               {loading ? (
                 <tr><td colSpan={10} className="px-6 py-8 text-center animate-pulse">Carregando histórico...</td></tr>
-              ) : cautelasFiltradas.length > 0 ? cautelasFiltradas.map((c) => (
+              ) : cautelasFiltradas.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
