@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { Plus, Wrench, FileText, CheckCircle, Search, List, Edit3, Trash2, Check, ClipboardCheck } from 'lucide-react';
 import ModalConfirmacao from '../components/ModalConfirmacao';
@@ -789,9 +790,9 @@ const Manutencao: React.FC = () => {
       </div>
       )}
 
-      {isModalConcluirOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-surface w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-slide-up border border-gray-200 dark:border-gray-700">
+      {isModalConcluirOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up border border-gray-200 dark:border-gray-700">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600">
                 <CheckCircle size={24} />
@@ -855,7 +856,8 @@ const Manutencao: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ModalConfirmacao 
