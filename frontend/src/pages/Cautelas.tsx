@@ -61,6 +61,9 @@ interface Cautela {
   recebedorNome?: string;
   recebedorGuerra?: string;
   recebedorContato?: string;
+  numeroSequencial: number | null;
+  observacao: string | null;
+  observacaoDevolucao: string | null;
   militar: Militar | null;
   unidade: { nome: string } | null;
   equipamentos: Equipamento[];
@@ -89,6 +92,8 @@ const Cautelas: React.FC = () => {
   const [recebedorNome, setRecebedorNome] = useState('');
   const [recebedorGuerra, setRecebedorGuerra] = useState('');
   const [recebedorContato, setRecebedorContato] = useState('');
+  const [observacao, setObservacao] = useState('');
+  const [observacaoDevolucao, setObservacaoDevolucao] = useState('');
 
   const [buscaRadio, setBuscaRadio] = useState('');
   const [tipoBusca, setTipoBusca] = useState('RADIO');
@@ -154,7 +159,8 @@ const Cautelas: React.FC = () => {
           recebedorRgPM,
           recebedorNome,
           recebedorGuerra,
-          recebedorContato
+          recebedorContato,
+          observacao
         });
         emitToast("Cautela atualizada!", "success");
       } else {
@@ -168,7 +174,8 @@ const Cautelas: React.FC = () => {
           recebedorRgPM,
           recebedorNome,
           recebedorGuerra,
-          recebedorContato
+          recebedorContato,
+          observacao
         });
         emitToast("Cautela registrada com sucesso!", "success");
       }
@@ -194,14 +201,16 @@ const Cautelas: React.FC = () => {
     setRecebedorNome('');
     setRecebedorGuerra('');
     setRecebedorContato('');
+    setObservacao('');
   };
 
   const confirmDevolver = async () => {
     if (!cautelaDevolverId) return;
     try {
-      await axios.put(`/api/cautelas/${cautelaDevolverId}/devolver`);
+      await axios.put(`/api/cautelas/${cautelaDevolverId}/devolver`, { observacaoDevolucao });
       setIsModalDevolverOpen(false);
       setCautelaDevolverId(null);
+      setObservacaoDevolucao('');
       fetchData();
     } catch (e) {
       console.error(e);
@@ -235,6 +244,7 @@ const Cautelas: React.FC = () => {
     setRecebedorNome(c.recebedorNome || '');
     setRecebedorGuerra(c.recebedorGuerra || '');
     setRecebedorContato(c.recebedorContato || '');
+    setObservacao(c.observacao || '');
     setRadiosSelecionados(c.equipamentos.map(eq => eq.id));
     setViewMode('form');
   };
@@ -271,7 +281,8 @@ const Cautelas: React.FC = () => {
     // Título Centralizado conforme modelo (Apenas a primeira linha da missão)
     const missaoLinhas = (c.missao || '').split('\n');
     const missaoPrincipal = missaoLinhas[0].toUpperCase();
-    const titulo = `CAUTELA - ${missaoPrincipal || 'GERAL'}`;
+    const osFormatada = c.numeroSequencial ? `OS-${c.numeroSequencial.toString().padStart(4, '0')}` : 'OS-0000';
+    const titulo = `CAUTELA ${osFormatada} - ${missaoPrincipal || 'GERAL'}`;
     doc.setFontSize(14);
     doc.text(titulo, 105, 50, { align: 'center' });
     
@@ -510,7 +521,9 @@ const Cautelas: React.FC = () => {
                          (c.militar?.rg || '').includes(busca) ||
                          (c.militar?.unidade?.nome || '').toLowerCase().includes(busca.toLowerCase()) ||
                          (c.unidade?.nome || '').toLowerCase().includes(busca.toLowerCase()) ||
-                         (c.missao || '').toLowerCase().includes(busca.toLowerCase());
+                         (c.missao || '').toLowerCase().includes(busca.toLowerCase()) ||
+                         (c.numeroSequencial ? `os-${c.numeroSequencial.toString().padStart(4, '0')}`.includes(busca.toLowerCase()) : false) ||
+                         (c.numeroSequencial?.toString().includes(busca));
     const matchesStatus = filtroStatus === 'Todos' || c.status === filtroStatus;
     return matchesBusca && matchesStatus;
   });
@@ -587,6 +600,7 @@ const Cautelas: React.FC = () => {
           <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
             <thead className="bg-gray-50 dark:bg-[#0b101a] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider">
               <tr>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">OS / Número</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Responsável (Entrega)</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Recebedor</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Unidade</th>
@@ -598,11 +612,16 @@ const Cautelas: React.FC = () => {
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
+            <tbody className="divide-y divide-gray-100 dark:divide-[#1f2937]">
               {loading ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center animate-pulse">Carregando histórico...</td></tr>
-              ) : cautelasFiltradas.map(c => (
-                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors">
+                <tr><td colSpan={10} className="px-6 py-8 text-center animate-pulse">Carregando histórico...</td></tr>
+              ) : cautelasFiltradas.length > 0 ? cautelasFiltradas.map((c) => (
+                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">
+                      {c.numeroSequencial ? `OS-${c.numeroSequencial.toString().padStart(4, '0')}` : 'OS-0000'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 font-bold text-gray-900 dark:text-white uppercase truncate max-w-[150px]">
                     {c.militar ? `${c.militar.posto || ''} ${c.militar.nomeGuerra || c.militar.nome}`.trim() : 'RESERVA'}
                   </td>
@@ -675,7 +694,7 @@ const Cautelas: React.FC = () => {
               ))}
               {cautelasFiltradas.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500 italic">
+                  <td colSpan={10} className="px-6 py-10 text-center text-gray-500 italic">
                     Nenhuma cautela encontrada.
                   </td>
                 </tr>
@@ -749,6 +768,16 @@ const Cautelas: React.FC = () => {
                     className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all"
                   />
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Observações (Início da Cautela)</label>
+                <textarea 
+                  placeholder="Se houver alguma avaria, pendência ou observação no momento da entrega, digite aqui..." 
+                  value={observacao}
+                  onChange={(e) => setObservacao(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all resize-none h-20"
+                />
               </div>
 
               {/* Militar Recebedor */}
@@ -1011,14 +1040,42 @@ const Cautelas: React.FC = () => {
           </div>
         </div>,
         document.body
-      )}      <ModalConfirmacao 
-        isOpen={isModalDevolverOpen}
-        title="Registrar Devolução"
-        message="Confirma o recebimento desta cautela? Todos os aparelhos vinculados a ela voltarão ao status OPERACIONAL livre na Reserva."
-        onConfirm={confirmDevolver}
-        onCancel={() => { setIsModalDevolverOpen(false); setCautelaDevolverId(null); }}
-        confirmText="Confirmar Devolução"
-      />
+      )}      {isModalDevolverOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-lg shadow-2xl p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Registrar Devolução</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+              Confirma o recebimento desta cautela? Todos os aparelhos vinculados a ela voltarão ao status OPERACIONAL livre na Reserva.
+            </p>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Observações Finais (Opcional)</label>
+              <textarea 
+                placeholder="Ex: Rádio devolvido com antena trincada, falta de presilha..." 
+                value={observacaoDevolucao}
+                onChange={(e) => setObservacaoDevolucao(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all resize-none h-24"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => { setIsModalDevolverOpen(false); setCautelaDevolverId(null); setObservacaoDevolucao(''); }}
+                className="px-4 py-2 text-sm font-bold text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmDevolver}
+                className="px-4 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors shadow-lg shadow-green-600/20"
+              >
+                Confirmar Devolução
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <ModalConfirmacao 
         isOpen={isModalDeleteOpen}

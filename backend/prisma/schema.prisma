@@ -112,6 +112,9 @@ model Cautela {
   recebedorGuerra  String?
   recebedorContato String?
   
+  observacao       String?
+  observacaoDevolucao String?
+  
   status        StatusCautela @default(ATIVA) // ATIVA, DEVOLVIDA, VENCIDA
 }
 

@@ -77,7 +77,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
+  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato, observacao } = req.body;
   
   // Validação: Exige pelo menos um equipamento para criar a Cautela
   if (!equipamentosIds || !Array.isArray(equipamentosIds) || equipamentosIds.length === 0) {
@@ -111,6 +111,7 @@ router.post('/', async (req: Request, res: Response) => {
           recebedorNome: recebedorNome || null,
           recebedorGuerra: recebedorGuerra || null,
           recebedorContato: recebedorContato || null,
+          observacao: observacao || null,
           status: 'ATIVA',
           equipamentos: {
             connect: equipamentosIds.map((id: any) => ({ id: id }))
@@ -145,7 +146,7 @@ router.post('/', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { missao, dataInicio, dataPrevista, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato } = req.body;
+  const { missao, dataInicio, dataPrevista, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato, observacao } = req.body;
   
   try {
     const updateData: any = {
@@ -156,6 +157,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       recebedorNome: recebedorNome || null,
       recebedorGuerra: recebedorGuerra || null,
       recebedorContato: recebedorContato || null,
+      observacao: observacao || null,
     };
     
     // Regra de Negócio: Se a cautela estava VENCIDA, mas o usuário editou empurrando a data prevista para o futuro, 
@@ -189,13 +191,15 @@ router.put('/:id', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id/devolver', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
+  const { observacaoDevolucao } = req.body;
   try {
     // 1. Marca a Cautela como DEVOLVIDA e salva a data atual
     const cautela = await prisma.cautela.update({
       where: { id: id as string },
       data: {
         status: 'DEVOLVIDA',
-        dataDevolucao: new Date()
+        dataDevolucao: new Date(),
+        observacaoDevolucao: observacaoDevolucao || null
       },
       include: { equipamentos: true }
     });
