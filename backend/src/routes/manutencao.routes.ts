@@ -140,6 +140,8 @@ router.post('/', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id/concluir', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
+  const { statusDestino } = req.body;
+  
   try {
     const manutencao = await prisma.manutencao.update({
       where: { id: id as string },
@@ -149,12 +151,14 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
       }
     });
 
+    const equipStatus = statusDestino === 'BAIXADO' ? 'BAIXADO' : 'OPERACIONAL';
+
     await prisma.equipamento.update({
       where: { id: manutencao.equipamentoId },
-      data: { status: 'OPERACIONAL' }
+      data: { status: equipStatus }
     });
 
-    registrarAuditoria(req, 'Concluiu e retirou rádio da Manutenção', `Concluiu a Ordem de Serviço ID Banco: ${id}`);
+    registrarAuditoria(req, 'Concluiu e retirou rádio da Manutenção', `Concluiu a Ordem de Serviço ID Banco: ${id}. Destino: ${equipStatus}`);
 
     res.json(manutencao);
   } catch (error) {

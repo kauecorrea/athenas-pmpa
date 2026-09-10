@@ -54,6 +54,7 @@ const Manutencao: React.FC = () => {
 
   const [isModalConcluirOpen, setIsModalConcluirOpen] = useState(false);
   const [manutencaoConcluirId, setManutencaoConcluirId] = useState<string | null>(null);
+  const [statusDestino, setStatusDestino] = useState<'OPERACIONAL' | 'BAIXADO'>('OPERACIONAL');
 
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState<string | null>(null);
@@ -208,7 +209,7 @@ const Manutencao: React.FC = () => {
   const confirmConcluir = async () => {
     if (!manutencaoConcluirId) return;
     try {
-      await axios.put(`/api/manutencoes/${manutencaoConcluirId}/concluir`);
+      await axios.put(`/api/manutencoes/${manutencaoConcluirId}/concluir`, { statusDestino });
       fetchManutencoes();
     } catch (error) {
       console.error("Erro ao concluir", error);
@@ -788,14 +789,74 @@ const Manutencao: React.FC = () => {
       </div>
       )}
 
-      <ModalConfirmacao 
-        isOpen={isModalConcluirOpen}
-        title="Finalizar Conserto"
-        message="Confirma a conclusão do reparo técnico? O rádio retornará para o status OPERACIONAL."
-        onConfirm={confirmConcluir}
-        onCancel={() => { setIsModalConcluirOpen(false); setManutencaoConcluirId(null); }}
-        confirmText="Confirmar Conclusão"
-      />
+      {isModalConcluirOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-surface w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-slide-up border border-gray-200 dark:border-gray-700">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600">
+                <CheckCircle size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Concluir Manutenção</h3>
+                <p className="text-sm text-gray-500">Defina o destino do equipamento</p>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                O equipamento foi reparado e está Operacional ou precisa de Laudo (Baixa/Condenação)?
+              </p>
+              
+              <div className="space-y-3">
+                <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${statusDestino === 'OPERACIONAL' ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'}`}>
+                  <input 
+                    type="radio" 
+                    name="statusDestino" 
+                    value="OPERACIONAL" 
+                    checked={statusDestino === 'OPERACIONAL'}
+                    onChange={() => setStatusDestino('OPERACIONAL')}
+                    className="w-4 h-4 text-primary"
+                  />
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white">Operacional</p>
+                    <p className="text-xs text-gray-500">Rádio consertado, volta para o estoque.</p>
+                  </div>
+                </label>
+
+                <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${statusDestino === 'BAIXADO' ? 'border-orange-500 bg-orange-500/5' : 'border-gray-200 dark:border-gray-700 hover:border-orange-500/50'}`}>
+                  <input 
+                    type="radio" 
+                    name="statusDestino" 
+                    value="BAIXADO" 
+                    checked={statusDestino === 'BAIXADO'}
+                    onChange={() => setStatusDestino('BAIXADO')}
+                    className="w-4 h-4 text-orange-500"
+                  />
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white text-orange-600">Laudo / Baixa</p>
+                    <p className="text-xs text-gray-500">Sem conserto, equipamento será baixado.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#0b101a] flex justify-end gap-3">
+              <button
+                onClick={() => { setIsModalConcluirOpen(false); setManutencaoConcluirId(null); }}
+                className="px-4 py-2 font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmConcluir}
+                className="px-4 py-2 font-bold text-white bg-primary hover:bg-blue-600 rounded-xl transition-all"
+              >
+                Confirmar Conclusão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ModalConfirmacao 
         isOpen={isModalDeleteOpen}
