@@ -236,7 +236,7 @@ const Extraviados: React.FC = () => {
     doc.setFontSize(14);
     doc.text("TERMO DE REGISTRO DE EXTRAVIO / PERDA", 105, 50, { align: "center" });
     doc.setFontSize(11);
-    doc.text(`Protocolo: ${ex.id.substring(0,8).toUpperCase()} | B.O: ${ex.boNumero}`, 105, 57, { align: "center" });
+    doc.text(`Protocolo: ${ex.id.substring(0,8).toUpperCase()} | B.O/TCO: ${ex.boNumero}`, 105, 57, { align: "center" });
 
     doc.line(14, 65, 196, 65);
 
@@ -317,7 +317,7 @@ const Extraviados: React.FC = () => {
             <ShieldOff className="text-danger" size={32} />
             Equipamentos Extraviados
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Controle e rastreio de bens não localizados ou com B.O de extravio</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Controle e rastreio de bens não localizados ou com B.O/TCO de extravio</p>
         </div>
         {viewMode === 'list' ? (
           <button 
@@ -345,7 +345,7 @@ const Extraviados: React.FC = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
                 type="text" 
-                placeholder="Buscar por militar, série, patrimônio ou B.O..." 
+                placeholder="Buscar por militar, série, patrimônio ou B.O/TCO..." 
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all"
@@ -359,7 +359,7 @@ const Extraviados: React.FC = () => {
                 <tr>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Equipamento</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Militar Responsável</th>
-                  <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nº do B.O</th>
+                  <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Nº do B.O/TCO</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Data do Registro</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
                   <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937] text-right">Ações</th>
@@ -581,7 +581,7 @@ const Extraviados: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">3. Número do B.O</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">3. Número do B.O/TCO</label>
                 <input 
                   type="text" 
                   required

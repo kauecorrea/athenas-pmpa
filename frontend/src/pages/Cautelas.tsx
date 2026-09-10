@@ -1023,7 +1023,7 @@ const Cautelas: React.FC = () => {
       <ModalConfirmacao 
         isOpen={isModalDeleteOpen}
         title="Exclusão de Histórico (Cautela)"
-        message="CUIDADO: Você está deletando o B.O inteiro da cautela e seu rastro na base de estatísticas do patrimônio. Esta ação é estritamente em caso de erro na hora de formular a Cautela. Confirma exclusão?"
+        message="CUIDADO: Você está deletando o B.O/TCO inteiro da cautela e seu rastro na base de estatísticas do patrimônio. Esta ação é estritamente em caso de erro na hora de formular a Cautela. Confirma exclusão?"
         onConfirm={confirmDelete}
         onCancel={() => { setIsModalDeleteOpen(false); setCautelaDeleteId(null); }}
       />
