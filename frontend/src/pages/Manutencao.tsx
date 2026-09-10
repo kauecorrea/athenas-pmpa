@@ -13,6 +13,7 @@ import jsPDF from 'jspdf';
 
 interface ManutencaoRecord {
   id: string;
+  numeroSequencial: number | null;
   equipamentoId: string;
   equipamento: { 
     id: string;
@@ -337,73 +338,74 @@ const Manutencao: React.FC = () => {
       doc.text("DIRETORIA DE TELEMÁTICA", 105, 28 + offsetY, { align: "center" });
 
       doc.setFontSize(14);
-      doc.text("RELATÓRIO DE LAUDO TÉCNICO", 105, 40 + offsetY, { align: "center" });
+      doc.text("RELATÓRIO DE LAUDO TÉCNICO", 105, 35 + offsetY, { align: "center" });
       
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.5);
-      doc.line(14, 45 + offsetY, 196, 45 + offsetY);
+      doc.line(14, 38 + offsetY, 196, 38 + offsetY);
 
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
-      doc.text(`OS: ${m.id.substring(0,6).toUpperCase()}`, 14, 52 + offsetY);
-      doc.text(`Suporte: ${m.equipamento.marca || ''} ${m.equipamento.modelo || ''}`, 60, 52 + offsetY);
-      doc.text(`Telecom:`, 130, 52 + offsetY);
+      const osFormatada = m.numeroSequencial ? `OS-${m.numeroSequencial.toString().padStart(4, '0')}` : `OS: ${m.id.substring(0,6).toUpperCase()}`;
+      doc.text(osFormatada, 14, 43 + offsetY);
+      doc.text(`Suporte: ${m.equipamento.marca || ''} ${m.equipamento.modelo || ''}`, 60, 43 + offsetY);
+      doc.text(`Telecom:`, 130, 43 + offsetY);
 
-      doc.line(14, 55 + offsetY, 196, 55 + offsetY);
+      doc.line(14, 45 + offsetY, 196, 45 + offsetY);
 
       doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
-      doc.text("UNIDADE", 14, 62 + offsetY);
-      doc.text("Nº PAE", 40, 62 + offsetY);
-      doc.text("RP/PM", 75, 62 + offsetY);
-      doc.text("Nº SÉRIE", 105, 62 + offsetY);
-      doc.text("SOLICITANTE", 140, 62 + offsetY);
-      doc.text("DATA ENTRADA", 175, 62 + offsetY);
+      doc.text("UNIDADE", 14, 50 + offsetY);
+      doc.text("Nº PAE", 40, 50 + offsetY);
+      doc.text("RP/PM", 75, 50 + offsetY);
+      doc.text("Nº SÉRIE", 105, 50 + offsetY);
+      doc.text("SOLICITANTE", 140, 50 + offsetY);
+      doc.text("DATA ENTRADA", 175, 50 + offsetY);
 
       doc.setFont("helvetica", "normal");
-      doc.text("DITEL", 14, 68 + offsetY);
-      doc.text(m.paeNumero || "-", 40, 68 + offsetY);
-      doc.text(m.equipamento.rp || "-", 75, 68 + offsetY);
-      doc.text(m.equipamento.numSerie || "-", 105, 68 + offsetY);
-      doc.text(m.solicitante || "-", 140, 68 + offsetY);
-      doc.text(new Date(m.dataEntrada).toLocaleDateString('pt-BR'), 175, 68 + offsetY);
-
-      doc.setFont("helvetica", "bold");
-      doc.text("DEFEITO RECLAMADO:", 14, 78 + offsetY);
-      doc.setFont("helvetica", "normal");
-      doc.text(doc.splitTextToSize(m.problema || "-", 182), 14, 83 + offsetY);
+      doc.text("DITEL", 14, 55 + offsetY);
+      doc.text(m.paeNumero || "-", 40, 55 + offsetY);
+      doc.text(m.equipamento.rp || "-", 75, 55 + offsetY);
+      doc.text(m.equipamento.numSerie || "-", 105, 55 + offsetY);
+      doc.text(m.solicitante || "-", 140, 55 + offsetY);
+      doc.text(new Date(m.dataEntrada).toLocaleDateString('pt-BR'), 175, 55 + offsetY);
 
       doc.setFont("helvetica", "bold");
-      doc.text("ANÁLISE TÉCNICA:", 14, 98 + offsetY);
+      doc.text("DEFEITO RECLAMADO:", 14, 62 + offsetY);
       doc.setFont("helvetica", "normal");
-      doc.text(doc.splitTextToSize(m.analiseTecnica || "Sob análise.", 182), 14, 103 + offsetY);
+      doc.text(doc.splitTextToSize(m.problema || "-", 182), 14, 67 + offsetY);
 
       doc.setFont("helvetica", "bold");
-      doc.text("LAUDO TÉCNICO:", 14, 118 + offsetY);
+      doc.text("ANÁLISE TÉCNICA:", 14, 78 + offsetY);
       doc.setFont("helvetica", "normal");
-      doc.text(doc.splitTextToSize(m.laudoTecnico || "-", 182), 14, 123 + offsetY);
+      doc.text(doc.splitTextToSize(m.analiseTecnica || "Sob análise.", 182), 14, 83 + offsetY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("LAUDO TÉCNICO:", 14, 94 + offsetY);
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(m.laudoTecnico || "-", 182), 14, 99 + offsetY);
 
       doc.setFont("helvetica", "bold");
       const outDate = m.dataConclusao || m.dataSaidaEmpresa || new Date().toISOString();
-      doc.text(`DATA DE SAÍDA: ${new Date(outDate).toLocaleDateString('pt-BR')}`, 14, 138 + offsetY);
-      doc.text(`TÉCNICO RESP: ${m.tecnicoResp || '-'}`, 130, 138 + offsetY);
+      doc.text(`DATA DE SAÍDA: ${new Date(outDate).toLocaleDateString('pt-BR')}`, 14, 114 + offsetY);
+      doc.text(`TÉCNICO RESP: ${m.tecnicoResp || '-'}`, 130, 114 + offsetY);
 
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
-      doc.text('"A Diretoria de Telemática não possui peças de reposição ou suprimento para aquisição destas peças informadas"', 105, 145 + offsetY, { align: "center" });
+      doc.text('"A Diretoria de Telemática não possui peças de reposição ou suprimento para aquisição destas peças informadas"', 105, 120 + offsetY, { align: "center" });
 
       doc.setDrawColor(0, 0, 0);
-      doc.line(20, 155 + offsetY, 95, 155 + offsetY);
-      doc.line(115, 155 + offsetY, 190, 155 + offsetY);
+      doc.line(20, 131 + offsetY, 95, 131 + offsetY);
+      doc.line(115, 131 + offsetY, 190, 131 + offsetY);
       
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 57.5, 158 + offsetY, { align: "center" });
+      doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 57.5, 134 + offsetY, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.text("CHEFE DAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 57.5, 161 + offsetY, { align: "center" });
+      doc.text("CHEFE DAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 57.5, 137 + offsetY, { align: "center" });
       
       doc.setFont("helvetica", "bold");
-      doc.text("RECEBEDOR DO EQUIPAMENTO", 152.5, 158 + offsetY, { align: "center" });
+      doc.text("RECEBEDOR DO EQUIPAMENTO", 152.5, 134 + offsetY, { align: "center" });
     };
 
     await drawVia(0);
@@ -693,6 +695,7 @@ const Manutencao: React.FC = () => {
               <tr>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">RP / Série</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">ID Rádio</th>
+                <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">OS</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Problema</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Datas</th>
                 <th className="px-6 py-4 border-b border-gray-200 dark:border-[#1f2937]">Status</th>
@@ -701,9 +704,9 @@ const Manutencao: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-[#1f2937]">
               {loading ? (
-                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">Carregando registros...</td></tr>
+                <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-400 italic">Carregando registros...</td></tr>
               ) : manutencoes.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-16 text-center text-gray-500 italic">Nenhum registro encontrado.</td></tr>
+                <tr><td colSpan={7} className="px-6 py-16 text-center text-gray-500 italic">Nenhum registro encontrado.</td></tr>
               ) : (
                 manutencoes.map((m) => (
                   <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-[#1f2937]/30 transition-colors group">
@@ -712,6 +715,11 @@ const Manutencao: React.FC = () => {
                        <p className="text-[10px] text-gray-400 font-mono uppercase">{m.equipamento?.numSerie}</p>
                     </td>
                     <td className="px-6 py-4 font-bold text-primary">{m.equipamento?.idRadio || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="font-bold text-gray-900 dark:text-white">
+                        {m.numeroSequencial ? `OS-${m.numeroSequencial.toString().padStart(4, '0')}` : m.id.substring(0, 6).toUpperCase()}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 max-w-[250px]">
                        <p className="text-xs italic text-gray-600 dark:text-gray-400 truncate" title={m.problema}>{m.problema}</p>
                     </td>

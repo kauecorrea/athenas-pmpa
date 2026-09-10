@@ -71,10 +71,17 @@ router.post('/', async (req: Request, res: Response) => {
     const result = await prisma.$transaction(async (tx) => {
       const created = [];
       
+      let maxManutencao = await tx.manutencao.findFirst({
+        orderBy: { numeroSequencial: 'desc' }
+      });
+      let currentSeq = maxManutencao?.numeroSequencial || 0;
+      
       for (const eqId of idsToProcess) {
+        currentSeq++;
         // 1. Criar o registro oficial (Ordem de Serviço)
         const manut = await tx.manutencao.create({
           data: {
+            numeroSequencial: currentSeq,
             equipamentoId: eqId,
             problema,
             dataEntrada: dataEntrada ? new Date(dataEntrada) : new Date(),

@@ -139,6 +139,7 @@ model Usuario {
 
 model Manutencao {
   id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  numeroSequencial Int?
   equipamentoId   String      @db.ObjectId
   equipamento     Equipamento @relation(fields: [equipamentoId], references: [id])
   problema        String
