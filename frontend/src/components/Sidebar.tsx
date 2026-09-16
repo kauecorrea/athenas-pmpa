@@ -40,7 +40,7 @@ interface SidebarProps {
 const menuPrincipal = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Radio, label: 'Rádios', path: '/equipamentos' },
-  { icon: Server, label: 'Equipamentos', path: '/equipamentos-diversos' },
+  { icon: Server, label: 'Acessórios', path: '/acessorios' },
   { icon: Users, label: 'Militares', path: '/militares' },
   { icon: Shield, label: 'Unidades', path: '/unidades' },
   { icon: ClipboardList, label: 'Cautelas', path: '/cautelas' },

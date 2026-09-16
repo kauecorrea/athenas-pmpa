@@ -18,6 +18,7 @@ model Unidade {
   cautelas  Cautela[]
   // Rádios podem pertencer a uma unidade
   radios    Equipamento[]
+  acessorios Acessorio[]
   manutencoesVTR ManutencaoVTR[]
   transferenciasEnviadas   Transferencia[] @relation("origem")
   transferenciasRecebidas  Transferencia[] @relation("destino")
@@ -239,4 +240,13 @@ model ManutencaoVTR {
   servicos          String[]
   
   dataCriacao       DateTime @default(now())
+}
+
+model Acessorio {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  marca       String
+  modelo      String
+  quantidade  Int
+  unidadeId   String?  @db.ObjectId
+  unidade     Unidade? @relation(fields: [unidadeId], references: [id])
 }

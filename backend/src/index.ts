@@ -28,9 +28,7 @@ import extraviosRoutes from './routes/extravios.routes';
 import transferenciasRoutes from './routes/transferencias.routes';
 import auditoriaRoutes from './routes/auditoria.routes';
 import vtrRoutes from './routes/vtr.routes';
-
-
-
+import acessoriosRoutes from './routes/acessorios.routes';
 const app = express();
 
 const port = process.env.PORT || 3333;
@@ -133,6 +131,7 @@ app.use('/api/extravios', authMiddleware, extraviosRoutes);
 app.use('/api/transferencias', authMiddleware, transferenciasRoutes);
 app.use('/api/auditoria', authMiddleware, auditoriaRoutes);
 app.use('/api/vtr', authMiddleware, vtrRoutes);
+app.use('/api/acessorios', authMiddleware, acessoriosRoutes);
 
 /**
  * Endpoint raiz / Status
