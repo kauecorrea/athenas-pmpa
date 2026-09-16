@@ -177,7 +177,7 @@ model Manutencao {
   tecnicoResp     String? // MANTIDO PARA LEGADO (Se existir)
   solicitante     String?
   
-  dataCriacao     DateTime    @default(now())
+  dataCriacao     DateTime?   @default(now())
 }
 
 model Extravio {
