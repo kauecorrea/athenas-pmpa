@@ -139,8 +139,9 @@ router.post('/', async (req: Request, res: Response) => {
     registrarAuditoria(req, 'Registrou Rádio(s) na Oficina/Manutenção', `Foram enviados ${idsToProcess.length} equipamento(s). Problema relatado: ${problema}`);
 
     res.status(201).json(result);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao registrar manutenção' });
+  } catch (error: any) {
+    console.error("ERRO DETALHADO NO POST MANUTENCAO:", error);
+    res.status(500).json({ error: 'Erro ao registrar manutenção', details: error.message });
   }
 });
 

@@ -201,7 +201,7 @@ const Manutencao: React.FC = () => {
       setViewMode('list');
     } catch (error: any) {
       console.error("Erro ao salvar manutenção", error);
-      alert("Erro ao salvar manutenção! Detalhes: " + (error.response?.data?.error || error.message));
+      alert("Erro ao salvar manutenção! Detalhes: " + (error.response?.data?.details || error.response?.data?.error || error.message));
     }
   };
 
