@@ -199,8 +199,9 @@ const Manutencao: React.FC = () => {
       resetForm();
       fetchManutencoes();
       setViewMode('list');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar manutenção", error);
+      alert("Erro ao salvar manutenção! Detalhes: " + (error.response?.data?.error || error.message));
     }
   };
 
@@ -711,7 +712,6 @@ const Manutencao: React.FC = () => {
               <div className="md:col-span-2">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Descrição do Problema / Defeito Reclamado</label>
                 <textarea 
-                  required
                   rows={4}
                   value={problema}
                   onChange={(e) => setProblema(e.target.value)}
