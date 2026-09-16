@@ -116,6 +116,7 @@ model Cautela {
   observacao       String?
   observacaoDevolucao String?
   
+  tipoCautela   String        @default("Provisória") // Provisória ou Permanente
   status        StatusCautela @default(ATIVA) // ATIVA, DEVOLVIDA, VENCIDA
 }
 

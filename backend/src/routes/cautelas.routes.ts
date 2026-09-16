@@ -30,6 +30,9 @@ router.get('/', async (req: Request, res: Response) => {
         status: 'ATIVA',
         dataPrevista: {
           lt: now // lt = less than (menor que agora)
+        },
+        NOT: {
+          dataPrevista: null
         }
       },
       data: {
@@ -77,7 +80,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato, observacao } = req.body;
+  const { equipamentosIds, militarId, unidadeId, dataPrevista, missao, dataInicio, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato, observacao, tipoCautela } = req.body;
   
   // Validação: Exige pelo menos um equipamento para criar a Cautela
   if (!equipamentosIds || !Array.isArray(equipamentosIds) || equipamentosIds.length === 0) {
@@ -112,6 +115,7 @@ router.post('/', async (req: Request, res: Response) => {
           recebedorGuerra: recebedorGuerra || null,
           recebedorContato: recebedorContato || null,
           observacao: observacao || null,
+          tipoCautela: tipoCautela || 'Provisória',
           status: 'ATIVA',
           equipamentos: {
             connect: equipamentosIds.map((id: any) => ({ id: id }))
@@ -146,7 +150,7 @@ router.post('/', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { missao, dataInicio, dataPrevista, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato, observacao } = req.body;
+  const { missao, dataInicio, dataPrevista, recebedorPosto, recebedorRgPM, recebedorNome, recebedorGuerra, recebedorContato, observacao, tipoCautela } = req.body;
   
   try {
     const updateData: any = {
@@ -158,6 +162,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       recebedorGuerra: recebedorGuerra || null,
       recebedorContato: recebedorContato || null,
       observacao: observacao || null,
+      tipoCautela: tipoCautela || undefined,
     };
     
     // Regra de Negócio: Se a cautela estava VENCIDA, mas o usuário editou empurrando a data prevista para o futuro, 

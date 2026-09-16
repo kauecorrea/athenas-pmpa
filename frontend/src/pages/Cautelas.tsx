@@ -64,6 +64,7 @@ interface Cautela {
   numeroSequencial: number | null;
   observacao: string | null;
   observacaoDevolucao: string | null;
+  tipoCautela?: string;
   militar: Militar | null;
   unidade: { nome: string } | null;
   equipamentos: Equipamento[];
@@ -82,6 +83,7 @@ const Cautelas: React.FC = () => {
   // Form state
   const [militarId, setMilitarId] = useState('');
   const [missao, setMissao] = useState('');
+  const [tipoCautela, setTipoCautela] = useState('Provisória');
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 16));
   const [dataPrevista, setDataPrevista] = useState('');
   const [radiosSelecionados, setRadiosSelecionados] = useState<string[]>([]);
@@ -160,7 +162,8 @@ const Cautelas: React.FC = () => {
           recebedorNome,
           recebedorGuerra,
           recebedorContato,
-          observacao
+          observacao,
+          tipoCautela
         });
         emitToast("Cautela atualizada!", "success");
       } else {
@@ -175,7 +178,8 @@ const Cautelas: React.FC = () => {
           recebedorNome,
           recebedorGuerra,
           recebedorContato,
-          observacao
+          observacao,
+          tipoCautela
         });
         emitToast("Cautela registrada com sucesso!", "success");
       }
@@ -191,6 +195,7 @@ const Cautelas: React.FC = () => {
   const resetForm = () => {
     setMilitarId('');
     setMissao('');
+    setTipoCautela('Provisória');
     setDataInicio(new Date().toISOString().slice(0, 16));
     setDataPrevista('');
     setRadiosSelecionados([]);
@@ -233,6 +238,7 @@ const Cautelas: React.FC = () => {
     setEditingCautelaId(c.id);
     setMilitarId(c.militar?.id || '');
     setMissao(c.missao || '');
+    setTipoCautela(c.tipoCautela || 'Provisória');
     if (c.dataRetirada) {
       setDataInicio(new Date(c.dataRetirada).toISOString().slice(0, 16));
     }
@@ -717,7 +723,7 @@ const Cautelas: React.FC = () => {
             <div className="max-w-4xl space-y-6">
               
               {/* Militar e Missão */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Militar Responsável</label>
                   <div className="relative">
@@ -736,10 +742,30 @@ const Cautelas: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tipo de Cautela</label>
+                  <div className="relative">
+                    <select 
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                      value={tipoCautela}
+                      onChange={(e) => {
+                        setTipoCautela(e.target.value);
+                        if (e.target.value === 'Permanente') {
+                          setDataPrevista('');
+                        }
+                      }}
+                    >
+                      <option value="Provisória">Provisória</option>
+                      <option value="Permanente">Permanente</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                  </div>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Missão / Objetivo</label>
                   <input 
                     type="text" 
-                    placeholder="Ex: Operação Verão, Policiamento Ordinário..." 
+                    placeholder="Ex: Operação Verão..." 
                     value={missao}
                     onChange={(e) => setMissao(e.target.value)}
                     className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
@@ -765,7 +791,9 @@ const Cautelas: React.FC = () => {
                     type="datetime-local" 
                     value={dataPrevista}
                     onChange={(e) => setDataPrevista(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all"
+                    disabled={tipoCautela === 'Permanente'}
+                    title={tipoCautela === 'Permanente' ? 'Cautelas permanentes não possuem previsão de retorno' : ''}
+                    className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
