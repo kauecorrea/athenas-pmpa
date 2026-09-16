@@ -709,7 +709,7 @@ const Manutencao: React.FC = () => {
 
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">6. Descrição do Problema / Defeito</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Descrição do Problema / Defeito Reclamado</label>
                 <textarea 
                   required
                   rows={4}
@@ -719,6 +719,33 @@ const Manutencao: React.FC = () => {
                   className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
                 />
               </div>
+
+              {tipoManutencao === 'Interna' && (
+                <>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Análise Técnica</label>
+                    <textarea 
+                      rows={4}
+                      value={analiseTecnica}
+                      onChange={(e) => setAnaliseTecnica(e.target.value)}
+                      placeholder="Descreva a análise técnica..."
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Laudo Técnico</label>
+                    <textarea 
+                      rows={4}
+                      value={laudoTecnico}
+                      onChange={(e) => setLaudoTecnico(e.target.value)}
+                      placeholder="Descreva o laudo técnico final..."
+                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
+                    />
+                  </div>
+                </>
+              )}
+
             </div>
             ) : (
               <div className="grid grid-cols-1 gap-8 max-w-5xl">
