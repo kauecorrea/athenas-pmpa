@@ -36,7 +36,16 @@ interface ManutencaoRecord {
   laudoTecnico: string | null;
   tecnicoResp: string | null;
   solicitante: string | null;
-  paeNumero: string | null;
+    paeNumero: string | null;
+  tipoManutencao: string;
+  unidadeId: string | null;
+  unidade: { id: string; nome: string } | null;
+  documentoOrigem: string | null;
+  documentoSaidaEmpresa: string | null;
+  documentoEntregaUnidade: string | null;
+  pae: string | null;
+  tecnicoId: string | null;
+  tecnico: { id: string; nome: string; rg: string } | null;
 }
 
 interface EquipamentoDisponivel {
@@ -78,9 +87,33 @@ const Manutencao: React.FC = () => {
   const [tipoBusca, setTipoBusca] = useState('RADIO');
   const [activeTab, setActiveTab] = useState<'identificacao' | 'laudo'>('identificacao');
 
+  const [tipoManutencao, setTipoManutencao] = useState<'Externa' | 'Interna'>('Externa');
+  const [unidadeId, setUnidadeId] = useState('');
+  const [documentoOrigem, setDocumentoOrigem] = useState('');
+  const [documentoSaidaEmpresa, setDocumentoSaidaEmpresa] = useState('');
+  const [documentoEntregaUnidade, setDocumentoEntregaUnidade] = useState('');
+  const [pae, setPae] = useState('');
+  const [tecnicoId, setTecnicoId] = useState('');
+  const [unidades, setUnidades] = useState<{id: string, nome: string}[]>([]);
+  const [militares, setMilitares] = useState<{id: string, nome: string, rg: string}[]>([]);
+
   useEffect(() => {
     fetchManutencoes();
+    fetchUnidadesAndMilitares();
   }, []);
+
+  const fetchUnidadesAndMilitares = async () => {
+    try {
+      const [uniRes, milRes] = await Promise.all([
+        axios.get('/api/unidades'),
+        axios.get('/api/militares')
+      ]);
+      setUnidades(uniRes.data);
+      setMilitares(milRes.data);
+    } catch (error) {
+      console.error("Erro ao buscar unidades e militares", error);
+    }
+  };
 
   useEffect(() => {
     if (viewMode === 'form' && !editingId) {
@@ -131,7 +164,14 @@ const Manutencao: React.FC = () => {
           laudoTecnico,
           tecnicoResp,
           solicitante,
-          paeNumero
+          paeNumero,
+          tipoManutencao,
+          unidadeId,
+          documentoOrigem,
+          documentoSaidaEmpresa,
+          documentoEntregaUnidade,
+          pae,
+          tecnicoId
         });
         alert("Registro de manutenção atualizado!");
       } else {
@@ -142,7 +182,17 @@ const Manutencao: React.FC = () => {
           dataChegadaDitel: dataChegadaDitel ? new Date(dataChegadaDitel).toISOString() : null,
           dataSaidaEmpresa: dataSaidaEmpresa ? new Date(dataSaidaEmpresa).toISOString() : null,
           previsaoRetorno: previsaoRetorno ? new Date(previsaoRetorno).toISOString() : null,
-          dataEnvioUnidade: dataEnvioUnidade ? new Date(dataEnvioUnidade).toISOString() : null
+          dataEnvioUnidade: dataEnvioUnidade ? new Date(dataEnvioUnidade).toISOString() : null,
+          tipoManutencao,
+          unidadeId,
+          documentoOrigem,
+          documentoSaidaEmpresa,
+          documentoEntregaUnidade,
+          pae,
+          tecnicoId,
+          analiseTecnica,
+          laudoTecnico,
+          solicitante
         });
         alert("Registro de manutenção incluído!");
       }
@@ -167,6 +217,13 @@ const Manutencao: React.FC = () => {
     setTecnicoResp('');
     setSolicitante('');
     setPaeNumero('');
+    setTipoManutencao('Externa');
+    setUnidadeId('');
+    setDocumentoOrigem('');
+    setDocumentoSaidaEmpresa('');
+    setDocumentoEntregaUnidade('');
+    setPae('');
+    setTecnicoId('');
     setEditingId(null);
     setActiveTab('identificacao');
   };
@@ -185,6 +242,13 @@ const Manutencao: React.FC = () => {
     setTecnicoResp(m.tecnicoResp || '');
     setSolicitante(m.solicitante || '');
     setPaeNumero(m.paeNumero || '');
+    setTipoManutencao(m.tipoManutencao as any || 'Externa');
+    setUnidadeId(m.unidadeId || '');
+    setDocumentoOrigem(m.documentoOrigem || '');
+    setDocumentoSaidaEmpresa(m.documentoSaidaEmpresa || '');
+    setDocumentoEntregaUnidade(m.documentoEntregaUnidade || '');
+    setPae(m.pae || '');
+    setTecnicoId(m.tecnicoId || '');
     setViewMode('form');
     setActiveTab('identificacao');
   };
@@ -496,8 +560,26 @@ const Manutencao: React.FC = () => {
           </div>
           
           <form onSubmit={handleCreateManutencao} className="p-8 overflow-y-auto flex-1 flex flex-col">
+            <div className="flex gap-4 mb-8">
+              <button 
+                type="button" 
+                onClick={() => setTipoManutencao('Externa')} 
+                className={`flex-1 py-4 font-bold text-lg rounded-xl border-2 transition-all ${tipoManutencao === 'Externa' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-500 hover:border-primary/50'}`}
+              >
+                🏢 Manutenção Externa (Empresa)
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setTipoManutencao('Interna')} 
+                className={`flex-1 py-4 font-bold text-lg rounded-xl border-2 transition-all ${tipoManutencao === 'Interna' ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-500 hover:border-primary/50'}`}
+              >
+                🛠️ Manutenção Interna (DITEL)
+              </button>
+            </div>
+
             {activeTab === 'identificacao' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
+              
               <div className="space-y-4">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">1. Selecionar Equipamento</label>
                 <div className={`border border-gray-300 dark:border-[#374151] bg-gray-50 dark:bg-[#0b101a] rounded-xl overflow-hidden flex flex-col ${editingId ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -528,9 +610,11 @@ const Manutencao: React.FC = () => {
                           key={radio.id} 
                           onClick={() => {
                             if (editingId) return;
-                            setEquipamentosSelecionados(prev => 
-                              prev.includes(radio.id) ? prev.filter(e => e !== radio.id) : [...prev, radio.id]
-                            );
+                            if (tipoManutencao === 'Interna') {
+                              setEquipamentosSelecionados([radio.id]);
+                            } else {
+                              setEquipamentosSelecionados(prev => prev.includes(radio.id) ? prev.filter(e => e !== radio.id) : [...prev, radio.id]);
+                            }
                           }}
                           className={`px-4 py-3 rounded-lg text-sm cursor-pointer transition-all border flex items-center justify-between ${equipamentosSelecionados.includes(radio.id) ? 'bg-primary/10 border-primary font-bold text-primary shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 border-transparent'}`}
                         >
@@ -550,46 +634,79 @@ const Manutencao: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">2. Chegada ao DITEL</label>
-                    <input 
-                      type="date" 
-                      value={dataChegadaDitel}
-                      onChange={(e) => setDataChegadaDitel(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">3. Saída para Empresa</label>
-                    <input 
-                      type="date" 
-                      value={dataSaidaEmpresa}
-                      onChange={(e) => setDataSaidaEmpresa(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">4. Previsão de Retorno</label>
-                    <input 
-                      type="date" 
-                      value={previsaoRetorno}
-                      onChange={(e) => setPrevisaoRetorno(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">5. Envio à Unidade</label>
-                    <input 
-                      type="date" 
-                      value={dataEnvioUnidade}
-                      onChange={(e) => setDataEnvioUnidade(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    />
+              {tipoManutencao === 'Externa' ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Unidade de Origem</label>
+                      <select value={unidadeId} onChange={e => setUnidadeId(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900">
+                        <option value="">Selecione...</option>
+                        {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nº Doc Origem</label>
+                      <input type="text" value={documentoOrigem} onChange={e => setDocumentoOrigem(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nº Doc Saída Empresa</label>
+                      <input type="text" value={documentoSaidaEmpresa} onChange={e => setDocumentoSaidaEmpresa(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nº Doc Entrega Unidade</label>
+                      <input type="text" value={documentoEntregaUnidade} onChange={e => setDocumentoEntregaUnidade(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Chegada ao DITEL</label>
+                      <input type="date" value={dataChegadaDitel} onChange={e => setDataChegadaDitel(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Saída para Empresa</label>
+                      <input type="date" value={dataSaidaEmpresa} onChange={e => setDataSaidaEmpresa(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Previsão Retorno</label>
+                      <input type="date" value={previsaoRetorno} onChange={e => setPrevisaoRetorno(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Envio à Unidade</label>
+                      <input type="date" value={dataEnvioUnidade} onChange={e => setDataEnvioUnidade(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Unidade</label>
+                      <select value={unidadeId} onChange={e => setUnidadeId(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900">
+                        <option value="">Selecione...</option>
+                        {unidades.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nº PAE</label>
+                      <input type="text" value={pae} onChange={e => setPae(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Solicitante</label>
+                      <input type="text" value={solicitante} onChange={e => setSolicitante(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Data de Entrada</label>
+                      <input type="date" value={dataEntrada} onChange={e => setDataEntrada(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Técnico Responsável</label>
+                      <select value={tecnicoId} onChange={e => setTecnicoId(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900">
+                        <option value="">Selecione...</option>
+                        {militares.map(m => <option key={m.id} value={m.id}>{m.rg} - {m.nome}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">6. Descrição do Problema / Defeito</label>

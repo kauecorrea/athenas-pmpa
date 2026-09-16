@@ -20,6 +20,7 @@ model Unidade {
   radios    Equipamento[]
   acessorios Acessorio[]
   manutencoesVTR ManutencaoVTR[]
+  manutencoes Manutencao[]
   transferenciasEnviadas   Transferencia[] @relation("origem")
   transferenciasRecebidas  Transferencia[] @relation("destino")
   extravios Extravio[]
@@ -37,6 +38,7 @@ model Militar {
   cautelas  Cautela[]
   extravios Extravio[]
   transferencias Transferencia[]
+  manutencoesTecnico Manutencao[] @relation("tecnicoManutencao")
 }
 
 enum TipoEquipamento {
@@ -153,12 +155,29 @@ model Manutencao {
   dataConclusao   DateTime?
   status          String      @default("EM ANDAMENTO") // EM ANDAMENTO, CONCLUIDA
   
-  // Campos de Laudo / Serviço
+  // Controle de Tipo
+  tipoManutencao         String    @default("Externa") // "Externa" ou "Interna"
+  
+  // Campos Exclusivos ou Compartilhados
+  unidadeId              String?   @db.ObjectId
+  unidade                Unidade?  @relation(fields: [unidadeId], references: [id])
+  
+  documentoOrigem        String?
+  documentoSaidaEmpresa  String?
+  documentoEntregaUnidade String?
+  pae                    String?
+  
+  // O técnico responsável será referenciado à tabela de Militares
+  tecnicoId              String?   @db.ObjectId
+  tecnico                Militar?  @relation("tecnicoManutencao", fields: [tecnicoId], references: [id])
+
+  // Campos de Laudo / Serviço antigos (serão aproveitados ou sobrepostos)
   analiseTecnica  String?
   laudoTecnico    String?
-  tecnicoResp     String?
+  tecnicoResp     String? // MANTIDO PARA LEGADO (Se existir)
   solicitante     String?
-  paeNumero       String?
+  
+  dataCriacao     DateTime    @default(now())
 }
 
 model Extravio {

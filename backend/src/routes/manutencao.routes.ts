@@ -24,6 +24,8 @@ router.get('/', async (req: Request, res: Response) => {
     const manutencoes = await prisma.manutencao.findMany({
       include: {
         equipamento: true,
+        unidade: true,
+        tecnico: true,
       },
       orderBy: { dataEntrada: 'desc' }
     });
@@ -54,9 +56,14 @@ router.post('/', async (req: Request, res: Response) => {
     dataEnvioUnidade, 
     analiseTecnica, 
     laudoTecnico, 
-    tecnicoResp, 
+    tecnicoId, 
     solicitante, 
-    paeNumero 
+    pae,
+    tipoManutencao,
+    unidadeId,
+    documentoOrigem,
+    documentoSaidaEmpresa,
+    documentoEntregaUnidade
   } = req.body;
   
   // Normaliza o array de IDs (Suporta tanto envio único via equipamentoId quanto lote via equipamentoIds)
@@ -91,9 +98,14 @@ router.post('/', async (req: Request, res: Response) => {
             dataEnvioUnidade: dataEnvioUnidade ? new Date(dataEnvioUnidade) : null,
             analiseTecnica,
             laudoTecnico,
-            tecnicoResp,
+            tecnicoId: tecnicoId || null,
             solicitante,
-            paeNumero,
+            pae,
+            tipoManutencao: tipoManutencao || 'Externa',
+            unidadeId: unidadeId || null,
+            documentoOrigem,
+            documentoSaidaEmpresa,
+            documentoEntregaUnidade,
             status: 'EM ANDAMENTO'
           },
         });
@@ -174,7 +186,7 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa, dataEnvioUnidade, analiseTecnica, laudoTecnico, tecnicoResp, solicitante, paeNumero } = req.body;
+  const { problema, dataEntrada, previsaoRetorno, dataChegadaDitel, dataSaidaEmpresa, dataEnvioUnidade, analiseTecnica, laudoTecnico, tecnicoId, solicitante, pae, tipoManutencao, unidadeId, documentoOrigem, documentoSaidaEmpresa, documentoEntregaUnidade } = req.body;
   
   try {
     const updateData: any = { problema };
@@ -189,9 +201,14 @@ router.put('/:id', async (req: Request, res: Response) => {
     // Tratamento de campos de texto opcionais
     if (analiseTecnica !== undefined) updateData.analiseTecnica = analiseTecnica;
     if (laudoTecnico !== undefined) updateData.laudoTecnico = laudoTecnico;
-    if (tecnicoResp !== undefined) updateData.tecnicoResp = tecnicoResp;
+    if (tecnicoId !== undefined) updateData.tecnicoId = tecnicoId;
     if (solicitante !== undefined) updateData.solicitante = solicitante;
-    if (paeNumero !== undefined) updateData.paeNumero = paeNumero;
+    if (pae !== undefined) updateData.pae = pae;
+    if (tipoManutencao !== undefined) updateData.tipoManutencao = tipoManutencao;
+    if (unidadeId !== undefined) updateData.unidadeId = unidadeId;
+    if (documentoOrigem !== undefined) updateData.documentoOrigem = documentoOrigem;
+    if (documentoSaidaEmpresa !== undefined) updateData.documentoSaidaEmpresa = documentoSaidaEmpresa;
+    if (documentoEntregaUnidade !== undefined) updateData.documentoEntregaUnidade = documentoEntregaUnidade;
 
     const updated = await prisma.manutencao.update({
       where: { id: id as string },
