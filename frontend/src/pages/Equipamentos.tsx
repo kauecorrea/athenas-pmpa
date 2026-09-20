@@ -247,7 +247,7 @@ const Equipamentos: React.FC = () => {
 
       doc.setFont("helvetica", "bold");
       doc.text(`DATA DE SAÍDA: ${m.dataSaidaLaudo ? new Date(m.dataSaidaLaudo).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-'}`, 10, 107 + offsetY);
-      doc.text(`TÉCNICO RESP: ${m.tecnicoResp || '-'}`, 130, 107 + offsetY);
+      doc.text(`TÉCNICO RESP: ${m.tecnico?.nome || m.tecnicoResp || '-'}`, 130, 107 + offsetY);
 
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");

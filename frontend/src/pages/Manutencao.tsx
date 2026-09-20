@@ -455,7 +455,7 @@ const Manutencao: React.FC = () => {
       doc.setFont("helvetica", "bold");
       const outDate = m.dataConclusao || m.dataSaidaEmpresa || new Date().toISOString();
       doc.text(`DATA DE SAÍDA: ${new Date(outDate).toLocaleDateString('pt-BR')}`, 14, 114 + offsetY);
-      doc.text(`TÉCNICO RESP: ${m.tecnicoResp || '-'}`, 130, 114 + offsetY);
+      doc.text(`TÉCNICO RESP: ${m.tecnico?.nome || m.tecnicoResp || '-'}`, 130, 114 + offsetY);
 
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
