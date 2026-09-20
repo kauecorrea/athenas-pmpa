@@ -82,10 +82,8 @@ const Manutencao: React.FC = () => {
   const [laudoTecnico, setLaudoTecnico] = useState('');
   const [tecnicoResp, setTecnicoResp] = useState('');
   const [solicitante, setSolicitante] = useState('');
-  const [paeNumero, setPaeNumero] = useState('');
   const [buscaRadioModal, setBuscaRadioModal] = useState('');
   const [tipoBusca, setTipoBusca] = useState('RADIO');
-  const [activeTab, setActiveTab] = useState<'identificacao' | 'laudo'>('identificacao');
 
   const [tipoManutencao, setTipoManutencao] = useState<'Externa' | 'Interna'>('Externa');
   const [unidadeId, setUnidadeId] = useState('');
@@ -164,7 +162,6 @@ const Manutencao: React.FC = () => {
           laudoTecnico,
           tecnicoResp,
           solicitante,
-          paeNumero,
           tipoManutencao,
           unidadeId,
           documentoOrigem,
@@ -217,7 +214,6 @@ const Manutencao: React.FC = () => {
     setLaudoTecnico('');
     setTecnicoResp('');
     setSolicitante('');
-    setPaeNumero('');
     setTipoManutencao('Externa');
     setUnidadeId('');
     setDocumentoOrigem('');
@@ -226,7 +222,6 @@ const Manutencao: React.FC = () => {
     setPae('');
     setTecnicoId('');
     setEditingId(null);
-    setActiveTab('identificacao');
   };
 
   const handleEdit = (m: ManutencaoRecord) => {
@@ -242,7 +237,6 @@ const Manutencao: React.FC = () => {
     setLaudoTecnico(m.laudoTecnico || '');
     setTecnicoResp(m.tecnicoResp || '');
     setSolicitante(m.solicitante || '');
-    setPaeNumero(m.paeNumero || '');
     setTipoManutencao(m.tipoManutencao as any || 'Externa');
     setUnidadeId(m.unidadeId || '');
     setDocumentoOrigem(m.documentoOrigem || '');
@@ -251,7 +245,6 @@ const Manutencao: React.FC = () => {
     setPae(m.pae || '');
     setTecnicoId(m.tecnicoId || '');
     setViewMode('form');
-    setActiveTab('identificacao');
   };
 
   const confirmDelete = async () => {
@@ -540,24 +533,7 @@ const Manutencao: React.FC = () => {
                 {editingId ? 'Visualização e Edição de Registro' : 'Registrar Entrada na Oficina'}
               </h2>
             </div>
-            {editingId && (
-              <div className="flex px-6 gap-6">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('identificacao')}
-                  className={`py-3 font-bold text-sm border-b-2 transition-colors outline-none ${activeTab === 'identificacao' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                >
-                  IDENTIFICAÇÃO
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('laudo')}
-                  className={`py-3 font-bold text-sm border-b-2 transition-colors outline-none ${activeTab === 'laudo' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                >
-                  ANÁLISE & SERVIÇO
-                </button>
-              </div>
-            )}
+
           </div>
           
           <form onSubmit={handleCreateManutencao} className="p-8 overflow-y-auto flex-1 flex flex-col">
@@ -578,7 +554,7 @@ const Manutencao: React.FC = () => {
               </button>
             </div>
 
-            {activeTab === 'identificacao' ? (
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">
               
               <div className="space-y-4">
@@ -747,65 +723,7 @@ const Manutencao: React.FC = () => {
               )}
 
             </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-8 max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Solicitante (Nome)</label>
-                    <input 
-                      type="text" 
-                      value={solicitante}
-                      onChange={(e) => setSolicitante(e.target.value)}
-                      placeholder="Ex: SD LAIANE"
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nº PAE</label>
-                    <input 
-                      type="text" 
-                      value={paeNumero}
-                      onChange={(e) => setPaeNumero(e.target.value)}
-                      placeholder="Ex: 2025/3481287"
-                      className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Análise Técnica Preliminar</label>
-                  <textarea 
-                    rows={4}
-                    value={analiseTecnica}
-                    onChange={(e) => setAnaliseTecnica(e.target.value)}
-                    placeholder="Descreva a análise técnica preliminar..."
-                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Laudo Técnico Final</label>
-                  <textarea 
-                    rows={4}
-                    value={laudoTecnico}
-                    onChange={(e) => setLaudoTecnico(e.target.value)}
-                    placeholder="Descreva o laudo técnico final detalhado..."
-                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none transition-all"
-                  />
-                </div>
-                
-                <div className="md:w-1/2">
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Técnico Responsável</label>
-                  <input 
-                    type="text" 
-                    value={tecnicoResp}
-                    onChange={(e) => setTecnicoResp(e.target.value)}
-                    placeholder="Ex: Subten"
-                    className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                  />
-                </div>
-              </div>
-            )}
+
             
             <div className="mt-8 flex items-center justify-end gap-3 pt-6 border-t border-gray-100 dark:border-[#1f2937]">
               {editingId && (

@@ -323,7 +323,7 @@ const Perfil: React.FC = () => {
                 type="password" 
                 value={novaSenha}
                 onChange={(e) => setNovaSenha(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 10 caracteres"
                 className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               />
             </div>
