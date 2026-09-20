@@ -264,10 +264,10 @@ const Equipamentos: React.FC = () => {
       
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 55, 131 + offsetY, { align: "center" });
+      doc.text("ODIRSON MICHAEL TAVARES DA SILVA - 2º TEN PM RG 44443", 55, 131 + offsetY, { align: "center" });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(6);
-      doc.text("CHEFE DAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 55, 134 + offsetY, { align: "center" });
+      doc.text("RESPONDENDO PELAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 55, 134 + offsetY, { align: "center" });
       
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);

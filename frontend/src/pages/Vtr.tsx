@@ -280,9 +280,9 @@ const Vtr: React.FC = () => {
     const pageHeight = doc.internal.pageSize.height;
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 105, pageHeight - 30, { align: "center" });
+    doc.text("ODIRSON MICHAEL TAVARES DA SILVA - 2º TEN PM RG 44443", 105, pageHeight - 30, { align: "center" });
     doc.setFont("helvetica", "normal");
-    doc.text("Chefe das Seções de Telecomunicações e Suporte ao Usuário.", 105, pageHeight - 25, { align: "center" });
+    doc.text("Respondendo pelas Seções de Telecomunicações e Suporte ao Usuário.", 105, pageHeight - 25, { align: "center" });
 
     window.open(doc.output('bloburl'), '_blank');
   };

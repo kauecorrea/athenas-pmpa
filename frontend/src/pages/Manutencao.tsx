@@ -415,8 +415,8 @@ const Manutencao: React.FC = () => {
       doc.setFont("helvetica", "bold");
       const osFormatada = m.numeroSequencial ? `OS-${m.numeroSequencial.toString().padStart(4, '0')}` : `OS: ${m.id.substring(0,6).toUpperCase()}`;
       doc.text(osFormatada, 14, 43 + offsetY);
-      doc.text(`Suporte: ${m.equipamento.marca || ''} ${m.equipamento.modelo || ''}`, 60, 43 + offsetY);
-      doc.text(`Telecom:`, 130, 43 + offsetY);
+      doc.text(`Suporte:`, 60, 43 + offsetY);
+      doc.text(`Telecom: ${m.equipamento.marca || ''} ${m.equipamento.modelo || ''}`, 130, 43 + offsetY);
 
       doc.line(14, 45 + offsetY, 196, 45 + offsetY);
 
@@ -431,7 +431,7 @@ const Manutencao: React.FC = () => {
 
       doc.setFont("helvetica", "normal");
       doc.text("DITEL", 14, 55 + offsetY);
-      doc.text(m.paeNumero || "-", 40, 55 + offsetY);
+      doc.text(m.pae || "-", 40, 55 + offsetY);
       doc.text(m.equipamento.rp || "-", 75, 55 + offsetY);
       doc.text(m.equipamento.numSerie || "-", 105, 55 + offsetY);
       doc.text(m.solicitante || "-", 140, 55 + offsetY);
@@ -467,9 +467,9 @@ const Manutencao: React.FC = () => {
       
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text("MADAKE MARCOS LEAL DO NASCIMENTO - 2º TEN PM RG 44448", 57.5, 134 + offsetY, { align: "center" });
+      doc.text("ODIRSON MICHAEL TAVARES DA SILVA - 2º TEN PM RG 44443", 57.5, 134 + offsetY, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.text("CHEFE DAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 57.5, 137 + offsetY, { align: "center" });
+      doc.text("RESPONDENDO PELAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 57.5, 137 + offsetY, { align: "center" });
       
       doc.setFont("helvetica", "bold");
       doc.text("RECEBEDOR DO EQUIPAMENTO", 152.5, 134 + offsetY, { align: "center" });
