@@ -45,7 +45,7 @@ interface ManutencaoRecord {
   documentoEntregaUnidade: string | null;
   pae: string | null;
   tecnicoId: string | null;
-  tecnico: { id: string; nome: string; rg: string } | null;
+  tecnico: { id: string; nome: string; rg: string; posto?: string | null } | null;
 }
 
 interface EquipamentoDisponivel {
@@ -93,7 +93,7 @@ const Manutencao: React.FC = () => {
   const [pae, setPae] = useState('');
   const [tecnicoId, setTecnicoId] = useState('');
   const [unidades, setUnidades] = useState<{id: string, nome: string}[]>([]);
-  const [militares, setMilitares] = useState<{id: string, nome: string, rg: string}[]>([]);
+  const [militares, setMilitares] = useState<{id: string, nome: string, rg: string, posto?: string | null}[]>([]);
 
   useEffect(() => {
     fetchManutencoes();
@@ -448,7 +448,8 @@ const Manutencao: React.FC = () => {
       doc.setFont("helvetica", "bold");
       const outDate = m.dataConclusao || m.dataSaidaEmpresa || new Date().toISOString();
       doc.text(`DATA DE SAÍDA: ${new Date(outDate).toLocaleDateString('pt-BR')}`, 14, 114 + offsetY);
-      doc.text(`TÉCNICO RESP: ${m.tecnico?.nome || m.tecnicoResp || '-'}`, 130, 114 + offsetY);
+      const postoTecnico = m.tecnico?.posto ? m.tecnico.posto + ' ' : '';
+      doc.text(`TÉCNICO RESP: ${m.tecnico?.nome ? postoTecnico + m.tecnico.nome : m.tecnicoResp || '-'}`, 130, 114 + offsetY);
 
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
@@ -677,7 +678,7 @@ const Manutencao: React.FC = () => {
                       <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Técnico Responsável</label>
                       <select value={tecnicoId} onChange={e => setTecnicoId(e.target.value)} className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none text-gray-900">
                         <option value="">Selecione...</option>
-                        {militares.map(m => <option key={m.id} value={m.id}>{m.rg} - {m.nome}</option>)}
+                        {militares.map(m => <option key={m.id} value={m.id}>{m.rg} - {m.posto ? `${m.posto} ` : ''}{m.nome}</option>)}
                       </select>
                     </div>
                   </div>

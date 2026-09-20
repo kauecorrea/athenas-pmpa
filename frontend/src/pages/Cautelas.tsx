@@ -734,7 +734,7 @@ const Cautelas: React.FC = () => {
                     >
                       <option value="" disabled>Selecione um militar</option>
                       {militares.map(m => (
-                        <option key={m.id} value={m.id}>{m.rg} - {m.nome}</option>
+                        <option key={m.id} value={m.id}>{m.rg} - {m.posto ? `${m.posto} ` : ''}{m.nome}</option>
                       ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
