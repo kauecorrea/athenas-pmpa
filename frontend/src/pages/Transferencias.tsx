@@ -187,6 +187,7 @@ const Transferencias: React.FC = () => {
   const gerarPDF = async (t: Transferencia) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.height;
 
     // 1. Brasões Institucionais
     try {
@@ -199,7 +200,7 @@ const Transferencias: React.FC = () => {
     
     try {
       const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
-      doc.addImage(base64Pmpa, 'PNG', 170, 8, 25, 25);
+      doc.addImage(base64Pmpa, 'PNG', 170, 10, 20, 22);
     } catch (err) { console.error('Sem brasao_pmpa.png'); }
 
     // 2. Cabeçalho Oficial (Timbre)
@@ -315,6 +316,12 @@ const Transferencias: React.FC = () => {
     doc.line(125, finalY + 50, 195, finalY + 50); // Linha assinatura
     doc.setFont("helvetica", "normal");
     doc.text("RECEBEDOR", 160, finalY + 55, { align: 'center' });
+
+    // Rodapé (Endereço)
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
+    doc.text("CEP: 66821-000. Contato: (91) 3258-9818 / E-mail: ditelpmpa@gmail.com", 105, pageHeight - 10, { align: "center" });
 
     window.open(doc.output('bloburl'), '_blank');
   };
