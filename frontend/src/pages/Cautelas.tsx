@@ -936,6 +936,16 @@ const Cautelas: React.FC = () => {
                       className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unidade</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: CPAT"
+                      value={recebedorUnidade}
+                      onChange={(e) => setRecebedorUnidade(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
                 </div>
               </div>
 
