@@ -25,7 +25,8 @@ router.get('/', async (req: Request, res: Response) => {
       include: {
         unidadeOrigem: true,
         unidadeDestino: true,
-        equipamentos: true
+        equipamentos: true,
+        militar: true
       },
       orderBy: { dataTransferencia: 'desc' }
     });
@@ -38,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Registrar Nova Transferência (Definitiva entre Unidades)
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
-  const { equipamentosIds, unidadeDestinoId, dataTransferencia, observacoes } = req.body;
+  const { equipamentosIds, unidadeDestinoId, dataTransferencia, observacoes, militarId } = req.body;
   
   if (!equipamentosIds || !Array.isArray(equipamentosIds) || equipamentosIds.length === 0) {
     return res.status(400).json({ error: 'Nenhum equipamento fornecido para transferência.' });
@@ -107,7 +108,8 @@ router.post('/', async (req: Request, res: Response) => {
           observacoes,
           qtdRadios: equipamentosIds.length,
           status: 'FINALIZADA',
-          equipamentoIds: equipamentosIds // Usar o campo escalar diretamente para evitar problemas no MongoDB
+          equipamentoIds: equipamentosIds, // Usar o campo escalar diretamente para evitar problemas no MongoDB
+          militarId: militarId || null
         },
         include: { unidadeDestino: true }
       });
@@ -129,7 +131,7 @@ router.post('/', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const { dataTransferencia, observacoes, unidadeDestinoId, equipamentosIds } = req.body;
+  const { dataTransferencia, observacoes, unidadeDestinoId, equipamentosIds, militarId } = req.body;
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -169,7 +171,8 @@ router.put('/:id', async (req: Request, res: Response) => {
           unidadeDestinoId: finalDestinoId,
           equipamentoIds: finalEquipIds,
           qtdRadios: finalEquipIds.length,
-          observacoes: observacoes !== undefined ? observacoes : undefined
+          observacoes: observacoes !== undefined ? observacoes : undefined,
+          militarId: militarId !== undefined ? (militarId || null) : undefined
         };
         if (dataTransferencia) updateData.dataTransferencia = new Date(dataTransferencia);
 
@@ -180,7 +183,8 @@ router.put('/:id', async (req: Request, res: Response) => {
       } else {
         // Apenas meta-dados
         const updateData: any = {
-          observacoes: observacoes !== undefined ? observacoes : undefined
+          observacoes: observacoes !== undefined ? observacoes : undefined,
+          militarId: militarId !== undefined ? (militarId || null) : undefined
         };
         if (dataTransferencia) updateData.dataTransferencia = new Date(dataTransferencia);
 

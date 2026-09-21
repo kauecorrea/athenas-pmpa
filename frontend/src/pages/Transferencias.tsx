@@ -42,11 +42,14 @@ interface Transferencia {
   unidadeOrigem: Unidade;
   unidadeDestino: Unidade;
   equipamentos: Equipamento[];
+  militarId?: string;
+  militar?: { id: string; nome: string; rg: string; posto?: string | null };
 }
 
 const Transferencias: React.FC = () => {
   const [transferencias, setTransferencias] = useState<Transferencia[]>([]);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
+  const [militares, setMilitares] = useState<{id: string, nome: string, rg: string, posto?: string | null}[]>([]);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -59,6 +62,7 @@ const Transferencias: React.FC = () => {
   const [formData, setFormData] = useState({
     unidadeDestinoId: '',
     equipamentosIds: [] as string[],
+    militarId: '',
     observacoes: '',
     dataTransferencia: new Date().toISOString().split('T')[0]
   });
@@ -74,14 +78,16 @@ const Transferencias: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [transRes, uniRes, eqRes] = await Promise.all([
+      const [transRes, uniRes, eqRes, milRes] = await Promise.all([
         axios.get('/api/transferencias'),
         axios.get('/api/unidades'),
-        axios.get('/api/equipamentos?status=OPERACIONAL')
+        axios.get('/api/equipamentos?status=OPERACIONAL'),
+        axios.get('/api/militares')
       ]);
       setTransferencias(transRes.data);
       setUnidades(uniRes.data);
       setEquipamentos(eqRes.data);
+      setMilitares(milRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -128,6 +134,7 @@ const Transferencias: React.FC = () => {
     setFormData({
       unidadeDestinoId: '',
       equipamentosIds: [],
+      militarId: '',
       observacoes: '',
       dataTransferencia: new Date().toISOString().split('T')[0]
     });
@@ -152,6 +159,7 @@ const Transferencias: React.FC = () => {
     setFormData({
       unidadeDestinoId: t.unidadeDestino.id,
       equipamentosIds: t.equipamentos.map(e => e.id),
+      militarId: t.militarId || '',
       observacoes: t.observacoes || '',
       dataTransferencia: t.dataTransferencia.split('T')[0]
     });
@@ -179,7 +187,6 @@ const Transferencias: React.FC = () => {
   const gerarPDF = async (t: Transferencia) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.height;
 
     // 1. Brasões Institucionais
     try {
@@ -204,52 +211,105 @@ const Transferencias: React.FC = () => {
     doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: 'center' });
     doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: 'center' });
     
-    doc.setFontSize(14);
-    doc.text("TERMO DE TRANSFERÊNCIA DE CARGA DEFINITIVA", 105, 52, { align: 'center' });
-    
-    // 3. Dados da Transferência
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(`DATA: ${new Date(t.dataTransferencia).toLocaleDateString('pt-BR')}`, 20, 65);
-    doc.text(`UNIDADE DE ORIGEM: ${t.unidadeOrigem?.nome || 'DITEL'}`, 20, 73);
-    doc.text(`UNIDADE DE DESTINO: ${t.unidadeDestino.nome}`, 20, 81);
-    
-    doc.setFont("helvetica", "normal");
-    const splitObs = doc.splitTextToSize(`OBSERVAÇÕES: ${t.observacoes || 'Sem observações'}`, pageWidth - 40);
-    doc.text(splitObs, 20, 89);
+    // Linha separadora
+    doc.setLineWidth(0.5);
+    doc.line(14, 42, pageWidth - 14, 42);
 
-    // 4. Tabela de Equipamentos
+    // Título e Número
+    doc.setFontSize(12);
+    doc.text("TERMO DE RESPONSABILIDADE", 105, 52, { align: 'center' });
+    doc.setLineWidth(0.2);
+    doc.line(70, 53, 140, 53); // Underline
+
+    const dataT = new Date(t.dataTransferencia);
+    const ano = dataT.getFullYear();
+    // Pega os ultimos digitos do ID para simular numero ou apenas gerar um
+    const seq = t.id.substring(t.id.length - 4).toUpperCase();
+    doc.text(`Nº ${seq}/${ano}`, 105, 62, { align: 'center' });
+
+    // Informações textuais (Esquerda)
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("ÓRGÃO: POLÍCIA MILITAR DO ESTADO DO PARÁ", 20, 75);
+    doc.text(`UNIDADE (ORIGEM): ${t.unidadeOrigem?.nome || 'DITEL/TELECOM'}`, 20, 81);
+    doc.text(`UNIDADE (DESTINO): ${t.unidadeDestino.nome}`, 20, 87);
+    doc.text("SITUAÇÃO: TRANSFERÊNCIA DE CARGA", 20, 93);
+
+    // Tabela
     const tableData = t.equipamentos.map(eq => [
+      eq.idRadio || eq.rp || '-',
+      `${eq.marca || ''} ${eq.modelo || ''}`.trim() || 'RÁDIO COMUNICADOR',
       eq.numSerie,
-      eq.marca || '-',
-      eq.modelo || '-',
-      'TRANSFERIDO'
+      eq.rp || '-'
     ]);
 
     autoTable(doc, {
       startY: 105,
-      head: [['Nº SÉRIE', 'MARCA', 'MODELO', 'STATUS']],
+      head: [[{ content: 'RELAÇÃO DE EQUIPAMENTOS', colSpan: 4, styles: { halign: 'center', fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' } }], ['ORDEM', 'DESCRIÇÃO DO BEM', 'Nº DE SÉRIE', 'RP']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
-      styles: { fontSize: 9, cellPadding: 3 }
+      headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center' },
+      bodyStyles: { textColor: 0, halign: 'center' },
+      styles: { fontSize: 9, cellPadding: 3, lineColor: [0, 0, 0], lineWidth: 0.2 }
     });
 
-    // 5. Rodapé (Assinaturas e Endereço)
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    const lineY = pageHeight - 45;
-    
-    doc.line(20, lineY, 95, lineY);
-    doc.text("RESPONSÁVEL ORIGEM", 58, lineY + 5, { align: 'center' });
-    
-    doc.line(pageWidth - 95, lineY, pageWidth - 20, lineY);
-    doc.text("RESPONSÁVEL DESTINO", pageWidth - 58, lineY + 5, { align: 'center' });
+    let finalY = (doc as any).lastAutoTable.finalY || 105;
 
-    doc.setFontSize(8);
+    // Observações
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    const obsText = `OBS: ${t.observacoes || 'RÁDIO ACOMPANHA BATERIA, MICROFONE DE LAPELA E BASE CARREGADORA COM FONTE.'}`;
+    const splitObs = doc.splitTextToSize(obsText.toUpperCase(), pageWidth - 40);
+    doc.text(splitObs, 20, finalY + 10);
+
+    finalY += 10 + (splitObs.length * 4);
+
+    // Termo de responsabilidade
     doc.setFont("helvetica", "normal");
-    doc.text("Rod. Augusto Montenegro, Km 9, n° 3401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
-    doc.text("CEP: 66821-000. Contato: (91) 3255-9018 l E-mail: dtel@pm.pa.gov.br", 105, pageHeight - 10, { align: "center" });
+    const responsabilidade = "Pelo presente termo assumo total e inteira responsabilidade pelo equipamento acima recebido, bem como, mantê-lo a salvo de perda, furto ou dano por má utilização, excetuado o desgaste natural de tempo e uso.";
+    const splitResp = doc.splitTextToSize(responsabilidade, pageWidth - 40);
+    doc.text(splitResp, 20, finalY + 10, { align: 'justify', maxWidth: pageWidth - 40 });
+
+    finalY += 10 + (splitResp.length * 4) + 5;
+
+    // Caixa de RECEBIMENTO
+    doc.rect(14, finalY, pageWidth - 28, 60);
+    doc.setFont("helvetica", "bold");
+    doc.text("RECEBIMENTO", 105, finalY + 5, { align: 'center' });
+    doc.line(14, finalY + 7, pageWidth - 14, finalY + 7); // Linha horizontal do recebimento
+    doc.line(105, finalY + 7, 105, finalY + 60); // Linha vertical separadora
+
+    // Coluna Esquerda (Origem)
+    doc.setFontSize(9);
+    doc.text(`ÓRGÃO ou UNIDADE ORIGEM: ${t.unidadeOrigem?.nome || 'TELECOM/DITEL'}`, 16, finalY + 13);
+    doc.text("DATA: ___/___/_______", 16, finalY + 23);
+
+    // Assinatura Militar Origem (DITEL)
+    let militarOrigem = "AUXILIAR DA SEÇÃO DE TELECOMUNICAÇÕES DA DITEL";
+    if (t.militar) {
+      const posto = t.militar.posto ? t.militar.posto + " " : "";
+      militarOrigem = `${posto}${t.militar.nome} - RG ${t.militar.rg}`;
+    } else {
+       militarOrigem = "RESPONSÁVEL ORIGEM";
+    }
+    
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.text(militarOrigem, 60, finalY + 53, { align: 'center' });
+    if (t.militar) {
+        doc.text("AUXILIAR DA SEÇÃO DE TELECOMUNICAÇÕES DA DITEL", 60, finalY + 57, { align: 'center' });
+    }
+
+    // Coluna Direita (Destino)
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text(`ÓRGÃO ou UNIDADE DESTINO: ${t.unidadeDestino.nome}`, 107, finalY + 13);
+    doc.text("DATA: ___/___/_______", 107, finalY + 23);
+    doc.text("RG:: ________________", 107, finalY + 28);
+
+    doc.line(125, finalY + 50, 195, finalY + 50); // Linha assinatura
+    doc.setFont("helvetica", "normal");
+    doc.text("RECEBEDOR", 160, finalY + 55, { align: 'center' });
 
     window.open(doc.output('bloburl'), '_blank');
   };
@@ -502,6 +562,18 @@ const Transferencias: React.FC = () => {
                   onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
                   className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 />
+              </div>
+
+              <div className="md:col-span-2 mt-4 border-t border-gray-100 dark:border-[#1f2937] pt-6">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">5. Militar Responsável (DITEL)</label>
+                <select 
+                  value={formData.militarId} 
+                  onChange={e => setFormData({...formData, militarId: e.target.value})} 
+                  className="w-full bg-gray-50 dark:bg-[#0b101a] border border-gray-300 dark:border-[#1f2937] rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">Selecione...</option>
+                  {militares.map(m => <option key={m.id} value={m.id}>{m.rg} - {m.posto ? `${m.posto} ` : ''}{m.nome}</option>)}
+                </select>
               </div>
             </div>
 
