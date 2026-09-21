@@ -346,6 +346,12 @@ const Cautelas: React.FC = () => {
 
     let finalY = (doc as any).lastAutoTable.finalY || 105;
 
+    // Verificar se há espaço suficiente para as observações e o bloco de recebimento (aprox 75 pts)
+    if (finalY + 80 > pageHeight - 20) {
+      doc.addPage();
+      finalY = 20;
+    }
+
     // Observações Fixas / Dinâmicas
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
@@ -389,21 +395,23 @@ const Cautelas: React.FC = () => {
     doc.setFont("helvetica", "normal");
     doc.text(`DATA: ${dataAtual}`, 102, finalY + 18);
 
-    doc.line(125, finalY + 46, 195, finalY + 46); // Linha assinatura
+    doc.line(115, finalY + 46, 185, finalY + 46); // Linha assinatura centralizada
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     
-    const nomeGuerraFormatado = c.recebedorGuerra || c.recebedorNome || 'N/A';
-    const postoFormatado = c.recebedorPosto || '';
-    const rgFormatado = c.recebedorRgPM || '';
-    const sigLine1 = `${nomeGuerraFormatado} - ${postoFormatado}`.trim();
+    const nomeGuerraFormatado = (c.recebedorGuerra || c.recebedorNome || 'N/A').trim();
+    const postoFormatado = (c.recebedorPosto || '').trim();
+    const rgFormatado = (c.recebedorRgPM || '').trim();
+    
+    let sigLine1 = `${nomeGuerraFormatado}`;
+    if (postoFormatado) sigLine1 += ` - ${postoFormatado}`;
     const sigLine2 = `RG: ${rgFormatado}`;
     
-    if (sigLine1 && sigLine1 !== 'N/A -') {
-      doc.text(sigLine1, 160, finalY + 51, { align: 'center' });
-      doc.text(sigLine2, 160, finalY + 55, { align: 'center' });
+    if (sigLine1 && sigLine1 !== 'N/A') {
+      doc.text(sigLine1, 150, finalY + 51, { align: 'center' });
+      doc.text(sigLine2, 150, finalY + 55, { align: 'center' });
     } else {
-      doc.text("RECEBEDOR", 160, finalY + 51, { align: 'center' });
+      doc.text("RECEBEDOR", 150, finalY + 51, { align: 'center' });
     }
 
     // Rodapé (Endereço)
