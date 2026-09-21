@@ -257,11 +257,10 @@ const Cautelas: React.FC = () => {
 
   const gerarComprovantePDF = async (c: Cautela) => {
     const doc = new jsPDF();
-    const nomeRecebedor = (c.recebedorPosto ? c.recebedorPosto + ' ' : '') + (c.recebedorGuerra || 'N/A');
-    const rgRecebedor = c.recebedorRgPM || 'N/A';
-    const contatoRecebedor = c.recebedorContato || '-';
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.height;
     
-    // Brasões
+    // 1. Brasões Institucionais
     try {
       const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
       doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
@@ -272,10 +271,10 @@ const Cautelas: React.FC = () => {
     
     try {
       const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
-      doc.addImage(base64Pmpa, 'PNG', 170, 8, 25, 25);
+      doc.addImage(base64Pmpa, 'PNG', 170, 10, 20, 22);
     } catch (e) { }
 
-    // Timbre Institucional
+    // 2. Cabeçalho Oficial (Timbre)
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text("GOVERNO DO ESTADO DO PARÁ", 105, 15, { align: "center" });
@@ -284,75 +283,113 @@ const Cautelas: React.FC = () => {
     doc.text("DEPARTAMENTO GERAL DE ADMINISTRAÇÃO", 105, 30, { align: "center" });
     doc.text("DIRETORIA DE TELEMÁTICA", 105, 35, { align: "center" });
 
-    // Título Centralizado conforme modelo (Apenas a primeira linha da missão)
-    const missaoLinhas = (c.missao || '').split('\n');
-    const missaoPrincipal = missaoLinhas[0].toUpperCase();
-    const osFormatada = c.numeroSequencial ? `OS-${c.numeroSequencial.toString().padStart(4, '0')}` : 'OS-0000';
-    const titulo = `CAUTELA ${osFormatada} - ${missaoPrincipal || 'GERAL'}`;
-    doc.setFontSize(14);
-    doc.text(titulo, 105, 50, { align: 'center' });
+    // Linha separadora
+    doc.setLineWidth(0.5);
+    doc.line(14, 42, pageWidth - 14, 42);
+
+    // Título e Número
+    doc.setFontSize(12);
+    doc.text("TERMO DE RESPONSABILIDADE", 105, 52, { align: 'center' });
+    doc.setLineWidth(0.2);
+    doc.line(70, 53, 140, 53); // Underline
+
+    const dataT = new Date(c.dataRetirada || new Date());
+    const ano = dataT.getFullYear();
+    const osFormatada = c.numeroSequencial ? `${c.numeroSequencial.toString().padStart(2, '0')}/${ano}` : `00/${ano}`;
     
-    // Nova Tabela conforme modelo
+    doc.setFontSize(11);
+    doc.text(`Nº ${osFormatada}`, 105, 62, { align: 'center' });
+
+    // Informações textuais (Esquerda)
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("ÓRGÃO: POLÍCIA MILITAR DO ESTADO DO PARÁ", 20, 75);
+    doc.text(`UNIDADE (ORIGEM): DITEL/TELECOM`, 20, 81);
+    
+    const unidadeDestinoStr = (c.unidade?.nome || c.militar?.unidade?.nome || '').toUpperCase();
+    doc.text(`UNIDADE (DESTINO): - ${unidadeDestinoStr}`, 20, 87);
+    
+    let yBase = 93;
+    doc.text(`SITUAÇÃO: CAUTELA ${c.tipoCautela?.toUpperCase() || 'PROVISÓRIA'}`, 20, yBase);
+
+    // Tabela
+    const tableData = c.equipamentos.map(eq => [
+      eq.idRadio || eq.rp || '-',
+      `${eq.marca || ''} ${eq.modelo || ''}`.trim() || 'RÁDIO COMUNICADOR',
+      eq.numSerie
+    ]);
+
     autoTable(doc, {
-      startY: 60,
-      head: [['Nº', 'Nº DE SÉRIE / RP', 'RECEBEDOR', 'RG', 'CONTATO', 'ASSINATURA']],
-      body: c.equipamentos.map((eq) => [
-        eq.idRadio || '-',
-        eq.rp || eq.numSerie,
-        nomeRecebedor,
-        rgRecebedor,
-        contatoRecebedor,
-        '________________________'
-      ]),
-      theme: 'plain',
-      styles: { fontSize: 9, textColor: [0, 0, 0], lineWidth: 0, cellPadding: 2 },
-      headStyles: { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [0, 0, 0] },
+      startY: yBase + 12,
+      head: [[{ content: 'RELAÇÃO DE EQUIPAMENTOS', colSpan: 3, styles: { halign: 'center', fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' } }], ['Nº ORDEM', 'DESCRIÇÃO DO BEM', 'Nº DE SÉRIE']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center' },
+      bodyStyles: { textColor: 0, halign: 'center' },
+      styles: { fontSize: 9, cellPadding: 3, lineColor: [0, 0, 0], lineWidth: 0.2 },
       columnStyles: {
-        0: { cellWidth: 15 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 45 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 50, halign: 'center' }
+        0: { cellWidth: 30 },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 50 }
       }
     });
 
-    let currentY = (doc as any).lastAutoTable.finalY + 15;
-    
-    // Seção ACOMPANHA
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text('ACOMPANHA:', 14, currentY);
-    doc.setFont("helvetica", "normal");
+    let finalY = (doc as any).lastAutoTable.finalY || 105;
+
+    // Observações Fixas / Dinâmicas
     doc.setFontSize(9);
-    
-    let yAcc = currentY + 7;
-    doc.text(`- ${c.equipamentos.length} RÁDIOS HT`, 20, yAcc);
-    yAcc += 7;
+    doc.setFont("helvetica", "bold");
+    let obsText = "OBS: ";
+    if (c.observacao) {
+        obsText += c.observacao.toUpperCase();
+    } else {
+        obsText += "RÁDIO COMPLETO, 2 BATERIAS RESERVAS";
+    }
+    const splitObs = doc.splitTextToSize(obsText, pageWidth - 40);
+    doc.text(splitObs, 20, finalY + 10);
 
-    // Removidas linhas extras da missão conforme solicitação do usuário
-    
-    const obsPadrao = "- TODOS OS RÁDIOS ESTÃO COM PRESILHA PARA CINTO, PROTETOR LATERAL, BATERIA E ANTENA.";
-    const splitObs = doc.splitTextToSize(obsPadrao, 180);
-    doc.text(splitObs, 20, yAcc);
+    finalY += 10 + (splitObs.length * 4);
 
-    // Rodapé Lateralizado conforme modelo
-    const pageHeight = doc.internal.pageSize.height;
-    
-    doc.setFontSize(10);
-    const dataLocal = `Belém PA, ${new Date(c.dataRetirada).toLocaleDateString('pt-BR')}`;
-    doc.text(dataLocal, 105, pageHeight - 60, { align: 'center' });
-    
-    doc.line(15, pageHeight - 45, 85, pageHeight - 45);
+    // Termo de responsabilidade
+    doc.setFont("helvetica", "normal");
+    const responsabilidade = "Pelo presente termo assumo total e inteira responsabilidade pelo equipamento acima recebido, bem como, mantê-lo a salvo de perda, furto ou dano por má utilização, excetuado o desgaste natural de tempo e uso.";
+    const splitResp = doc.splitTextToSize(responsabilidade, pageWidth - 40);
+    doc.text(splitResp, 20, finalY + 5, { align: 'justify', maxWidth: pageWidth - 40 });
+
+    finalY += 5 + (splitResp.length * 4) + 10;
+
+    // Caixa de RECEBIMENTO
+    doc.rect(14, finalY, pageWidth - 28, 55);
+    doc.setFont("helvetica", "bold");
+    doc.text("RECEBIMENTO", 105, finalY + 5, { align: 'center' });
+    doc.line(14, finalY + 7, pageWidth - 14, finalY + 7); // Linha horizontal do recebimento
+    doc.line(100, finalY + 7, 100, finalY + 55); // Linha vertical separadora
+
+    // Coluna Esquerda (Origem - DITEL)
+    doc.setFontSize(9);
+    doc.text(`ÓRGÃO ou UNIDADE ORIGEM: TELECOM/DITEL`, 16, finalY + 13);
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+    doc.setFont("helvetica", "normal");
+    doc.text(`DATA: ${dataAtual}`, 16, finalY + 18);
+
     doc.setFontSize(8);
-    doc.text('ASSINATURA DE QUEM ENTREGA\n(Militar Responsável)', 50, pageHeight - 40, { align: 'center' });
-    doc.text(`${c.militar?.posto ? c.militar.posto + ' ' : ''}${c.militar?.nomeGuerra || c.militar?.nome || ''}\nRG: ${c.militar?.rg || ''}`, 50, pageHeight - 32, { align: 'center' });
+    doc.setFont("helvetica", "bolditalic");
+    doc.text("ODIRSON MICHAEL TAVARES DA SILVA - 2º TEN PM RG 44443", 57, finalY + 48, { align: 'center' });
+    doc.text("RESP. PELA CHEFIA DA SEÇÃO DE TELECOMUNICAÇÕES", 57, finalY + 52, { align: 'center' });
 
-    doc.line(125, pageHeight - 45, 195, pageHeight - 45);
-    doc.text('ASSINATURA DE QUEM RECEBE\n(Militar Recebedor)', 160, pageHeight - 40, { align: 'center' });
-    doc.text(`${c.recebedorPosto ? c.recebedorPosto + ' ' : ''}${c.recebedorGuerra || ''}\nRG: ${c.recebedorRgPM || ''}`, 160, pageHeight - 32, { align: 'center' });
+    // Coluna Direita (Destino)
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text(`ÓRGÃO ou UNIDADE DESTINO: ${unidadeDestinoStr}`, 102, finalY + 13);
+    doc.setFont("helvetica", "normal");
+    doc.text(`DATA: ${dataAtual}`, 102, finalY + 18);
 
-    // Endereço Institucional no extremo rodapé (Exatamente como o outro)
+    doc.line(125, finalY + 46, 195, finalY + 46); // Linha assinatura
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("RECEBEDOR", 160, finalY + 51, { align: 'center' });
+
+    // Rodapé (Endereço)
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.text("Rod. Augusto Montenegro, Km 9, n°8401, Bairro Parque Guajará/Dist. de Icoaraci - Belém/PA.", 105, pageHeight - 15, { align: "center" });
