@@ -114,6 +114,7 @@ model Cautela {
   recebedorNome    String?
   recebedorGuerra  String?
   recebedorContato String?
+  recebedorUnidade String?
   
   observacao       String?
   observacaoDevolucao String?

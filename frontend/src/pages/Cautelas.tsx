@@ -61,6 +61,7 @@ interface Cautela {
   recebedorNome?: string;
   recebedorGuerra?: string;
   recebedorContato?: string;
+    recebedorUnidade?: string;
   numeroSequencial: number | null;
   observacao: string | null;
   observacaoDevolucao: string | null;
@@ -94,6 +95,7 @@ const Cautelas: React.FC = () => {
   const [recebedorNome, setRecebedorNome] = useState('');
   const [recebedorGuerra, setRecebedorGuerra] = useState('');
   const [recebedorContato, setRecebedorContato] = useState('');
+  const [recebedorUnidade, setRecebedorUnidade] = useState('');
   const [observacao, setObservacao] = useState('');
   const [observacaoDevolucao, setObservacaoDevolucao] = useState('');
 
@@ -162,6 +164,7 @@ const Cautelas: React.FC = () => {
           recebedorNome,
           recebedorGuerra,
           recebedorContato,
+          recebedorUnidade,
           observacao,
           tipoCautela
         });
@@ -178,6 +181,7 @@ const Cautelas: React.FC = () => {
           recebedorNome,
           recebedorGuerra,
           recebedorContato,
+          recebedorUnidade,
           observacao,
           tipoCautela
         });
@@ -206,6 +210,7 @@ const Cautelas: React.FC = () => {
     setRecebedorNome('');
     setRecebedorGuerra('');
     setRecebedorContato('');
+    setRecebedorUnidade('');
     setObservacao('');
   };
 
@@ -250,6 +255,7 @@ const Cautelas: React.FC = () => {
     setRecebedorNome(c.recebedorNome || '');
     setRecebedorGuerra(c.recebedorGuerra || '');
     setRecebedorContato(c.recebedorContato || '');
+    setRecebedorUnidade(c.recebedorUnidade || '');
     setObservacao(c.observacao || '');
     setRadiosSelecionados(c.equipamentos.map(eq => eq.id));
     setViewMode('form');
@@ -306,10 +312,14 @@ const Cautelas: React.FC = () => {
     doc.text("ÓRGÃO: POLÍCIA MILITAR DO ESTADO DO PARÁ", 20, 75);
     doc.text(`UNIDADE (ORIGEM): DITEL/TELECOM`, 20, 81);
     
-    const unidadeDestinoStr = (c.unidade?.nome || c.militar?.unidade?.nome || '').toUpperCase();
+    const unidadeDestinoStr = (c.recebedorUnidade || c.unidade?.nome || c.militar?.unidade?.nome || '').toUpperCase();
     doc.text(`UNIDADE (DESTINO): - ${unidadeDestinoStr}`, 20, 87);
     
     let yBase = 93;
+    if (c.observacao) {
+      doc.text(`OBS: ${c.observacao.toUpperCase()}`, 20, yBase);
+      yBase += 6;
+    }
     doc.text(`SITUAÇÃO: CAUTELA ${c.tipoCautela?.toUpperCase() || 'PROVISÓRIA'}`, 20, yBase);
 
     // Tabela
@@ -339,12 +349,7 @@ const Cautelas: React.FC = () => {
     // Observações Fixas / Dinâmicas
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    let obsText = "OBS: ";
-    if (c.observacao) {
-        obsText += c.observacao.toUpperCase();
-    } else {
-        obsText += "RÁDIO COMPLETO, 2 BATERIAS RESERVAS";
-    }
+    const obsText = "OBS: RÁDIO ACOMPANHA BATERIA, MICROFONE DE LAPELA E BASE CARREGADORA COM FONTE.";
     const splitObs = doc.splitTextToSize(obsText, pageWidth - 40);
     doc.text(splitObs, 20, finalY + 10);
 
@@ -387,7 +392,19 @@ const Cautelas: React.FC = () => {
     doc.line(125, finalY + 46, 195, finalY + 46); // Linha assinatura
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("RECEBEDOR", 160, finalY + 51, { align: 'center' });
+    
+    const nomeGuerraFormatado = c.recebedorGuerra || c.recebedorNome || 'N/A';
+    const postoFormatado = c.recebedorPosto || '';
+    const rgFormatado = c.recebedorRgPM || '';
+    const sigLine1 = `${nomeGuerraFormatado} - ${postoFormatado}`.trim();
+    const sigLine2 = `RG: ${rgFormatado}`;
+    
+    if (sigLine1 && sigLine1 !== 'N/A -') {
+      doc.text(sigLine1, 160, finalY + 51, { align: 'center' });
+      doc.text(sigLine2, 160, finalY + 55, { align: 'center' });
+    } else {
+      doc.text("RECEBEDOR", 160, finalY + 51, { align: 'center' });
+    }
 
     // Rodapé (Endereço)
     doc.setFontSize(8);
@@ -848,7 +865,7 @@ const Cautelas: React.FC = () => {
               {/* Militar Recebedor */}
               <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-[#1f2937]">
                 <h3 className="text-md font-bold text-gray-900 dark:text-white">Militar Recebedor</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patente / Posto *</label>
                     <select
