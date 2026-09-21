@@ -233,7 +233,12 @@ const Transferencias: React.FC = () => {
     doc.text("ÓRGÃO: POLÍCIA MILITAR DO ESTADO DO PARÁ", 20, 75);
     doc.text(`UNIDADE (ORIGEM): ${t.unidadeOrigem?.nome || 'DITEL/TELECOM'}`, 20, 81);
     doc.text(`UNIDADE (DESTINO): ${t.unidadeDestino.nome}`, 20, 87);
-    doc.text("SITUAÇÃO: TRANSFERÊNCIA DE CARGA", 20, 93);
+    let yBase = 93;
+    if (t.observacoes) {
+      doc.text(`OBS: ${t.observacoes.toUpperCase()}`, 20, yBase);
+      yBase += 6;
+    }
+    doc.text("SITUAÇÃO: TRANSFERÊNCIA DE CARGA", 20, yBase);
 
     // Tabela
     const tableData = t.equipamentos.map(eq => [
@@ -244,7 +249,7 @@ const Transferencias: React.FC = () => {
     ]);
 
     autoTable(doc, {
-      startY: 105,
+      startY: yBase + 12,
       head: [[{ content: 'RELAÇÃO DE EQUIPAMENTOS', colSpan: 4, styles: { halign: 'center', fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' } }], ['ORDEM', 'DESCRIÇÃO DO BEM', 'Nº DE SÉRIE', 'RP']],
       body: tableData,
       theme: 'grid',
@@ -255,11 +260,11 @@ const Transferencias: React.FC = () => {
 
     let finalY = (doc as any).lastAutoTable.finalY || 105;
 
-    // Observações
+    // Observações Fixas
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    const obsText = `OBS: ${t.observacoes || 'RÁDIO ACOMPANHA BATERIA, MICROFONE DE LAPELA E BASE CARREGADORA COM FONTE.'}`;
-    const splitObs = doc.splitTextToSize(obsText.toUpperCase(), pageWidth - 40);
+    const obsText = `OBS: RÁDIO ACOMPANHA BATERIA, MICROFONE DE LAPELA E BASE CARREGADORA COM FONTE.`;
+    const splitObs = doc.splitTextToSize(obsText, pageWidth - 40);
     doc.text(splitObs, 20, finalY + 10);
 
     finalY += 10 + (splitObs.length * 4);
