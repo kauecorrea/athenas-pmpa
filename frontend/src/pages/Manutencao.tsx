@@ -789,7 +789,14 @@ const Manutencao: React.FC = () => {
                        <p className="text-xs italic text-gray-600 dark:text-gray-400 truncate" title={m.problema}>{m.problema}</p>
                     </td>
                     <td className="px-6 py-4 text-xs">
-                      <p className="font-medium text-gray-500">DITEL: {m.dataChegadaDitel ? new Date(m.dataChegadaDitel).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'}</p>
+                      <span className={`px-2 py-0.5 mb-1 inline-block text-[9px] font-bold uppercase rounded ${m.tipoManutencao === 'Interna' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {m.tipoManutencao || 'Externa'}
+                      </span>
+                      {m.tipoManutencao === 'Interna' ? (
+                         <p className="font-medium text-gray-500">Entrada: {m.dataEntrada ? new Date(m.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'}</p>
+                      ) : (
+                         <p className="font-medium text-gray-500">DITEL: {m.dataChegadaDitel ? new Date(m.dataChegadaDitel).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'}</p>
+                      )}
                       {m.dataEnvioUnidade && <p className="text-[10px] text-green-500">Envio Unid: {new Date(m.dataEnvioUnidade).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</p>}
                     </td>
                     <td className="px-6 py-4">
