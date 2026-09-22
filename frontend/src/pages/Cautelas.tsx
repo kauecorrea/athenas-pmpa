@@ -75,6 +75,7 @@ const Cautelas: React.FC = () => {
   const [cautelas, setCautelas] = useState<Cautela[]>([]);
   const [militares, setMilitares] = useState<Militar[]>([]);
   const [equipamentosDisponiveis, setEquipamentosDisponiveis] = useState<Equipamento[]>([]);
+  const [unidades, setUnidades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [viewMode, setViewMode] = useState<'form' | 'list'>('form');
@@ -119,14 +120,16 @@ const Cautelas: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [cautRes, milRes, eqRes] = await Promise.all([
+      const [cautRes, milRes, eqRes, uniRes] = await Promise.all([
         axios.get('/api/cautelas'),
         axios.get('/api/militares'),
-        axios.get('/api/equipamentos?status=OPERACIONAL')
+        axios.get('/api/equipamentos?status=OPERACIONAL'),
+        axios.get('/api/unidades')
       ]);
       setCautelas(cautRes.data);
       setMilitares(milRes.data);
       setEquipamentosDisponiveis(eqRes.data);
+      setUnidades(uniRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -938,13 +941,16 @@ const Cautelas: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unidade</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: CPAT"
+                    <select
                       value={recebedorUnidade}
                       onChange={(e) => setRecebedorUnidade(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
-                    />
+                    >
+                      <option value="">Selecione...</option>
+                      {unidades.map(u => (
+                        <option key={u.id} value={u.nome}>{u.nome}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
