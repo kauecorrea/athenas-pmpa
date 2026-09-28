@@ -87,6 +87,13 @@ router.post('/', async (req: Request, res: Response) => {
       let currentSeq = contadorBase.valor - idsToProcess.length;
       
       for (const eqId of idsToProcess) {
+        const manutencaoAtiva = await tx.manutencao.findFirst({
+          where: { equipamentoId: eqId, status: { not: 'CONCLUIDA' } }
+        });
+        if (manutencaoAtiva) {
+          throw new Error(`O equipamento já possui uma manutenção ativa (OS ${manutencaoAtiva.numeroSequencial || 'Sem Número'}). Conclua-a primeiro.`);
+        }
+
         currentSeq++;
         // 1. Criar o registro oficial (Ordem de Serviço)
         const manut = await tx.manutencao.create({
@@ -144,6 +151,12 @@ router.post('/', async (req: Request, res: Response) => {
     res.status(201).json(result);
   } catch (error: any) {
     console.error("ERRO DETALHADO NO POST MANUTENCAO:", error);
+    
+    // Se for nosso erro de validação (já em manutenção)
+    if (error.message && error.message.includes('já possui uma manutenção ativa')) {
+      return res.status(400).json({ error: error.message });
+    }
+    
     res.status(500).json({ error: 'Erro ao registrar manutenção', details: error.message });
   }
 });
