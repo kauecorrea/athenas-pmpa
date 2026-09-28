@@ -10,6 +10,7 @@ import axios from "axios";
 import { Plus, Search, Trash2, Edit2, ChevronDown, List, ClipboardCheck } from "lucide-react";
 import ModalConfirmacao from "../components/ModalConfirmacao";
 import jsPDF from 'jspdf';
+import { CHEFIA_DITEL } from '../config/ditel';
 
 interface Equipamento {
   id: string;
@@ -264,7 +265,7 @@ const Equipamentos: React.FC = () => {
       
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text("ODIRSON MICHAEL TAVARES DA SILVA - 2º TEN PM RG 44443", 55, 131 + offsetY, { align: "center" });
+      doc.text(CHEFIA_DITEL.assinaturaBase, 55, 131 + offsetY, { align: "center" });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(6);
       doc.text("RESPONDENDO PELAS SEÇÕES DE TELECOMUNICAÇÃO E SUPORTE AO USUÁRIO", 55, 134 + offsetY, { align: "center" });

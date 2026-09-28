@@ -1,0 +1,7 @@
+export const CHEFIA_DITEL = {
+  nome: "ODIRSON MICHAEL TAVARES DA SILVA",
+  posto: "2º TEN PM",
+  rg: "44443",
+  funcao: "RESP. PELA CHEFIA DA SEÇÃO DE TELECOMUNICAÇÕES",
+  assinaturaBase: "ODIRSON MICHAEL TAVARES DA SILVA - 2º TEN PM RG 44443"
+};

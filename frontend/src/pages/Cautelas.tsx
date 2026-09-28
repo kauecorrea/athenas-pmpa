@@ -24,6 +24,7 @@ import ModalConfirmacao from '../components/ModalConfirmacao';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { emitToast } from '../utils/toast';
+import { CHEFIA_DITEL } from '../config/ditel';
 
 interface Equipamento {
   id: string;
@@ -388,8 +389,8 @@ const Cautelas: React.FC = () => {
 
     doc.setFontSize(8);
     doc.setFont("helvetica", "bolditalic");
-    doc.text("ODIRSON MICHAEL TAVARES DA SILVA - 2º TEN PM RG 44443", 57, finalY + 48, { align: 'center' });
-    doc.text("RESP. PELA CHEFIA DA SEÇÃO DE TELECOMUNICAÇÕES", 57, finalY + 52, { align: 'center' });
+    doc.text(CHEFIA_DITEL.assinaturaBase, 57, finalY + 48, { align: 'center' });
+    doc.text(CHEFIA_DITEL.funcao, 57, finalY + 52, { align: 'center' });
 
     // Coluna Direita (Destino)
     doc.setFontSize(9);
