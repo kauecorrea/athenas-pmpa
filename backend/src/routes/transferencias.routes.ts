@@ -216,27 +216,35 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
       });
 
       if (!trans) throw new Error('Transferência não encontrada');
+      if (trans.status === 'CANCELADA') throw new Error('A transferência já está cancelada');
 
-      // Se havia uma unidade de origem, devolvemos os rádios pra lá
+      // Se havia uma unidade de origem, devolvemos os rádios pra lá APENAS se ainda estiverem marcados como TRANSFERIDO
       if (trans.unidadeOrigemId) {
-        for (const equip of trans.equipamentos) {
-          await tx.equipamento.update({
-            where: { id: equip.id },
-            data: { 
-              unidadeId: trans.unidadeOrigemId,
-              status: 'OPERACIONAL'
-            }
-          });
+        const eqTransferidos = await tx.equipamento.findMany({
+          where: { id: { in: trans.equipamentos.map(e => e.id) }, status: 'TRANSFERIDO' }
+        });
+        
+        if (eqTransferidos.length > 0) {
+          for (const equip of eqTransferidos) {
+            await tx.equipamento.update({
+              where: { id: equip.id },
+              data: { 
+                unidadeId: trans.unidadeOrigemId,
+                status: 'OPERACIONAL'
+              }
+            });
+          }
         }
       }
 
-      await tx.transferencia.delete({
-        where: { id: id as string }
+      await tx.transferencia.update({
+        where: { id: id as string },
+        data: { status: 'CANCELADA' }
       });
     });
 
-    registrarAuditoria(req, 'Estornou Transferência de Carga', `A Transferência ID ${id} foi revertida.`);
-    res.json({ message: 'Transferência estornada e carga devolvida à unidade de origem.' });
+    registrarAuditoria(req, 'Estornou Transferência de Carga', `A Transferência ID ${id} foi revertida e cancelada.`);
+    res.json({ message: 'Transferência estornada, carga devolvida à unidade de origem e registro cancelado.' });
   } catch (error) {
     console.error('Erro em Transferências:', (error as Error).message);
     res.status(500).json({ error: 'Erro ao estornar transferência' });

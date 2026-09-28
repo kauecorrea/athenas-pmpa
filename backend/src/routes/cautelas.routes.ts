@@ -200,29 +200,38 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   const { observacaoDevolucao } = req.body;
   try {
-    // 1. Marca a Cautela como DEVOLVIDA e salva a data atual
-    const cautela = await prisma.cautela.update({
-      where: { id: id as string },
-      data: {
-        status: 'DEVOLVIDA',
-        dataDevolucao: new Date(),
-        observacaoDevolucao: observacaoDevolucao || null
-      },
-      include: { equipamentos: true }
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Marca a Cautela como DEVOLVIDA
+      const cautela = await tx.cautela.update({
+        where: { id: id as string },
+        data: {
+          status: 'DEVOLVIDA',
+          dataDevolucao: new Date(),
+          observacaoDevolucao: observacaoDevolucao || null
+        },
+        include: { equipamentos: true }
+      });
 
-    // 2. Localiza os equipamentos no array (MongoDB suporta queries in arrays)
-    const idsRadios = cautela.equipamentoIds as string[];
-    
-    // 3. Libera os rádios no estoque (Voltam a ser OPERACIONAL)
-    await prisma.equipamento.updateMany({
-      where: { id: { in: idsRadios } },
-      data: { status: 'OPERACIONAL' }
+      // 2. Localiza os equipamentos no array (MongoDB suporta queries in arrays)
+      const idsRadios = cautela.equipamentoIds as string[];
+      
+      // 3. Libera os rádios no estoque (Voltam a ser OPERACIONAL) SOMENTE SE estiverem CAUTELADOS
+      const eqCautelados = await tx.equipamento.findMany({
+        where: { id: { in: idsRadios }, status: 'CAUTELADO' }
+      });
+
+      if (eqCautelados.length > 0) {
+        await tx.equipamento.updateMany({
+          where: { id: { in: eqCautelados.map(e => e.id) } },
+          data: { status: 'OPERACIONAL' }
+        });
+      }
+      return cautela;
     });
 
     registrarAuditoria(req, 'Devolveu Cautela Completa', `Lote Devolvido ID: ${id}`);
 
-    res.json(cautela);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Erro interno ao processar a devolução.' });
   }
@@ -237,18 +246,29 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
 router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
   try {
-    const cautela = await prisma.cautela.findUnique({ where: { id: id as string }, include: { equipamentos: true } });
-    if (cautela) {
-       // Libera os equipamentos antes de apagar a amarração
-       await prisma.equipamento.updateMany({
-         where: { id: { in: cautela.equipamentos.map(e => e.id) } },
-         data: { status: 'OPERACIONAL' }
-       });
-       
-       // Exclui a cautela do banco
-       await prisma.cautela.delete({ where: { id: id as string }});
-       registrarAuditoria(req, 'Apagou Cautela Definitivamente', `Registro de cautela destruído. ID: ${id}`);
-    }
+    await prisma.$transaction(async (tx) => {
+      const cautela = await tx.cautela.findUnique({ where: { id: id as string }, include: { equipamentos: true } });
+      if (cautela) {
+         const eqCautelados = await tx.equipamento.findMany({
+           where: { id: { in: cautela.equipamentos.map(e => e.id) }, status: 'CAUTELADO' }
+         });
+         
+         if (eqCautelados.length > 0) {
+           await tx.equipamento.updateMany({
+             where: { id: { in: eqCautelados.map(e => e.id) } },
+             data: { status: 'OPERACIONAL' }
+           });
+         }
+         
+         // Em vez de delete (exclusão física), faz soft delete / cancelamento
+         await tx.cautela.update({ 
+           where: { id: id as string },
+           data: { status: 'CANCELADA' }
+         });
+         
+         registrarAuditoria(req, 'Apagou Cautela Definitivamente (Cancelada)', `Registro de cautela cancelado. ID: ${id}`);
+      }
+    });
     res.status(204).send();
   } catch(error) { 
     res.status(500).json({error: 'Erro grave ao tentar excluir a Cautela.'}); 

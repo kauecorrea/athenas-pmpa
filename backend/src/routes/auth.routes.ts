@@ -9,8 +9,18 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { normalizeLogin, validatePassword } from '../utils/validation';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  keyGenerator: (req) => {
+    return `${req.ip}-${normalizeLogin(req.body.login) || 'unknown'}`;
+  },
+  message: { error: 'Muitas tentativas de login. Tente novamente mais tarde.' },
+});
 
 
 // ATENÇÃO PMPA: Esta chave deve ser configurada obrigatoriamente no arquivo .env
@@ -24,7 +34,7 @@ if (!JWT_SECRET) {
  * @access Público
  * @body { login, senha }
  */
-router.post('/login', async (req: Request, res: Response): Promise<void> => {
+router.post('/login', loginLimiter, async (req: Request, res: Response): Promise<void> => {
   try {
     const { login, senha } = req.body;
 
@@ -45,14 +55,13 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const validatedPassword = validatePassword(senha);
-    if (!validatedPassword) {
+    if (!senha || typeof senha !== 'string' || senha.length === 0 || senha.length > 255) {
       res.status(401).json({ error: 'Credenciais inválidas' });
       return;
     }
 
     // 2. Compara a senha informada no frontend com o hash guardado no banco de dados
-    const isPasswordValid = await bcrypt.compare(validatedPassword, usuario.senha);
+    const isPasswordValid = await bcrypt.compare(senha, usuario.senha);
     if (!isPasswordValid) {
       res.status(401).json({ error: 'Credenciais inválidas' });
       return;

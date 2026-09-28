@@ -95,16 +95,8 @@ app.use((req, res, next) => {
  */
 app.use(hpp());
 
-/**
- * Middleware: Rate Limiter
- * Limita cada IP a 300 requisições a cada 15 minutos para bloquear ataques de força bruta ou DDoS.
- */
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 300, 
-  message: { error: 'Muitas requisições. Tente novamente mais tarde.' },
-});
-app.use('/api', limiter);
+// O limiter global de API foi removido.
+// Usamos um limiter focado em auth.routes.ts para evitar bloqueio por IP numa rede institucional.
 
 // ==========================================
 // REGISTRO DE ROTAS

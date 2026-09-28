@@ -127,6 +127,7 @@ enum StatusCautela {
   ATIVA
   DEVOLVIDA
   VENCIDA
+  CANCELADA
 }
 
 model Usuario {
