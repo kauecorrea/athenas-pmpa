@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
+import { adminMiddleware } from '../middlewares/admin.middleware';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 // POST /api/acessorios
 // @ts-ignore
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', adminMiddleware, async (req: Request, res: Response) => {
   const { marca, modelo, quantidade, unidadeId } = req.body;
 
   if (!marca || !modelo || quantidade === undefined || quantidade === null) {
@@ -50,7 +51,7 @@ router.post('/', async (req: Request, res: Response) => {
 
 // PUT /api/acessorios/:id
 // @ts-ignore
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { marca, modelo, quantidade, unidadeId } = req.body;
 
@@ -74,7 +75,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
 // DELETE /api/acessorios/:id
 // @ts-ignore
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
