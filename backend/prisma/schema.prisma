@@ -271,3 +271,8 @@ model Acessorio {
   unidadeId   String?  @db.ObjectId
   unidade     Unidade? @relation(fields: [unidadeId], references: [id])
 }
+
+model Contador {
+  id    String @id @map("_id")
+  valor Int    @default(0)
+}

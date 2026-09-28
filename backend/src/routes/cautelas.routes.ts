@@ -92,13 +92,13 @@ router.post('/', async (req: Request, res: Response) => {
     // Garante que a Cautela e o Status dos Rádios sejam salvos JUNTOS. Se um falhar, o outro desfaz (Rollback).
     const cautelaRealizada = await prisma.$transaction(async (tx) => {
       
-      // Busca o último número sequencial para gerar o novo número (Ex: Cautela Nº 15)
-      const ultimaCautela = await (tx.cautela as any).findFirst({
-        orderBy: { numeroSequencial: 'desc' },
-        select: { numeroSequencial: true }
+      // Utiliza o contador atômico do MongoDB para garantir unicidade do número sequencial
+      const contador = await tx.contador.upsert({
+        where: { id: 'cautela' },
+        update: { valor: { increment: 1 } },
+        create: { id: 'cautela', valor: 1 }
       });
-      
-      const proximoNumero = (ultimaCautela?.numeroSequencial || 0) + 1;
+      const proximoNumero = contador.valor;
 
       // 1. Cria o registro principal da Cautela amarrando (connect) aos IDs dos equipamentos (M:N)
       const cautela = await (tx.cautela as any).create({

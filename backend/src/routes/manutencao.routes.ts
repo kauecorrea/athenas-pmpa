@@ -78,10 +78,13 @@ router.post('/', async (req: Request, res: Response) => {
     const result = await prisma.$transaction(async (tx) => {
       const created = [];
       
-      let maxManutencao = await tx.manutencao.findFirst({
-        orderBy: { numeroSequencial: 'desc' }
+      const contadorBase = await tx.contador.upsert({
+        where: { id: 'manutencao' },
+        update: { valor: { increment: idsToProcess.length } },
+        create: { id: 'manutencao', valor: idsToProcess.length }
       });
-      let currentSeq = maxManutencao?.numeroSequencial || 0;
+      // Se eu pedi N itens, os itens serão valor - N + 1, ..., valor
+      let currentSeq = contadorBase.valor - idsToProcess.length;
       
       for (const eqId of idsToProcess) {
         currentSeq++;
