@@ -8,6 +8,8 @@ import prisma from '../prisma';
 import { Router, Request, Response } from 'express';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import { registrarAuditoria } from '../utils/auditoria';
+import { validate } from '../middlewares/validate.middleware';
+import { updateVTRSchema } from '../schemas/vtr.schema';
 
 const router = Router();
 
@@ -100,31 +102,11 @@ router.post('/', async (req: Request, res: Response) => {
 
 // Editar manutenção VTR
 // @ts-ignore
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', validate(updateVTRSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
   
-  // Zod schema to restrict allowed fields
-  const { z } = require('zod');
-  const updateSchema = z.object({
-    pae: z.string().optional().nullable(),
-    unidadeId: z.string().optional().nullable(),
-    solicitante: z.string().optional().nullable(),
-    tecnico: z.string().optional().nullable(),
-    placaVrt: z.string().optional().nullable(),
-    prefixo: z.string().optional().nullable(),
-    kmVrt: z.union([z.number(), z.string()]).optional().nullable().transform((v: any) => (v ? parseInt(v as string) : undefined)),
-    modeloRadio: z.string().optional().nullable(),
-    numSerieRadio: z.string().optional().nullable(),
-    defeitoReclamado: z.string().optional().nullable(),
-    defeitoConstatado: z.string().optional().nullable(),
-    solucao: z.string().optional().nullable(),
-    servicos: z.array(z.string()).optional(),
-    status: z.string().optional(),
-    dataInicio: z.string().optional().transform((v: any) => (v ? new Date(v) : undefined)),
-  });
-
   try {
-    const validatedData = updateSchema.parse(req.body);
+    const validatedData = req.body;
     // Remover chaves undefined para não sobescrever com vazio sem querer
     Object.keys(validatedData).forEach(key => validatedData[key] === undefined && delete validatedData[key]);
     // Mapping specific names

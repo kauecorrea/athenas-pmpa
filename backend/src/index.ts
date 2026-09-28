@@ -153,22 +153,30 @@ import { bootstrapCounters } from './utils/bootstrapCounters';
  * Inicia a escuta da porta e o loop de pings internos (se hospedado em infraestruturas serverless que "dormem").
  */
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(port, async () => {
-    console.log(`Servidor rodando na porta ${port}`);
-    await bootstrapCounters();
+  async function start() {
+    try {
+      await bootstrapCounters();
+      app.listen(port, () => {
+        console.log(`Servidor rodando na porta ${port}`);
 
-  // Lógica de Keep-Alive (Ping a cada 10 minutos para evitar cold-start)
-  const URL_SISTEMA = process.env.RENDER_EXTERNAL_URL;
-  if (URL_SISTEMA) {
-    const https = require('https');
-    console.log(`Auto-ping configurado para: ${URL_SISTEMA}`);
-    setInterval(() => {
-      https.get(`${URL_SISTEMA}/api/health`, (res: any) => {
-        console.log(`Ping de atividade: ${res.statusCode}`);
-      }).on('error', (err: any) => {
-        console.error('Erro no auto-ping:', err.message);
+        // Lógica de Keep-Alive (Ping a cada 10 minutos para evitar cold-start)
+        const URL_SISTEMA = process.env.RENDER_EXTERNAL_URL;
+        if (URL_SISTEMA) {
+          const https = require('https');
+          console.log(`Auto-ping configurado para: ${URL_SISTEMA}`);
+          setInterval(() => {
+            https.get(`${URL_SISTEMA}/api/health`, (res: any) => {
+              console.log(`Ping de atividade: ${res.statusCode}`);
+            }).on('error', (err: any) => {
+              console.error('Erro no auto-ping:', err.message);
+            });
+          }, 10 * 60 * 1000); // 10 minutos
+        }
       });
-    }, 10 * 60 * 1000); // 10 minutos
+    } catch (err) {
+      console.error('Falha ao iniciar o servidor durante o bootstrap:', err);
+      process.exit(1);
+    }
   }
-});
+  start();
 }

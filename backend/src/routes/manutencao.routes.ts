@@ -121,13 +121,14 @@ router.post('/', async (req: Request, res: Response) => {
         });
 
         // 2. Trava o equipamento no inventário marcando como MANUTENCAO de forma atômica
+        // Apenas equipamentos OPERACIONAIS ou CAUTELADOS podem ir para manutenção
         const updateStatus = await tx.equipamento.updateMany({
-          where: { id: eqId as string, status: { not: 'MANUTENCAO' } },
+          where: { id: eqId as string, status: { in: ['OPERACIONAL', 'CAUTELADO'] } },
           data: { status: 'MANUTENCAO' }
         });
 
         if (updateStatus.count === 0) {
-          throw new Error(`O equipamento já está em manutenção ou bloqueado.`);
+          throw new Error('O equipamento não está em estado válido (Operacional/Cautelado) para entrar em manutenção ou já está bloqueado.');
         }
 
         // 3. Regra de Limpeza de Cautelas Órfãs
@@ -156,11 +157,11 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("ERRO DETALHADO NO POST MANUTENCAO:", error);
     
-    // Se for nosso erro de validação (já em manutenção)
-    if (error.message && error.message.includes('já possui uma manutenção ativa')) {
-      return res.status(400).json({ error: error.message });
+    // Se for erro de validação/estado inválido, retorna 409
+    if (error.message && (error.message.includes('estado válido') || error.message.includes('já possui uma manutenção ativa') || error.message.includes('já está em manutenção'))) {
+      return res.status(409).json({ error: error.message });
     }
-    res.status(500).json({ error: 'Erro ao registrar manutenção' });
+    res.status(500).json({ error: 'Erro ao registrar manutenção', details: error.message });
   }
 });
 
@@ -178,23 +179,28 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
     const equipStatus = statusDestino === 'BAIXADO' ? 'BAIXADO' : 'OPERACIONAL';
     
     const manutencao = await prisma.$transaction(async (tx) => {
-      const checkManut = await tx.manutencao.findUnique({ where: { id: id as string }});
-      if (!checkManut || checkManut.status === 'CONCLUIDA') {
-        throw new Error('Manutenção já concluída ou não encontrada.');
-      }
-
-      const man = await tx.manutencao.update({
-        where: { id: id as string },
+      // Atualização atômica idempotente, requer estar EM ANDAMENTO
+      const manUpdate = await tx.manutencao.updateMany({
+        where: { id: id as string, status: 'EM ANDAMENTO' },
         data: {
           status: 'CONCLUIDA',
           dataConclusao: new Date()
         }
       });
+      
+      if (manUpdate.count === 0) {
+        throw new Error('Manutenção já concluída, não encontrada ou não está em andamento.');
+      }
 
-      await tx.equipamento.update({
-        where: { id: man.equipamentoId },
-        data: { status: equipStatus }
-      });
+      // Buscar para recuperar o equipamentoId
+      const man = await tx.manutencao.findUnique({ where: { id: id as string } });
+
+      if (man) {
+        await tx.equipamento.update({
+          where: { id: man.equipamentoId },
+          data: { status: equipStatus }
+        });
+      }
 
       return man;
     });
@@ -202,7 +208,10 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
     await registrarAuditoria(req, 'Concluiu e retirou rádio da Manutenção', `Concluiu a Ordem de Serviço ID Banco: ${id}. Destino: ${equipStatus}`);
 
     res.json(manutencao);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message && error.message.includes('já concluída')) {
+      return res.status(409).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Erro ao concluir manutenção' });
   }
 });

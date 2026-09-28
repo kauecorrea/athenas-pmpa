@@ -125,20 +125,15 @@ router.post('/', async (req: Request, res: Response) => {
         include: { equipamentos: true }
       });
 
-      // 2. Exigir que todos os equipamentos selecionados estejam OPERACIONAIS para evitar corrida
-      const equipamentosDisponiveis = await tx.equipamento.findMany({
-        where: { id: { in: equipamentosIds as string[] }, status: 'OPERACIONAL' }
-      });
-
-      if (equipamentosDisponiveis.length !== equipamentosIds.length) {
-        throw new Error('Um ou mais equipamentos selecionados não estão operacionais no momento. Atualize a página.');
-      }
-
-      // 3. Altera imediatamente o status de todos os equipamentos para CAUTELADO
-      await tx.equipamento.updateMany({
-        where: { id: { in: equipamentosIds as string[] } },
+      // 2. Altera imediatamente o status de todos os equipamentos para CAUTELADO de forma atômica
+      const updateResult = await tx.equipamento.updateMany({
+        where: { id: { in: equipamentosIds as string[] }, status: 'OPERACIONAL' },
         data: { status: 'CAUTELADO' }
       });
+
+      if (updateResult.count !== equipamentosIds.length) {
+        throw new Error('Um ou mais equipamentos selecionados não estão operacionais no momento. A cautela foi abortada.');
+      }
 
       return cautela;
     });

@@ -36,7 +36,7 @@ router.post('/', adminMiddleware, validate(createAcessorioSchema), async (req: R
       data: {
         marca,
         modelo,
-        quantidade: Number(quantidade),
+        quantidade,
         unidadeId: unidadeId || null
       }
     });
@@ -60,7 +60,7 @@ router.put('/:id', adminMiddleware, validate(updateAcessorioSchema), async (req:
     const data: any = {};
     if (marca !== undefined) data.marca = marca;
     if (modelo !== undefined) data.modelo = modelo;
-    if (quantidade !== undefined) data.quantidade = Number(quantidade);
+    if (quantidade !== undefined) data.quantidade = quantidade;
     if (unidadeId !== undefined) data.unidadeId = unidadeId || null;
 
     const acessorio = await prisma.acessorio.update({

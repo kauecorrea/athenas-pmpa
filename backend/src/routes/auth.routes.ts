@@ -16,6 +16,7 @@ const router = Router();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 15, // reduzido para 15 tentativas
+  skipSuccessfulRequests: true,
   keyGenerator: (req) => {
     const ip = ipKeyGenerator(req.ip ?? '');
     const login = normalizeLogin(req.body?.login) ?? 'unknown';
