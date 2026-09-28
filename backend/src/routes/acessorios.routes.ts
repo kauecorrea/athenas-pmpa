@@ -3,6 +3,7 @@ import prisma from '../prisma';
 import { adminMiddleware } from '../middlewares/admin.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { createAcessorioSchema, updateAcessorioSchema } from '../schemas/acessorio.schema';
+import { registrarAuditoria } from '../utils/auditoria';
 
 const router = Router();
 
@@ -40,6 +41,8 @@ router.post('/', adminMiddleware, validate(createAcessorioSchema), async (req: R
       }
     });
 
+    registrarAuditoria(req, 'Criou Acessório', `Marca: ${marca}, Modelo: ${modelo}, Quantidade: ${quantidade}`);
+
     res.status(201).json(acessorio);
   } catch (error) {
     console.error("Erro ao criar acessório:", error);
@@ -64,6 +67,9 @@ router.put('/:id', adminMiddleware, validate(updateAcessorioSchema), async (req:
       where: { id: id as string },
       data
     });
+    
+    registrarAuditoria(req, 'Editou Acessório', `ID: ${id}`);
+    
     res.json(acessorio);
   } catch (error) {
     console.error("Erro ao atualizar acessório:", error);
@@ -80,6 +86,9 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
     await prisma.acessorio.delete({
       where: { id: id as string }
     });
+    
+    registrarAuditoria(req, 'Excluiu Acessório', `ID: ${id}`);
+    
     res.json({ message: 'Acessório removido com sucesso' });
   } catch (error) {
     console.error("Erro ao excluir acessório:", error);
