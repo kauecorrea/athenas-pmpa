@@ -65,7 +65,7 @@ router.post('/', async (req, res) => {
       },
     });
 
-    registrarAuditoria(req, 'Cadastrou novo Rádio / Equipamento', `RP: ${rp} - Série: ${numSerie} - ID Virtual: ${idRadio}`);
+    await registrarAuditoria(req, 'Cadastrou novo Rádio / Equipamento', `RP: ${rp} - Série: ${numSerie} - ID Virtual: ${idRadio}`);
 
     res.status(201).json(equipamento);
   } catch (error) {
@@ -107,7 +107,7 @@ router.put('/:id', async (req, res) => {
       },
     });
 
-    registrarAuditoria(req, 'Editou informações de um Rádio', `ID Banco: ${id} - Novo RP: ${rp || 'mantido'}`);
+    await registrarAuditoria(req, 'Editou informações de um Rádio', `ID Banco: ${id} - Novo RP: ${rp || 'mantido'}`);
 
     res.json(equipamento);
   } catch (error) {
@@ -123,7 +123,7 @@ router.delete('/:id', adminMiddleware, async (req, res) => {
       where: { id: id as string }
     });
 
-    registrarAuditoria(req, 'Excluiu um Rádio permanentemente do Banco', `ID Banco: ${id}`);
+    await registrarAuditoria(req, 'Excluiu um Rádio permanentemente do Banco', `ID Banco: ${id}`);
 
     res.status(204).send();
   } catch (error) {

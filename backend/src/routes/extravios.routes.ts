@@ -112,7 +112,7 @@ router.post('/', async (req: Request, res: Response) => {
       return extr;
     });
 
-    registrarAuditoria(req, 'Registrou Perda/Furto de Rádio na Tropa', `Rádio ID Banco perdido: ${equipamentoId} | B.O: ${boNumero} | Desc: ${descricao.substring(0, 30)}...`);
+    await registrarAuditoria(req, 'Registrou Perda/Furto de Rádio na Tropa', `Rádio ID Banco perdido: ${equipamentoId} | B.O: ${boNumero} | Desc: ${descricao.substring(0, 30)}...`);
 
     res.status(201).json(result);
   } catch (error) {
@@ -149,7 +149,7 @@ router.put('/:id/encontrado', async (req: Request, res: Response) => {
       return updatedExt;
     });
 
-    registrarAuditoria(req, 'Rádio Extraviado foi Encontrado', `O Extravio ID ${id} foi resolvido e o equipamento voltou a ser Operacional.`);
+    await registrarAuditoria(req, 'Rádio Extraviado foi Encontrado', `O Extravio ID ${id} foi resolvido e o equipamento voltou a ser Operacional.`);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao assinalar reencontro do rádio.' });
@@ -185,7 +185,7 @@ router.put('/:id/baixar', async (req: Request, res: Response) => {
       return updatedExt;
     });
 
-    registrarAuditoria(req, 'Rádio Configurado como Baixado', `A perda ID ${id} resultou na Baixa (Inutilização) do rádio do inventário ativo.`);
+    await registrarAuditoria(req, 'Rádio Configurado como Baixado', `A perda ID ${id} resultou na Baixa (Inutilização) do rádio do inventário ativo.`);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao descarregar rádio em Baixa.' });
@@ -220,7 +220,7 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
       return deletado;
     });
 
-    registrarAuditoria(req, 'Excluiu Registro de Extravio', `Rádio desvinculado do protocolo de sumiço por cancelamento de ordem ID ${id}.`);
+    await registrarAuditoria(req, 'Excluiu Registro de Extravio', `Rádio desvinculado do protocolo de sumiço por cancelamento de ordem ID ${id}.`);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao reverter e extinguir o extravio.' });

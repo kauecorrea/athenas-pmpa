@@ -29,7 +29,7 @@ import transferenciasRoutes from './routes/transferencias.routes';
 import auditoriaRoutes from './routes/auditoria.routes';
 import vtrRoutes from './routes/vtr.routes';
 import acessoriosRoutes from './routes/acessorios.routes';
-const app = express();
+export const app = express();
 
 const port = process.env.PORT || 3333;
 
@@ -146,12 +146,16 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+import { bootstrapCounters } from './utils/bootstrapCounters';
+
 /**
  * Inicialização do Servidor
  * Inicia a escuta da porta e o loop de pings internos (se hospedado em infraestruturas serverless que "dormem").
  */
-app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, async () => {
+    console.log(`Servidor rodando na porta ${port}`);
+    await bootstrapCounters();
 
   // Lógica de Keep-Alive (Ping a cada 10 minutos para evitar cold-start)
   const URL_SISTEMA = process.env.RENDER_EXTERNAL_URL;
@@ -167,3 +171,4 @@ app.listen(port, () => {
     }, 10 * 60 * 1000); // 10 minutos
   }
 });
+}

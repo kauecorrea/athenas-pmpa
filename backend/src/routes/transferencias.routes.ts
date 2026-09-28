@@ -117,7 +117,7 @@ router.post('/', async (req: Request, res: Response) => {
       return trans;
     });
 
-    registrarAuditoria(req, 'Transferência de Carga Definitiva', `Transferiu IDs [${equipamentosIds.join(', ')}] para Unidade ID: ${unidadeDestinoId}`);
+    await registrarAuditoria(req, 'Transferência de Carga Definitiva', `Transferiu IDs [${equipamentosIds.join(', ')}] para Unidade ID: ${unidadeDestinoId}`);
     res.status(201).json(result);
   } catch (error: any) {
     console.error('ERRO TRANSFERENCIA:', error);
@@ -195,7 +195,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       }
     });
 
-    registrarAuditoria(req, 'Editou Transferência', `Transferência ID ${id} atualizada.`);
+    await registrarAuditoria(req, 'Editou Transferência', `Transferência ID ${id} atualizada.`);
     res.json(result);
   } catch (error: any) {
     console.error('ERRO ATUALIZAR TRANSFERENCIA:', error);
@@ -243,7 +243,7 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
       });
     });
 
-    registrarAuditoria(req, 'Estornou Transferência de Carga', `A Transferência ID ${id} foi revertida e cancelada.`);
+    await registrarAuditoria(req, 'Estornou Transferência de Carga', `A Transferência ID ${id} foi revertida e cancelada.`);
     res.json({ message: 'Transferência estornada, carga devolvida à unidade de origem e registro cancelado.' });
   } catch (error) {
     console.error('Erro em Transferências:', (error as Error).message);

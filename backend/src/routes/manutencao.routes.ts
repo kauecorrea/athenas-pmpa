@@ -120,11 +120,15 @@ router.post('/', async (req: Request, res: Response) => {
           },
         });
 
-        // 2. Trava o equipamento no inventário marcando como MANUTENCAO
-        await tx.equipamento.update({
-          where: { id: eqId as string },
+        // 2. Trava o equipamento no inventário marcando como MANUTENCAO de forma atômica
+        const updateStatus = await tx.equipamento.updateMany({
+          where: { id: eqId as string, status: { not: 'MANUTENCAO' } },
           data: { status: 'MANUTENCAO' }
         });
+
+        if (updateStatus.count === 0) {
+          throw new Error(`O equipamento já está em manutenção ou bloqueado.`);
+        }
 
         // 3. Regra de Limpeza de Cautelas Órfãs
         // Busca cautelas onde o rádio defeituoso ainda consta como ATIVO na rua.
@@ -146,7 +150,7 @@ router.post('/', async (req: Request, res: Response) => {
       return created;
     });
 
-    registrarAuditoria(req, 'Registrou Rádio(s) na Oficina/Manutenção', `Foram enviados ${idsToProcess.length} equipamento(s). Problema relatado: ${problema}`);
+    await registrarAuditoria(req, 'Registrou Rádio(s) na Oficina/Manutenção', `Foram enviados ${idsToProcess.length} equipamento(s). Problema relatado: ${problema}`);
 
     res.status(201).json(result);
   } catch (error: any) {
@@ -174,6 +178,11 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
     const equipStatus = statusDestino === 'BAIXADO' ? 'BAIXADO' : 'OPERACIONAL';
     
     const manutencao = await prisma.$transaction(async (tx) => {
+      const checkManut = await tx.manutencao.findUnique({ where: { id: id as string }});
+      if (!checkManut || checkManut.status === 'CONCLUIDA') {
+        throw new Error('Manutenção já concluída ou não encontrada.');
+      }
+
       const man = await tx.manutencao.update({
         where: { id: id as string },
         data: {
@@ -190,7 +199,7 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
       return man;
     });
 
-    registrarAuditoria(req, 'Concluiu e retirou rádio da Manutenção', `Concluiu a Ordem de Serviço ID Banco: ${id}. Destino: ${equipStatus}`);
+    await registrarAuditoria(req, 'Concluiu e retirou rádio da Manutenção', `Concluiu a Ordem de Serviço ID Banco: ${id}. Destino: ${equipStatus}`);
 
     res.json(manutencao);
   } catch (error) {
@@ -235,7 +244,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       data: updateData
     });
     
-    registrarAuditoria(req, 'Editou Manutenção', `Editou Ordem de Serviço ID Banco: ${id}`);
+    await registrarAuditoria(req, 'Editou Manutenção', `Editou Ordem de Serviço ID Banco: ${id}`);
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao editar manutenção' });
@@ -271,7 +280,7 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
       return { success: true };
     });
 
-    registrarAuditoria(req, 'Excluiu/Estornou Manutenção', `Removeu fisicamente a Ordem de Serviço ID Banco: ${id}`);
+    await registrarAuditoria(req, 'Excluiu/Estornou Manutenção', `Removeu fisicamente a Ordem de Serviço ID Banco: ${id}`);
     res.json(result);
   } catch (error: any) {
     console.error('ERRO EXCLUIR MANUTENCAO:', error);

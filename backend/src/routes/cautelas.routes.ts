@@ -125,7 +125,16 @@ router.post('/', async (req: Request, res: Response) => {
         include: { equipamentos: true }
       });
 
-      // 2. Altera imediatamente o status de todos os equipamentos para CAUTELADO
+      // 2. Exigir que todos os equipamentos selecionados estejam OPERACIONAIS para evitar corrida
+      const equipamentosDisponiveis = await tx.equipamento.findMany({
+        where: { id: { in: equipamentosIds as string[] }, status: 'OPERACIONAL' }
+      });
+
+      if (equipamentosDisponiveis.length !== equipamentosIds.length) {
+        throw new Error('Um ou mais equipamentos selecionados não estão operacionais no momento. Atualize a página.');
+      }
+
+      // 3. Altera imediatamente o status de todos os equipamentos para CAUTELADO
       await tx.equipamento.updateMany({
         where: { id: { in: equipamentosIds as string[] } },
         data: { status: 'CAUTELADO' }
@@ -135,7 +144,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     // Registra a ação no Livro de Auditoria para transparência institucional
-    registrarAuditoria(req, `Criou Lote de Cautela`, `Cautelou ${equipamentosIds.length} equipamento(s).`);
+    await registrarAuditoria(req, `Criou Lote de Cautela`, `Cautelou ${equipamentosIds.length} equipamento(s).`);
 
     res.status(201).json(cautelaRealizada);
   } catch (error) {
@@ -183,7 +192,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       data: updateData
     });
     
-    registrarAuditoria(req, 'Editou Lote de Cautela', `Cautela ID: ${id}`);
+    await registrarAuditoria(req, 'Editou Lote de Cautela', `Cautela ID: ${id}`);
     res.json(cautela);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao editar cautela' });
@@ -229,7 +238,7 @@ router.put('/:id/devolver', async (req: Request, res: Response) => {
       return cautela;
     });
 
-    registrarAuditoria(req, 'Devolveu Cautela Completa', `Lote Devolvido ID: ${id}`);
+    await registrarAuditoria(req, 'Devolveu Cautela Completa', `Lote Devolvido ID: ${id}`);
 
     res.json(result);
   } catch (error) {
@@ -266,7 +275,7 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
            data: { status: 'CANCELADA' }
          });
          
-         registrarAuditoria(req, 'Apagou Cautela Definitivamente (Cancelada)', `Registro de cautela cancelado. ID: ${id}`);
+         await registrarAuditoria(req, 'Apagou Cautela Definitivamente (Cancelada)', `Registro de cautela cancelado. ID: ${id}`);
       }
     });
     res.status(204).send();

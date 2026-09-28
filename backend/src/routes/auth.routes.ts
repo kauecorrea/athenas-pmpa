@@ -17,7 +17,9 @@ const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 15, // reduzido para 15 tentativas
   keyGenerator: (req) => {
-    return `${ipKeyGenerator(req as any, {} as any) || req.ip || 'unknown'}-${normalizeLogin(req.body?.login) || 'unknown'}`;
+    const ip = ipKeyGenerator(req.ip ?? '');
+    const login = normalizeLogin(req.body?.login) ?? 'unknown';
+    return `${ip}:${login}`;
   },
   message: { error: 'Muitas tentativas de login. Tente novamente mais tarde.' },
 });

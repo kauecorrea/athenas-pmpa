@@ -56,14 +56,13 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const manutencaoRealizada = await prisma.$transaction(async (tx) => {
       
-      // Pegar o último número de OS para incrementar
-      const ultimaManut = await (tx as any).manutencaoVTR.findFirst({
-        orderBy: { osNumero: 'desc' },
-        select: { osNumero: true }
+      const contador = await tx.contador.upsert({
+        where: { id: 'vtr' },
+        update: { valor: { increment: 1 } },
+        create: { id: 'vtr', valor: 1 }
       });
       
-      // Começar do 1 se não houver registros, ou o próximo
-      const proximoNumero = (ultimaManut?.osNumero || 0) + 1;
+      const proximoNumero = contador.valor;
 
       const novaManut = await (tx as any).manutencaoVTR.create({
         data: {
@@ -90,7 +89,7 @@ router.post('/', async (req: Request, res: Response) => {
       return novaManut;
     });
 
-    registrarAuditoria(req, 'Criou Manutenção VTR', `OS nº ${manutencaoRealizada.osNumero} - VTR ${placaVrt}`);
+    await registrarAuditoria(req, 'Criou Manutenção VTR', `OS nº ${manutencaoRealizada.osNumero} - VTR ${placaVrt}`);
 
     res.status(201).json(manutencaoRealizada);
   } catch (error) {
@@ -103,18 +102,42 @@ router.post('/', async (req: Request, res: Response) => {
 // @ts-ignore
 router.put('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const data = req.body;
   
+  // Zod schema to restrict allowed fields
+  const { z } = require('zod');
+  const updateSchema = z.object({
+    pae: z.string().optional().nullable(),
+    unidadeId: z.string().optional().nullable(),
+    solicitante: z.string().optional().nullable(),
+    tecnico: z.string().optional().nullable(),
+    placaVrt: z.string().optional().nullable(),
+    prefixo: z.string().optional().nullable(),
+    kmVrt: z.union([z.number(), z.string()]).optional().nullable().transform((v: any) => (v ? parseInt(v as string) : undefined)),
+    modeloRadio: z.string().optional().nullable(),
+    numSerieRadio: z.string().optional().nullable(),
+    defeitoReclamado: z.string().optional().nullable(),
+    defeitoConstatado: z.string().optional().nullable(),
+    solucao: z.string().optional().nullable(),
+    servicos: z.array(z.string()).optional(),
+    status: z.string().optional(),
+    dataInicio: z.string().optional().transform((v: any) => (v ? new Date(v) : undefined)),
+  });
+
   try {
+    const validatedData = updateSchema.parse(req.body);
+    // Remover chaves undefined para não sobescrever com vazio sem querer
+    Object.keys(validatedData).forEach(key => validatedData[key] === undefined && delete validatedData[key]);
+    // Mapping specific names
+    if (validatedData.dataInicio !== undefined) {
+      validatedData.dataServico = validatedData.dataInicio;
+      delete validatedData.dataInicio;
+    }
+
     const manutencao = await (prisma as any).manutencaoVTR.update({
       where: { id },
-      data: {
-        ...data,
-        kmVrt: data.kmVrt ? parseInt(data.kmVrt) : undefined,
-        dataServico: data.dataInicio ? new Date(data.dataInicio) : undefined,
-      }
+      data: validatedData
     });
-    registrarAuditoria(req, 'Editou Manutenção VTR', `OS nº ${manutencao.osNumero}`);
+    await registrarAuditoria(req, 'Editou Manutenção VTR', `OS nº ${manutencao.osNumero}`);
     res.json(manutencao);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao editar manutenção VTR' });
@@ -127,7 +150,7 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const manut = await (prisma as any).manutencaoVTR.delete({ where: { id } });
-    registrarAuditoria(req, 'Excluiu Manutenção VTR', `OS nº ${manut.osNumero}`);
+    await registrarAuditoria(req, 'Excluiu Manutenção VTR', `OS nº ${manut.osNumero}`);
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Erro ao excluir manutenção VTR' });

@@ -41,7 +41,7 @@ router.post('/', adminMiddleware, validate(createAcessorioSchema), async (req: R
       }
     });
 
-    registrarAuditoria(req, 'Criou Acessório', `Marca: ${marca}, Modelo: ${modelo}, Quantidade: ${quantidade}`);
+    await registrarAuditoria(req, 'Criou Acessório', `Marca: ${marca}, Modelo: ${modelo}, Quantidade: ${quantidade}`);
 
     res.status(201).json(acessorio);
   } catch (error) {
@@ -68,7 +68,7 @@ router.put('/:id', adminMiddleware, validate(updateAcessorioSchema), async (req:
       data
     });
     
-    registrarAuditoria(req, 'Editou Acessório', `ID: ${id}`);
+    await registrarAuditoria(req, 'Editou Acessório', `ID: ${id}`);
     
     res.json(acessorio);
   } catch (error) {
@@ -87,7 +87,7 @@ router.delete('/:id', adminMiddleware, async (req: Request, res: Response) => {
       where: { id: id as string }
     });
     
-    registrarAuditoria(req, 'Excluiu Acessório', `ID: ${id}`);
+    await registrarAuditoria(req, 'Excluiu Acessório', `ID: ${id}`);
     
     res.json({ message: 'Acessório removido com sucesso' });
   } catch (error) {
