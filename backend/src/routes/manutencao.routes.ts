@@ -156,8 +156,7 @@ router.post('/', async (req: Request, res: Response) => {
     if (error.message && error.message.includes('já possui uma manutenção ativa')) {
       return res.status(400).json({ error: error.message });
     }
-    
-    res.status(500).json({ error: 'Erro ao registrar manutenção', details: error.message });
+    res.status(500).json({ error: 'Erro ao registrar manutenção' });
   }
 });
 
