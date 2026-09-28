@@ -8,7 +8,7 @@ import prisma from '../prisma';
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { normalizeLogin } from '../utils/validation';
+import { normalizeLogin, validatePassword } from '../utils/validation';
 
 const router = Router();
 
@@ -45,8 +45,14 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const validatedPassword = validatePassword(senha);
+    if (!validatedPassword) {
+      res.status(401).json({ error: 'Credenciais inválidas' });
+      return;
+    }
+
     // 2. Compara a senha informada no frontend com o hash guardado no banco de dados
-    const isPasswordValid = await bcrypt.compare(senha, usuario.senha);
+    const isPasswordValid = await bcrypt.compare(validatedPassword, usuario.senha);
     if (!isPasswordValid) {
       res.status(401).json({ error: 'Credenciais inválidas' });
       return;
