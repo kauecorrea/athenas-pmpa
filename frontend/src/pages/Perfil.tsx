@@ -23,6 +23,7 @@ const Perfil: React.FC = () => {
   const [avatar, setAvatar] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Carregar os dados logados do session
     const userStr = localStorage.getItem('usuario');
@@ -67,7 +68,7 @@ const Perfil: React.FC = () => {
     }
   };
 
-  const syncLocalUsuario = (updatedProps: any) => {
+  const syncLocalUsuario = (updatedProps: unknown) => {
     const userStr = localStorage.getItem('usuario');
     if (userStr) {
       const u = JSON.parse(userStr);
@@ -103,7 +104,7 @@ const Perfil: React.FC = () => {
       });
       syncLocalUsuario({ email: emailContato });
       alert("Autenticação atualizada com sucesso!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       alert(err.response?.data?.error || "Erro ao alterar autenticação.");
     }

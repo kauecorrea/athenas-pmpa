@@ -96,6 +96,7 @@ const Manutencao: React.FC = () => {
   const [unidades, setUnidades] = useState<{id: string, nome: string}[]>([]);
   const [militares, setMilitares] = useState<{id: string, nome: string, rg: string, posto?: string | null}[]>([]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchManutencoes();
     fetchUnidadesAndMilitares();
@@ -114,6 +115,7 @@ const Manutencao: React.FC = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (viewMode === 'form' && !editingId) {
       setBuscaRadioModal('');
@@ -136,7 +138,7 @@ const Manutencao: React.FC = () => {
   const fetchEquipamentosParaManutencao = async () => {
     try {
       const res = await axios.get('/api/equipamentos');
-      const disponiveis = res.data.filter((eq: any) => eq.status !== 'MANUTENCAO' && eq.status !== 'EXTRAVIADO');
+      const disponiveis = res.data.filter((eq: Record<string, unknown>) => eq.status !== 'MANUTENCAO' && eq.status !== 'EXTRAVIADO');
       setRadiosDisponiveis(disponiveis);
     } catch (error) {
       console.error("Erro ao buscar equipamentos para manutenção", error);
@@ -197,7 +199,7 @@ const Manutencao: React.FC = () => {
       resetForm();
       fetchManutencoes();
       setViewMode('list');
-    } catch (error: any) {
+    } catch (error: Record<string, unknown>) {
       console.error("Erro ao salvar manutenção", error);
       alert("Erro ao salvar manutenção! Detalhes: " + (error.response?.data?.details || error.response?.data?.error || error.message));
     }
@@ -238,7 +240,7 @@ const Manutencao: React.FC = () => {
     setLaudoTecnico(m.laudoTecnico || '');
     setTecnicoResp(m.tecnicoResp || '');
     setSolicitante(m.solicitante || '');
-    setTipoManutencao(m.tipoManutencao as any || 'Externa');
+    setTipoManutencao(m.tipoManutencao as unknown || 'Externa');
     setUnidadeId(m.unidadeId || '');
     setDocumentoOrigem(m.documentoOrigem || '');
     setDocumentoSaidaEmpresa(m.documentoSaidaEmpresa || '');
@@ -302,12 +304,12 @@ const Manutencao: React.FC = () => {
     try {
       const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
       doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
-    } catch (err) { console.error('Sem brasao_para.png'); }
+    } catch (_err) { console.error('Sem brasao_para.png'); }
     
     try {
       const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
       doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
-    } catch (err) { console.error('Sem brasao_pmpa.png'); }
+    } catch (_err) { console.error('Sem brasao_pmpa.png'); }
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
@@ -383,11 +385,11 @@ const Manutencao: React.FC = () => {
       try {
         const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
         doc.addImage(base64Para, 'PNG', 14, 10 + offsetY, 20, 22);
-      } catch (err) { }
+      } catch (_err) { }
       try {
         const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
         doc.addImage(base64Pmpa, 'PNG', 176, 10 + offsetY, 20, 22);
-      } catch (err) { }
+      } catch (_err) { }
 
       doc.setFontSize(8);
       doc.setFont("helvetica", "bold");

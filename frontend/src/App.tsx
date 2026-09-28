@@ -120,7 +120,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
 
   // Escuta custom events globais do Window para disparar Toasts de qualquer lugar do sistema
   React.useEffect(() => {
-    const handler = (e: any) => setToast(e.detail);
+    const handler = (e: Record<string, unknown>) => setToast(e.detail);
     window.addEventListener('showToast', handler);
     return () => window.removeEventListener('showToast', handler);
   }, []);

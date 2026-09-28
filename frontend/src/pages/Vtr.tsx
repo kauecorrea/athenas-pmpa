@@ -113,7 +113,7 @@ const Vtr: React.FC = () => {
       ]);
       setManutencoes(vtrRes.data);
       setUnidades(unidadesRes.data);
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao buscar dados:', error);
     } finally {
       setLoading(false);
@@ -143,7 +143,7 @@ const Vtr: React.FC = () => {
         servicos: [],
         dataInicio: new Date().toISOString().split('T')[0]
       });
-    } catch (error) {
+    } catch (_error) {
       alert('Erro ao criar manutenção VTR');
     }
   };
@@ -169,7 +169,7 @@ const Vtr: React.FC = () => {
       setIsDeleteModalOpen(false);
       setIdToDelete(null);
       fetchData();
-    } catch (error) {
+    } catch (_error) {
       alert('Erro ao excluir');
     }
   };
@@ -180,7 +180,7 @@ const Vtr: React.FC = () => {
       setIsEditModalOpen(false);
       setEditingManutencao(null);
       fetchData();
-    } catch (error) {
+    } catch (_error) {
       alert('Erro ao atualizar status');
     }
   };
@@ -202,12 +202,12 @@ const Vtr: React.FC = () => {
     try {
       const base64Para = await getBase64ImageFromUrl('/brasao_para.png');
       doc.addImage(base64Para, 'PNG', 14, 10, 20, 22);
-    } catch (e) { console.error('Sem brasao_para.png'); }
+    } catch (_e) { console.error('Sem brasao_para.png'); }
     
     try {
       const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
       doc.addImage(base64Pmpa, 'PNG', 176, 10, 20, 22);
-    } catch (e) { console.error('Sem brasao_pmpa.png'); }
+    } catch (_e) { console.error('Sem brasao_pmpa.png'); }
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
@@ -247,7 +247,7 @@ const Vtr: React.FC = () => {
       }
     });
 
-    const finalYInfo = (doc as any).lastAutoTable.finalY + 10;
+    const finalYInfo = (doc as unknown).lastAutoTable.finalY + 10;
     
     doc.setFont("helvetica", "bold");
     doc.text("ATENDIMENTO", 105, finalYInfo, { align: "center" });
@@ -270,7 +270,7 @@ const Vtr: React.FC = () => {
       columnStyles: { 0: { cellWidth: 15, halign: 'center' } }
     });
 
-    const finalYServ = (doc as any).lastAutoTable.finalY + 10;
+    const finalYServ = (doc as unknown).lastAutoTable.finalY + 10;
     
     doc.setFont("helvetica", "bold");
     doc.text("SOLUÇÃO", 14, finalYServ);
@@ -289,13 +289,13 @@ const Vtr: React.FC = () => {
   };
 
   const manutencoesFiltradas = manutencoes.filter(m => {
-    let matchString = 
+    const matchString = 
       (m.placaVrt || '').toLowerCase().includes(filtro.toLowerCase()) ||
       (m.prefixo || '').toLowerCase().includes(filtro.toLowerCase()) ||
       (m.unidade?.nome || '').toLowerCase().includes(filtro.toLowerCase()) ||
       (m.osNumero || '').toString().includes(filtro);
     
-    let matchStatus = filtroStatus === 'Todos' || m.status === filtroStatus;
+    const matchStatus = filtroStatus === 'Todos' || m.status === filtroStatus;
 
     return matchString && matchStatus;
   });

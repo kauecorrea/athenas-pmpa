@@ -348,7 +348,7 @@ const Cautelas: React.FC = () => {
       }
     });
 
-    let finalY = (doc as any).lastAutoTable.finalY || 105;
+    let finalY = (doc as unknown).lastAutoTable.finalY || 105;
 
     // Verificar se há espaço suficiente para as observações e o bloco de recebimento (aprox 75 pts)
     if (finalY + 80 > pageHeight - 20) {

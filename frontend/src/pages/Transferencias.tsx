@@ -123,7 +123,7 @@ const Transferencias: React.FC = () => {
       resetForm();
       fetchData();
       setViewMode('list');
-    } catch (e: any) {
+    } catch (e: Record<string, unknown>) {
       console.error(e);
       const msg = e.response?.data?.error || e.response?.data?.details || "Erro desconhecido";
       alert(`Erro ao salvar: ${msg}`);
@@ -196,12 +196,12 @@ const Transferencias: React.FC = () => {
       doc.setFontSize(6);
       doc.text("GOVERNO DO ESTADO", 24, 34, { align: "center" });
       doc.text("DO PARÁ", 24, 37, { align: "center" });
-    } catch (err) { console.error('Sem brasao_para.png'); }
+    } catch (_err) { console.error('Sem brasao_para.png'); }
     
     try {
       const base64Pmpa = await getBase64ImageFromUrl('/brasao_pmpa.png');
       doc.addImage(base64Pmpa, 'PNG', 170, 10, 20, 22);
-    } catch (err) { console.error('Sem brasao_pmpa.png'); }
+    } catch (_err) { console.error('Sem brasao_pmpa.png'); }
 
     // 2. Cabeçalho Oficial (Timbre)
     doc.setFontSize(10);
@@ -259,7 +259,7 @@ const Transferencias: React.FC = () => {
       styles: { fontSize: 9, cellPadding: 3, lineColor: [0, 0, 0], lineWidth: 0.2 }
     });
 
-    let finalY = (doc as any).lastAutoTable.finalY || 105;
+    let finalY = (doc as unknown).lastAutoTable.finalY || 105;
 
     // Observações Fixas
     doc.setFontSize(9);

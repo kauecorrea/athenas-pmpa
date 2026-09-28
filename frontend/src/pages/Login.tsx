@@ -44,7 +44,7 @@ const Login: React.FC = () => {
 
       // Redireciona para o Dashboard
       navigate('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.response?.data?.error || 'Erro ao conectar com o servidor.');
     } finally {
       setIsLoading(false);

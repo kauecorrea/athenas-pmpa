@@ -81,11 +81,6 @@ const Equipamentos: React.FC = () => {
   });
   const [activeTab, setActiveTab] = useState<'identificacao' | 'laudo'>('identificacao');
 
-  useEffect(() => {
-    fetchEquipamentos();
-    fetchUnidades();
-  }, []);
-
   const fetchUnidades = async () => {
     try {
       const res = await axios.get("/api/unidades");
@@ -107,6 +102,11 @@ const Equipamentos: React.FC = () => {
       setEquipamentos([]);
     }
   };
+
+  useEffect(() => {
+    fetchEquipamentos();
+    fetchUnidades();
+  }, []);
 
   const switchToFormNovo = () => {
     setIsEditing(false);
@@ -175,7 +175,7 @@ const Equipamentos: React.FC = () => {
     });
   };
 
-  const gerarLaudoPdf = async (m: any) => {
+  const gerarLaudoPdf = async (m: Record<string, unknown>) => {
     const doc = new jsPDF();
     
     const drawVia = async (offsetY: number) => {

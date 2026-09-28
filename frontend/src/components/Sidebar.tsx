@@ -61,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   
   // Estados para gerenciar as credenciais logadas e o visual do usuário
-  const [usuario, setUsuario] = React.useState<any>(null);
+  const [usuario, setUsuario] = React.useState<Record<string, unknown>>(null);
   const [avatar, setAvatar] = React.useState<string | null>(null);
 
   // Estado para injetar a classe 'dark' no HTML
@@ -77,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   // useEffect para carregar o perfil do usuário logo no carregamento do componente
   React.useEffect(() => {
-    let currentUser: any = null;
+    let currentUser: Record<string, unknown> = null;
     const userStr = localStorage.getItem('usuario');
     if (userStr) {
       currentUser = JSON.parse(userStr);

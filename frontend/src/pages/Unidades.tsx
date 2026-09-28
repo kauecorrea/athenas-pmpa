@@ -80,7 +80,7 @@ const Unidades: React.FC = () => {
       resetForm();
       fetchUnidades();
       setViewMode('list');
-    } catch (e: any) {
+    } catch (e: Record<string, unknown>) {
       console.error(e);
       const errorMessage = e.response?.data?.error || "Erro ao salvar unidade.";
       showToast(errorMessage, "error");
@@ -106,7 +106,7 @@ const Unidades: React.FC = () => {
       setUnidadeToDelete(null);
       fetchUnidades();
       showToast("Unidade excluída com sucesso!", "success");
-    } catch (e: any) {
+    } catch (e: Record<string, unknown>) {
       console.error(e);
       const errorMessage = e.response?.data?.error || "Erro ao excluir unidade. Ela pode estar vinculada a militares ou equipamentos.";
       showToast(errorMessage, "error");

@@ -97,6 +97,7 @@ const Extraviados: React.FC = () => {
   const [isModalBaixarOpen, setIsModalBaixarOpen] = useState(false);
   const [idToBaixar, setIdToBaixar] = useState<string | null>(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData();
   }, []);
@@ -113,7 +114,7 @@ const Extraviados: React.FC = () => {
       if (extRes.data) setExtraviados(extRes.data);
       if (eqRes.data) setEquipamentos(eqRes.data);
       if (uniRes.data) setUnidades(uniRes.data);
-    } catch (e) {
+    } catch (_e) {
       console.error("Erro crítico no fetchData", e);
     } finally {
       setLoading(false);
@@ -137,7 +138,7 @@ const Extraviados: React.FC = () => {
       resetForm();
       fetchData();
       setViewMode('list');
-    } catch (e: any) {
+    } catch (e: Record<string, unknown>) {
       console.error(e);
       const msg = e.response?.data?.error || e.message || "Erro desconhecido";
       alert(`Falha ao registrar extravio: ${msg}`);
@@ -169,7 +170,7 @@ const Extraviados: React.FC = () => {
       setIsModalDeleteOpen(false);
       setIdToDelete(null);
       fetchData();
-    } catch (e) {
+    } catch (_e) {
       console.error(e);
     }
   };
@@ -181,7 +182,7 @@ const Extraviados: React.FC = () => {
       setIsModalRecuperarOpen(false);
       setIdToRecuperar(null);
       fetchData();
-    } catch (e) {
+    } catch (_e) {
       console.error(e);
     }
   };
@@ -193,7 +194,7 @@ const Extraviados: React.FC = () => {
       setIsModalBaixarOpen(false);
       setIdToBaixar(null);
       fetchData();
-    } catch (e) {
+    } catch (_e) {
       console.error(e);
     }
   };
