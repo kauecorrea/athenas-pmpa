@@ -252,7 +252,7 @@ const Extraviados: React.FC = () => {
     doc.text(`Contato: ${ex.militarResponsavelContato || 'N/I'}`, 120, 89);
     doc.text(`Unidade: ${ex.unidade?.nome || 'N/I'}`, 14, 96);
     
-    // Adjusted Y coords for section 2 due to added fields
+    // Coordenadas Y ajustadas para a seção 2 devido aos campos adicionados
     doc.setFont("helvetica", "bold");
     doc.text("2. IDENTIFICAÇÃO DO EQUIPAMENTO", 14, 110);
     doc.setFont("helvetica", "normal");

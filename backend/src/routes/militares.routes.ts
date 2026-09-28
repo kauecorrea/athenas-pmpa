@@ -76,7 +76,7 @@ router.delete('/:id', adminMiddleware, async (req, res) => {
   const { id } = req.params as { id: string };
   
   try {
-    // Check if there are active cautelas for this militar
+    // Verifica se há cautelas ativas para este militar
     const activeCautelas = await prisma.cautela.findFirst({
       where: {
         militarId: id,

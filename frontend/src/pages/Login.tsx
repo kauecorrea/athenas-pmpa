@@ -29,7 +29,7 @@ const Login: React.FC = () => {
       setIsLoading(false);
       return;
     }
-    // Password length validation removed – legacy passwords allowed at login
+    // Validação de tamanho de senha removida – senhas antigas curtas são permitidas no login
 
     try {
       const response = await axios.post('/api/auth/login', {

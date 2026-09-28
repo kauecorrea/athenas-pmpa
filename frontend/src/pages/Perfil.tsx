@@ -76,7 +76,7 @@ const Perfil: React.FC = () => {
       const newU = { ...u, ...updatedProps };
       localStorage.setItem('usuario', JSON.stringify(newU));
       
-      // Emit events so Header could theoretically pick it up if needed.
+      // Emite eventos para que o Header possa capturá-los, se necessário.
       window.dispatchEvent(new Event('storage'));
     }
   };

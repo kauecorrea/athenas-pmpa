@@ -51,7 +51,7 @@ router.post('/', async (req: Request, res: Response) => {
     dataInicio 
   } = req.body;
   
-  // Removed strict validation to make all fields optional
+  // Validação estrita removida para tornar todos os campos opcionais
 
   try {
     const manutencaoRealizada = await prisma.$transaction(async (tx) => {

@@ -185,7 +185,7 @@ const App: React.FC = () => {
     const s2 = 'background: #0ea5e9; color: #fff; padding: 5px 10px; border-radius: 0 4px 4px 0; font-weight: bold;';
     const s3 = 'background: #f8fafc; color: #0284c7; padding: 2px 8px; border-radius: 4px; margin-top: 4px; font-weight: bold; font-size: 10px;';
     
-    // Obfuscated signature with UTF-8 support
+    // Assinatura ofuscada com suporte a UTF-8
     const sig = decodeURIComponent(escape(window.atob('SGFuZGNyYWZ0ZWQgYnkgS2F1w6ogQ29ycsOqYQ==')));
     
     console.log('%c🚀 DITEL SYSTEM %c%s', s1, s2, sig);
