@@ -793,7 +793,8 @@ const Cautelas: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Militar Responsável</label>
                   <div className="relative">
                     <select 
-                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none"
+                      disabled={!!editingCautelaId}
+                      className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
                       value={militarId}
                       onChange={(e) => setMilitarId(e.target.value)}
                     >
@@ -959,6 +960,7 @@ const Cautelas: React.FC = () => {
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Rádios para Cautela</label>
                 
+                {!editingCautelaId && (
                 <div className="relative">
                   <div className="flex gap-3">
                     <select 
@@ -1010,6 +1012,7 @@ const Cautelas: React.FC = () => {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Lista de Selecionados */}
                 {radiosSelecionados.length > 0 && (
@@ -1021,12 +1024,14 @@ const Cautelas: React.FC = () => {
                         return (
                           <div key={id} className="flex items-center gap-2 bg-white dark:bg-surface px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#1f2937] shadow-sm group">
                             <span className="text-xs font-bold text-primary">{eq?.rp || eq?.numSerie}</span>
-                            <button 
-                              onClick={() => setRadiosSelecionados(prev => prev.filter(i => i !== id))}
-                              className="text-gray-400 hover:text-danger p-0.5 rounded-full hover:bg-danger/10 transition-colors"
-                            >
-                              <Plus size={14} className="rotate-45" />
-                            </button>
+                            {!editingCautelaId && (
+                              <button 
+                                onClick={() => setRadiosSelecionados(prev => prev.filter(i => i !== id))}
+                                className="text-gray-400 hover:text-danger p-0.5 rounded-full hover:bg-danger/10 transition-colors"
+                              >
+                                <Plus size={14} className="rotate-45" />
+                              </button>
+                            )}
                           </div>
                         );
                       })}
