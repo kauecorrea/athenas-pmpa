@@ -29,7 +29,7 @@ interface Equipamento {
   };
   problema?: string;
   solicitante?: string;
-  paeNumero?: string;
+  pae?: string;
   analiseTecnica?: string;
   laudoTecnico?: string;
   tecnicoResp?: string;
@@ -72,7 +72,7 @@ const Equipamentos: React.FC = () => {
     unidadeId: "",
     problema: "",
     solicitante: "",
-    paeNumero: "",
+    pae: "",
     analiseTecnica: "",
     laudoTecnico: "",
     tecnicoResp: "",
@@ -122,7 +122,7 @@ const Equipamentos: React.FC = () => {
       unidadeId: "",
       problema: "",
       solicitante: "",
-      paeNumero: "",
+      pae: "",
       analiseTecnica: "",
       laudoTecnico: "",
       tecnicoResp: "",
@@ -147,7 +147,7 @@ const Equipamentos: React.FC = () => {
       unidadeId: eq.unidadeId || "",
       problema: eq.problema || "",
       solicitante: eq.solicitante || "",
-      paeNumero: eq.paeNumero || "",
+      pae: eq.pae || "",
       analiseTecnica: eq.analiseTecnica || "",
       laudoTecnico: eq.laudoTecnico || "",
       tecnicoResp: eq.tecnicoResp || "",
@@ -225,7 +225,7 @@ const Equipamentos: React.FC = () => {
       doc.setFontSize(8);
       const unidadeNome = unidades.find(u => u.id === m.unidadeId)?.nome || "DITEL";
       doc.text(unidadeNome, 10, 53 + offsetY);
-      doc.text(m.paeNumero || "-", 40, 53 + offsetY);
+      doc.text(m.pae || "-", 40, 53 + offsetY);
       doc.text(m.rp || "-", 75, 53 + offsetY);
       doc.text(m.numSerie || "-", 105, 53 + offsetY);
       doc.text(m.solicitante || "-", 140, 53 + offsetY);
@@ -315,7 +315,7 @@ const Equipamentos: React.FC = () => {
           unidadeId: "",
           problema: "",
           solicitante: "",
-          paeNumero: "",
+          pae: "",
           analiseTecnica: "",
           laudoTecnico: "",
           tecnicoResp: "",
@@ -867,8 +867,8 @@ const Equipamentos: React.FC = () => {
                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nº PAE</label>
                     <input 
                       type="text" 
-                      value={novoEquip.paeNumero}
-                      onChange={(e) => setNovoEquip({ ...novoEquip, paeNumero: e.target.value })}
+                      value={novoEquip.pae}
+                      onChange={(e) => setNovoEquip({ ...novoEquip, pae: e.target.value })}
                       placeholder="Ex: 2025/3481287"
                       className="w-full bg-gray-50 dark:bg-[#111827] border border-gray-300 dark:border-[#374151] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                     />

@@ -60,7 +60,7 @@ model Equipamento {
   // Campos de Laudo Técnico vinculados ao rádio
   problema       String?
   solicitante    String?
-  paeNumero      String?
+  pae            String?   @map("paeNumero")
   analiseTecnica String?
   laudoTecnico   String?
   tecnicoResp    String?
@@ -237,7 +237,7 @@ model Auditoria {
 model ManutencaoVTR {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
   osNumero          Int?     // Numeração sequencial (OS)
-  paeNumero         String?
+  pae               String?  @map("paeNumero")
   dataServico       DateTime @default(now())
   
   unidadeId         String?   @db.ObjectId

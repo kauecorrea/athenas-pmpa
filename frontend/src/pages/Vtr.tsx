@@ -29,7 +29,7 @@ interface Unidade {
 interface ManutencaoVTR {
   id: string;
   osNumero: number;
-  paeNumero: string;
+  pae: string;
   dataServico: string;
   unidade: Unidade;
   unidadeId: string;
@@ -79,7 +79,7 @@ const Vtr: React.FC = () => {
   const [editingManutencao, setEditingManutencao] = useState<ManutencaoVTR | null>(null);
   
   const [formData, setFormData] = useState({
-    paeNumero: '',
+    pae: '',
     unidadeId: '',
     solicitante: '',
     tecnico: '',
@@ -127,7 +127,7 @@ const Vtr: React.FC = () => {
       alert('Manutenção VTR registrada com sucesso!');
       fetchData();
       setFormData({
-        paeNumero: '',
+        pae: '',
         unidadeId: '',
         solicitante: '',
         tecnico: '',
@@ -528,8 +528,8 @@ const Vtr: React.FC = () => {
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 tracking-wider">Nº/PAE</label>
                   <input 
                     type="text" 
-                    value={formData.paeNumero}
-                    onChange={(e) => setFormData({...formData, paeNumero: e.target.value})}
+                    value={formData.pae}
+                    onChange={(e) => setFormData({...formData, pae: e.target.value})}
                     className="w-full bg-gray-50 dark:bg-[#0a0f1d] border border-gray-200 dark:border-[#374151] rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>

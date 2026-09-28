@@ -37,7 +37,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req, res) => {
   const { 
     rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId, tipo,
-    problema, solicitante, paeNumero, analiseTecnica, laudoTecnico, tecnicoResp, dataEntradaLaudo, dataSaidaLaudo
+    problema, solicitante, pae, analiseTecnica, laudoTecnico, tecnicoResp, dataEntradaLaudo, dataSaidaLaudo
   } = req.body;
   try {
     const equipamento = await prisma.equipamento.create({
@@ -53,7 +53,7 @@ router.post('/', async (req, res) => {
         unidadeId: unidadeId ? unidadeId : null,
         problema,
         solicitante,
-        paeNumero,
+        pae,
         analiseTecnica,
         laudoTecnico,
         tecnicoResp,
@@ -78,7 +78,7 @@ router.put('/:id', async (req, res) => {
   const { id } = req.params as { id: string };
   const { 
     rp, numSerie, idRadio, marca, modelo, status, garantia, unidadeId, tipo,
-    problema, solicitante, paeNumero, analiseTecnica, laudoTecnico, tecnicoResp, dataEntradaLaudo, dataSaidaLaudo
+    problema, solicitante, pae, analiseTecnica, laudoTecnico, tecnicoResp, dataEntradaLaudo, dataSaidaLaudo
   } = req.body;
   try {
     const equipamento = await prisma.equipamento.update({
@@ -95,7 +95,7 @@ router.put('/:id', async (req, res) => {
         unidadeId: unidadeId ? unidadeId : null,
         problema,
         solicitante,
-        paeNumero,
+        pae,
         analiseTecnica,
         laudoTecnico,
         tecnicoResp,

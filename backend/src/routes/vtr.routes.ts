@@ -34,7 +34,7 @@ router.get('/', async (req: Request, res: Response) => {
 // @ts-ignore
 router.post('/', async (req: Request, res: Response) => {
   const { 
-    paeNumero, 
+    pae, 
     unidadeId, 
     solicitante, 
     tecnico, 
@@ -68,7 +68,7 @@ router.post('/', async (req: Request, res: Response) => {
       const novaManut = await (tx as any).manutencaoVTR.create({
         data: {
           osNumero: proximoNumero,
-          paeNumero,
+          pae,
           unidadeId,
           solicitante,
           tecnico,

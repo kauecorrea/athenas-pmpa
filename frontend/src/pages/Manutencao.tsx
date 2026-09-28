@@ -37,7 +37,7 @@ interface ManutencaoRecord {
   laudoTecnico: string | null;
   tecnicoResp: string | null;
   solicitante: string | null;
-    paeNumero: string | null;
+    pae: string | null;
   tipoManutencao: string;
   unidadeId: string | null;
   unidade: { id: string; nome: string } | null;
