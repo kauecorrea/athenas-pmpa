@@ -156,19 +156,23 @@ router.put('/:id/concluir', async (req: Request, res: Response) => {
   const { statusDestino } = req.body;
   
   try {
-    const manutencao = await prisma.manutencao.update({
-      where: { id: id as string },
-      data: {
-        status: 'CONCLUIDA',
-        dataConclusao: new Date()
-      }
-    });
-
     const equipStatus = statusDestino === 'BAIXADO' ? 'BAIXADO' : 'OPERACIONAL';
+    
+    const manutencao = await prisma.$transaction(async (tx) => {
+      const man = await tx.manutencao.update({
+        where: { id: id as string },
+        data: {
+          status: 'CONCLUIDA',
+          dataConclusao: new Date()
+        }
+      });
 
-    await prisma.equipamento.update({
-      where: { id: manutencao.equipamentoId },
-      data: { status: equipStatus }
+      await tx.equipamento.update({
+        where: { id: man.equipamentoId },
+        data: { status: equipStatus }
+      });
+
+      return man;
     });
 
     registrarAuditoria(req, 'Concluiu e retirou rádio da Manutenção', `Concluiu a Ordem de Serviço ID Banco: ${id}. Destino: ${equipStatus}`);
