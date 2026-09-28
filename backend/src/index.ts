@@ -8,7 +8,7 @@ import 'dotenv/config';
 import prisma from './prisma';
 import express from 'express';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+
 import helmet from 'helmet';
 import hpp from 'hpp';
 import mongoSanitize from 'express-mongo-sanitize';

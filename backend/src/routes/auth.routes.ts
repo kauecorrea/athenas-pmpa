@@ -9,15 +9,16 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { normalizeLogin, validatePassword } from '../utils/validation';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 const router = Router();
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
-  keyGenerator: (req) => {
-    return `${req.ip}-${normalizeLogin(req.body.login) || 'unknown'}`;
+  max: 15, // reduzido para 15 tentativas
+  keyGenerator: (req, res) => {
+    // @ts-ignore
+    return `${ipKeyGenerator(req.ip || '') || 'unknown'}-${normalizeLogin(req.body.login) || 'unknown'}`;
   },
   message: { error: 'Muitas tentativas de login. Tente novamente mais tarde.' },
 });
