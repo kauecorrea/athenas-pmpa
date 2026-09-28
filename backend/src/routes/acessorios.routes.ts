@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
 import { adminMiddleware } from '../middlewares/admin.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { createAcessorioSchema, updateAcessorioSchema } from '../schemas/acessorio.schema';
 
 const router = Router();
 
@@ -25,12 +27,8 @@ router.get('/', async (req: Request, res: Response) => {
 
 // POST /api/acessorios
 // @ts-ignore
-router.post('/', adminMiddleware, async (req: Request, res: Response) => {
+router.post('/', adminMiddleware, validate(createAcessorioSchema), async (req: Request, res: Response) => {
   const { marca, modelo, quantidade, unidadeId } = req.body;
-
-  if (!marca || !modelo || quantidade === undefined || quantidade === null) {
-    return res.status(400).json({ error: 'Marca, Modelo e Quantidade são obrigatórios.' });
-  }
 
   try {
     const acessorio = await prisma.acessorio.create({
@@ -51,7 +49,7 @@ router.post('/', adminMiddleware, async (req: Request, res: Response) => {
 
 // PUT /api/acessorios/:id
 // @ts-ignore
-router.put('/:id', adminMiddleware, async (req: Request, res: Response) => {
+router.put('/:id', adminMiddleware, validate(updateAcessorioSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { marca, modelo, quantidade, unidadeId } = req.body;
 
