@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Upload, Shield, Lock, User } from 'lucide-react';
+import type { Usuario } from '../types';
 
 const Perfil: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
@@ -68,7 +69,7 @@ const Perfil: React.FC = () => {
     }
   };
 
-  const syncLocalUsuario = (updatedProps: unknown) => {
+  const syncLocalUsuario = (updatedProps: Partial<Usuario>) => {
     const userStr = localStorage.getItem('usuario');
     if (userStr) {
       const u = JSON.parse(userStr);
@@ -104,9 +105,9 @@ const Perfil: React.FC = () => {
       });
       syncLocalUsuario({ email: emailContato });
       alert("Autenticação atualizada com sucesso!");
-    } catch (err: unknown) {
+    } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Erro ao alterar autenticação.");
+      alert((err as any).response?.data?.error || "Erro ao alterar autenticação.");
     }
   };
 

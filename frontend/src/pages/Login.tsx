@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import axios from 'axios';
 import { Radio, Lock } from 'lucide-react';
 
@@ -44,8 +45,8 @@ const Login: React.FC = () => {
 
       // Redireciona para o Dashboard
       navigate('/');
-    } catch (err: unknown) {
-      setError(err.response?.data?.error || 'Erro ao conectar com o servidor.');
+    } catch (err) {
+      setError((err as any).response?.data?.error || 'Erro ao conectar com o servidor.');
     } finally {
       setIsLoading(false);
     }

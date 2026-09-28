@@ -104,6 +104,7 @@ const Equipamentos: React.FC = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchEquipamentos();
     fetchUnidades();
   }, []);
@@ -175,7 +176,7 @@ const Equipamentos: React.FC = () => {
     });
   };
 
-  const gerarLaudoPdf = async (m: Record<string, unknown>) => {
+  const gerarLaudoPdf = async (m: Equipamento) => {
     const doc = new jsPDF();
     
     const drawVia = async (offsetY: number) => {

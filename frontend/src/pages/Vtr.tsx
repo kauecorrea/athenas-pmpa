@@ -114,7 +114,7 @@ const Vtr: React.FC = () => {
       setManutencoes(vtrRes.data);
       setUnidades(unidadesRes.data);
     } catch (_error) {
-      console.error('Erro ao buscar dados:', error);
+      console.error('Erro ao buscar dados:', _error);
     } finally {
       setLoading(false);
     }
@@ -247,7 +247,7 @@ const Vtr: React.FC = () => {
       }
     });
 
-    const finalYInfo = (doc as unknown).lastAutoTable.finalY + 10;
+    const finalYInfo = (doc as any).lastAutoTable.finalY + 10;
     
     doc.setFont("helvetica", "bold");
     doc.text("ATENDIMENTO", 105, finalYInfo, { align: "center" });
@@ -270,7 +270,7 @@ const Vtr: React.FC = () => {
       columnStyles: { 0: { cellWidth: 15, halign: 'center' } }
     });
 
-    const finalYServ = (doc as unknown).lastAutoTable.finalY + 10;
+    const finalYServ = (doc as any).lastAutoTable.finalY + 10;
     
     doc.setFont("helvetica", "bold");
     doc.text("SOLUÇÃO", 14, finalYServ);

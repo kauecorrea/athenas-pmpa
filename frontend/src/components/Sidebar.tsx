@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import type { Usuario } from '../types';
 import { 
   LayoutDashboard, 
   Radio, 
@@ -61,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   
   // Estados para gerenciar as credenciais logadas e o visual do usuário
-  const [usuario, setUsuario] = React.useState<Record<string, unknown>>(null);
+  const [usuario, setUsuario] = React.useState<Usuario | null>(null);
   const [avatar, setAvatar] = React.useState<string | null>(null);
 
   // Estado para injetar a classe 'dark' no HTML
@@ -77,13 +78,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   // useEffect para carregar o perfil do usuário logo no carregamento do componente
   React.useEffect(() => {
-    let currentUser: Record<string, unknown> = null;
+    let currentUser: Usuario | null = null;
     const userStr = localStorage.getItem('usuario');
     if (userStr) {
       currentUser = JSON.parse(userStr);
       setUsuario(currentUser);
 
-      const savedAvatar = localStorage.getItem(`avatar_${currentUser.id}`);
+      const savedAvatar = localStorage.getItem(`avatar_${currentUser?.id}`);
       if (savedAvatar) setAvatar(savedAvatar);
     }
 

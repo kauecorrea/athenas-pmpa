@@ -123,9 +123,9 @@ const Transferencias: React.FC = () => {
       resetForm();
       fetchData();
       setViewMode('list');
-    } catch (e: Record<string, unknown>) {
+    } catch (e) {
       console.error(e);
-      const msg = e.response?.data?.error || e.response?.data?.details || "Erro desconhecido";
+      const msg = (e as any).response?.data?.error || (e as any).response?.data?.details || "Erro desconhecido";
       alert(`Erro ao salvar: ${msg}`);
     }
   };
@@ -259,7 +259,7 @@ const Transferencias: React.FC = () => {
       styles: { fontSize: 9, cellPadding: 3, lineColor: [0, 0, 0], lineWidth: 0.2 }
     });
 
-    let finalY = (doc as unknown).lastAutoTable.finalY || 105;
+    let finalY = (doc as any).lastAutoTable.finalY || 105;
 
     // Observações Fixas
     doc.setFontSize(9);

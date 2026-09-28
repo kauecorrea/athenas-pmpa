@@ -115,7 +115,7 @@ const Extraviados: React.FC = () => {
       if (eqRes.data) setEquipamentos(eqRes.data);
       if (uniRes.data) setUnidades(uniRes.data);
     } catch (_e) {
-      console.error("Erro crítico no fetchData", e);
+      console.error("Erro crítico no fetchData", _e);
     } finally {
       setLoading(false);
     }
@@ -138,9 +138,9 @@ const Extraviados: React.FC = () => {
       resetForm();
       fetchData();
       setViewMode('list');
-    } catch (e: Record<string, unknown>) {
+    } catch (e) {
       console.error(e);
-      const msg = e.response?.data?.error || e.message || "Erro desconhecido";
+      const msg = (e as any).response?.data?.error || (e as any).message || "Erro desconhecido";
       alert(`Falha ao registrar extravio: ${msg}`);
     }
   };
@@ -171,7 +171,7 @@ const Extraviados: React.FC = () => {
       setIdToDelete(null);
       fetchData();
     } catch (_e) {
-      console.error(e);
+      console.error(_e);
     }
   };
 
@@ -183,7 +183,7 @@ const Extraviados: React.FC = () => {
       setIdToRecuperar(null);
       fetchData();
     } catch (_e) {
-      console.error(e);
+      console.error(_e);
     }
   };
 
@@ -195,7 +195,7 @@ const Extraviados: React.FC = () => {
       setIdToBaixar(null);
       fetchData();
     } catch (_e) {
-      console.error(e);
+      console.error(_e);
     }
   };
 

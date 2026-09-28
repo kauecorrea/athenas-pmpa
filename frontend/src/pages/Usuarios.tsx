@@ -86,9 +86,9 @@ const Usuarios: React.FC = () => {
       resetForm();
       fetchUsuarios();
       setViewMode('list');
-    } catch (e: Record<string, unknown>) {
+    } catch (e) {
       console.error(e);
-      alert(`Erro ao salvar: ${e.response?.data?.error || e.message}`);
+      alert(`Erro ao salvar: ${(e as any).response?.data?.error || (e as any).message}`);
     }
   };
 

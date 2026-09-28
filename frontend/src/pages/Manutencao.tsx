@@ -44,7 +44,6 @@ interface ManutencaoRecord {
   documentoOrigem: string | null;
   documentoSaidaEmpresa: string | null;
   documentoEntregaUnidade: string | null;
-  pae: string | null;
   tecnicoId: string | null;
   tecnico: { id: string; nome: string; rg: string; posto?: string | null } | null;
 }
@@ -199,9 +198,9 @@ const Manutencao: React.FC = () => {
       resetForm();
       fetchManutencoes();
       setViewMode('list');
-    } catch (error: Record<string, unknown>) {
+    } catch (error) {
       console.error("Erro ao salvar manutenção", error);
-      alert("Erro ao salvar manutenção! Detalhes: " + (error.response?.data?.details || error.response?.data?.error || error.message));
+      alert("Erro ao salvar manutenção! Detalhes: " + ((error as any).response?.data?.details || (error as any).response?.data?.error || (error as any).message));
     }
   };
 
@@ -240,7 +239,7 @@ const Manutencao: React.FC = () => {
     setLaudoTecnico(m.laudoTecnico || '');
     setTecnicoResp(m.tecnicoResp || '');
     setSolicitante(m.solicitante || '');
-    setTipoManutencao(m.tipoManutencao as unknown || 'Externa');
+    setTipoManutencao((m.tipoManutencao as 'Externa' | 'Interna') || 'Externa');
     setUnidadeId(m.unidadeId || '');
     setDocumentoOrigem(m.documentoOrigem || '');
     setDocumentoSaidaEmpresa(m.documentoSaidaEmpresa || '');
